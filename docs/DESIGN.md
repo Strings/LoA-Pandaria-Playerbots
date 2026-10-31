@@ -1199,6 +1199,22 @@ Splitting data into general, class-specific and situation-specific behavior happ
   - Target: creature entry or player class, level gap, classification (normal, elite, rare, boss), creature type, health %, distance, angle, casting (spell), who it is attacking.
   - Surroundings: hostiles within 5, 15 and 40 yards with their level gaps, attackers on self, enemies near death, friendly players and bots nearby, group size and roles.
   - Place and time: map, zone, subzone, instance type, indoors, server time, minutes into the session.
+  - Line of sight and terrain: line of sight to the target (a raycast, so on decision events only, never per
+    movement sample) and the height difference to the target (ledges, roofs, drops).
+  - Casting and control: when the character cancels its own cast, how far through the cast it was (0 to 1)
+    and whether the target's interrupt was ready (fake casts in one field); the target's interrupt cooldown
+    remaining; diminishing-returns state per category (stun, incapacitate, fear, root, ...) on self and target.
+- **Movement events keep the raw movement flags** (strafing, backpedaling, jumping, keyboard turning) and
+  orientation. Keyboard turns set turn flags, mouse turns only change orientation, so turn speed and strafe
+  ratios are computed offline; they are likely the clearest human-versus-bot tells.
+- **Emotes and chat or macro lines are decision events** with the full context snapshot, so offline training
+  can learn when expressive behavior happens, not just that it does.
+- **Objective events:** battleground and encounter objectives log their state changes (flag picked up, dropped
+  or captured, node contested, boss soak or puddle triggered) with position. Distance and angle to the nearest
+  objective are computed offline from these and the movement samples, so the live hook needs no per-map code.
+- **Source and intent:** every row carries `actor_type` (`human` or `scripted_bot`; sparring logs both sides,
+  see PvP sparring), and `.telemetry tag <intent>` (`spin-flag`, `hunt-healer`, `bodyguard`, ...) stamps an
+  intent on the current episode until cleared: supervised labels for the bots' play and archetype selector.
 - **Relative values, not raw ones:** level gap rather than level, health % rather than hit points, distance and angle rather than coordinates, so one player's data carries over to other characters and zones. Raw positions stay on movement events only.
 - **Stable IDs:** spell, creature entry, item entry, map and zone IDs, plus a player and session ID, so one person's style can be told apart from human behavior in general.
 - **Outcome events** label the decisions: kill, death, damage taken per fight, fight duration, wipe, flee, resurrection.
@@ -1223,6 +1239,26 @@ Splitting data into general, class-specific and situation-specific behavior happ
 | Movement snippet library | A few hundred parameterized curves (curved approach, strafe-jump, stop-and-look) chosen by context and fitted to the navmesh path | Movement layer | Biggest visual win |
 | Combat lookup tables | Action biases per state bucket (health, enemy count, cooldowns) | Trigger and action priority multipliers | Later |
 | Policy distillation | Shallow decision tree or rule list from an offline model | Readable, editable strategy triggers | Later |
+
+**Offline methods (decided)**
+
+All run offline and compile into the same tables and libraries; no model runs live.
+
+- **Bot-tells discriminator, first:** a small offline classifier (logistic regression or shallow gradient
+  boosting) predicts "scripted bot" from state and action sequence, trained on human logs against stock bot
+  logs. Its top features say what gives bots away; at table compile time, actions are penalized by
+  `lambda * log P(bot | state, action)` so bots avoid robotic transitions. It also scores each retrain and backs
+  the clip-based Turing test.
+- **Relative frames for movement:** combat snippets are stored relative to the target (radial and tangential
+  offset, facing change) and travel snippets relative to the path (along and lateral), so a strafe arc or a
+  line-of-sight break recorded in one place applies everywhere.
+- **Action chunks:** telemetry is segmented into 2 to 4 second micro-primitives (fake cast then free cast,
+  pillar peek, stutter-step to a puddle edge), each with an entry and an exit condition. Once started, a bot
+  plays the chunk out unless a high-priority hazard interrupts, instead of rolling every tick.
+- **Skill tiers by degradation:** weaker bots come from the player's profile through four parameters rather than
+  separate recordings: hazard reaction latency (worse late in a cast for greedy traits), placement noise,
+  cooldown and DoT drift, and encounter familiarity (rises with each wipe or raid warning and tightens the
+  other three across pulls).
 
 **Variety and iteration**
 
