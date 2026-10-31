@@ -59,7 +59,7 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 | T-042 | 36-slot bags: expensive vendor (gold sink); hooks to plant them in rare loot later | `sql/updates/world/` | | open |
 | T-043 | Reagent bank in detached storage, with crafting drawing from it | `src/server/scripts/Custom/ReagentBank/` | | open |
 | T-044 | Free XP on/off toggle (command now, settings panel later); no separate battleground queue for XP-off characters | `src/server/scripts/Custom/Twinks/` | | open |
-| T-045 | **Priority:** twink gear buffs above heirlooms via item hotfixes, per bracket and breakpoint (compile the current best non-heirloom items first) | `sql/updates/world/`, `docs/twinks.md` | | open |
+| T-045 | **Priority:** twink gear buffs above heirlooms via item hotfixes, per bracket and breakpoint (compile the current best non-heirloom items first) | `sql/updates/world/`, `docs/twinks.md` | codex | blocked: approve numerical heirloom margin (proposed 5% stats and weapon DPS) |
 | T-046 | Dungeon finder for outleveled dungeons: solo teleport at 20+ levels over the dungeon's level (config key). Bot groups wait for the instance pool (Phase 5) | `src/server/game/DungeonFinding/` hooks, `src/server/scripts/Custom/` | | open |
 | T-047 | Multi-type tracking test: combine tracking bitmasks behind a config key; test whether the client draws several types and shows several checkmarks | `src/server/scripts/Custom/Tracking/` | | open |
 
