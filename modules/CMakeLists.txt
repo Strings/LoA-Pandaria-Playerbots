@@ -92,6 +92,16 @@ endif()
 # Création de la bibliothèque statique "modules"
 add_library(modules STATIC ${MODULES_SOURCES})
 
+# With debug info embedded in each object (/Z7, used for compiler caching) this library passes the
+# 4 GB limit of a .lib; keep its debug info in a PDB (/Zi). Only applies when CMP0141 is NEW.
+# Objects sharing a PDB can't be cached, and parallel cl runs through sccache fail to open the shared
+# PDB (C1041), so this target compiles without the launcher.
+if(MSVC)
+  set_property(TARGET modules PROPERTY MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>")
+  set_property(TARGET modules PROPERTY CXX_COMPILER_LAUNCHER "")
+  set_property(TARGET modules PROPERTY C_COMPILER_LAUNCHER "")
+endif()
+
 # Fonction pour récupérer récursivement tous les sous-dossiers
 function(get_all_subdirectories result curdir)
     file(GLOB_RECURSE children LIST_DIRECTORIES true ${curdir}/*)
