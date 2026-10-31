@@ -72,7 +72,7 @@ public:
     void RegisterStep(std::string const& type, Checkpoints::StepHandler handler, Checkpoints::StepExplainer explainer);
     bool IsKnownStep(std::string const& type) const;
 
-    void LoadData();                         // world: gmtools_checkpoint, gmtools_checkpoint_step, gmtools_kit, gmtools_kit_item
+    void LoadData();                         // world: gmtools_checkpoint(_step), gmtools_kit(_item), gmtools_twink_candidate, twink_item
 
     std::vector<Checkpoints::Checkpoint> GetCheckpoints() const;     // by sort order
     bool GetCheckpoint(std::string const& name, Checkpoints::Checkpoint& out) const;
@@ -98,6 +98,7 @@ private:
     std::map<std::string, StepType> _stepTypes;
     std::map<std::string, Checkpoints::Checkpoint> _checkpoints;   // lower-case name -> checkpoint
     std::map<std::string, Checkpoints::Kit> _kits;                 // lower-case name -> kit
+    std::vector<std::pair<uint32, uint8>> _twinkCandidates;       // item entry, lowest bracket (level) it is for
 };
 
 #define sCheckpointMgr CheckpointMgr::instance()
