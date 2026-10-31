@@ -81,9 +81,9 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 |---|---|---|---|---|
 | T-032 | Live server MCP: thin wrapper over SOAP and logs (bots near a position, bot state, `.botscenario`, `.server info`, log tail, GM commands). Standalone module | `tools/live-server-mcp/` | codex | done |
 | T-033 | Crash triage: read crash dumps and core logs, map to source, suggest the likely commit | `tools/crash-triage/` | | open |
-| T-034 | SQL validator: lint new SQL against schema and references (givers, items, ID collisions) | `tools/sql-validator/` | | open |
+| T-034 | SQL validator: lint new SQL against schema and references (givers, items, ID collisions) | `tools/sql-validator/` | gemini | open |
 | T-031 | Balance sim: `.botscenario` dummy room that reports DPS for a given Heartseed loadout | `tools/balance-sim/`, `modules/mod_playerbots/src/Scenario/` | | open |
-| T-030 | Shared DBC reader library, then content search on top of it (spells, visuals, items, creatures, display IDs) as an MCP tool | `tools/dbc/`, `tools/content-search/` | | open |
+| T-030 | Shared DBC reader library, then content search on top of it (spells, visuals, items, creatures, display IDs) as an MCP tool | `tools/dbc/`, `tools/content-search/` | gemini | open |
 | T-048 | GM test suite for human playtests. **Checkpoint templates** as data rows, applied in one command (`.checkpoint apply <name>`, `.checkpoint list`, `.checkpoint explain <name>`): level, gear set, spells and talents, Heartseed rank, Growth, majors, essences and story flags, legacy projects done, quests, reputations, location. First checkpoints at each Heartseed major tier (10, 25, 40, 55, 70, 85) and at the first and second legendary unlocks (placeholder levels until the pacing pass). **Twink kits** per bracket from T-045's gear. **Ability tester:** learn a spell, reset cooldowns, refill power, set level. **Addon panel** (no client patch) listing checkpoints and kits with one-click apply; the server does the work, the addon only sends commands. Each later system adds its fields to the template. Builds on T-007 fixtures and T-039 GM tools | `src/server/scripts/Custom/GMTools/Checkpoints/`, `sql/updates/world/`, `addons/GMSuite/` | claude | review |
 
 ## Suggested split
@@ -93,4 +93,6 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
    the first human playtest.
 2. **Codex**, once T-001 is done: fast iteration (T-005 to T-009, T-035, T-037 to T-040) and the cheap
    tools (T-032 to T-034), then the quick wins, starting with T-045 (priority) and T-010 to T-013.
-3. **Human:** T-036 (timeline), the hardware target for T-003, and PR reviews.
+3. **Gemini:** tooling first, no full server builds while it settles in: T-034 (SQL validator), then
+   T-030 (DBC reader and content search). Claude Code reviews its PRs.
+4. **Human:** T-036 (timeline), the hardware target for T-003, and PR reviews.
