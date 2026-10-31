@@ -2153,6 +2153,7 @@ void AddSC_heartseed();
 void AddSC_gmtools_checkpoints();
 void AddSC_custom_reload();
 void AddSC_mounted_speed();
+void AddSC_solo_config();
 
 void AddCustomScripts()
 {
@@ -2168,6 +2169,7 @@ void AddCustomScripts()
     AddSC_gmtools_checkpoints();
     AddSC_custom_reload();
     AddSC_mounted_speed();
+    AddSC_solo_config();
 
 #endif
     AddSC_Anticheat();

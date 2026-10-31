@@ -86,6 +86,7 @@
 #include "DisableMgr.h"
 #include "CharacterDatabaseCleaner.h"
 #include "ScriptMgr.h"
+#include "SoloConfig.h"
 #include "WeatherMgr.h"
 #include "CreatureTextMgr.h"
 #include "SmartAI.h"
@@ -814,6 +815,7 @@ void World::LoadConfigSettings(bool reload)
         TC_LOG_ERROR("server.loading", "Currency.StartConquestPoints (%i) must be >= 0, set to default 0.", m_int_configs[CONFIG_CURRENCY_START_CONQUEST_POINTS]);
         m_int_configs[CONFIG_CURRENCY_START_CONQUEST_POINTS] = 0;
     }
+    SoloConfig::Load();
     m_int_configs[CONFIG_CURRENCY_CONQUEST_POINTS_WEEK_CAP] = sConfigMgr->GetIntDefault("Currency.ConquestPointsWeekCap", 1650);
     if (int32(m_int_configs[CONFIG_CURRENCY_CONQUEST_POINTS_WEEK_CAP]) <= 0)
     {

@@ -1006,10 +1006,11 @@ DisableRestart = 1
 #
 #    AllFlightPaths
 #        Description: Character knows all flight paths (of both factions) after creation.
-#        Default:     0 - (Disabled)
-#                     1 - (Enabled)
+#        Default:     1 - (Enabled, solo-first)
+#                     0 - (Disabled)
 
-AllFlightPaths = 0
+# Solo-first default: all taxi paths available.
+AllFlightPaths = 1
 
 #
 #    InstantFlightPaths
@@ -1209,18 +1210,26 @@ MailDeliveryDelay = 3600
 #
 #    SkillChance.Prospecting
 #        Description: Allow skill increase from prospecting.
-#        Default:     0 - (Disabled)
-#                     1 - (Enabled)
+#        Default:     1 - (Enabled, solo-first)
+#                     0 - (Disabled)
 
-SkillChance.Prospecting = 0
+SkillChance.Prospecting = 1
 
 #
 #    SkillChance.Milling
 #        Description: Allow skill increase from milling.
-#        Default:     0 - (Disabled)
-#                     1 - (Enabled)
+#        Default:     1 - (Enabled, solo-first)
+#                     0 - (Disabled)
 
-SkillChance.Milling = 0
+SkillChance.Milling = 1
+
+#
+#    SkillChance.Fishing.Always
+#        Description: Guarantee a fishing skill-up after a successful catch, below the learned skill cap.
+#                     0 restores the stock skill-dependent chance. Takes effect on config reload.
+#        Default:     1 - (Enabled, solo-first)
+
+SkillChance.Fishing.Always = 1
 
 #
 #    OffhandCheckAtSpellUnlearn
@@ -2147,15 +2156,12 @@ SkillGain.Gathering = 1
 #    SkillChance.Green
 #    SkillChance.Grey
 #        Description: Chance to increase skill based on recipe color.
-#        Default:     100 - (SkillChance.Orange)
-#                     75  - (SkillChance.Yellow)
-#                     25  - (SkillChance.Green)
-#                     0   - (SkillChance.Grey)
+#        Default:     100 for all colors (solo-first guaranteed crafting/gathering)
 
 SkillChance.Orange = 100
-SkillChance.Yellow = 75
-SkillChance.Green  = 25
-SkillChance.Grey   = 0
+SkillChance.Yellow = 100
+SkillChance.Green = 100
+SkillChance.Grey = 100
 
 #
 #    SkillChance.MiningSteps
@@ -2164,7 +2170,7 @@ SkillChance.Grey   = 0
 #        Default:     0  - (Disabled)
 #                     75 - (In 2 times each 75 skill points)
 
-SkillChance.MiningSteps   = 0
+SkillChance.MiningSteps = 0
 SkillChance.SkinningSteps = 0
 
 #
@@ -2178,9 +2184,10 @@ DurabilityLoss.InPvP = 0
 #
 #    DurabilityLoss.OnDeath
 #        Description: Durability loss percentage on death.
-#        Default:     10
+#        Default:     0 (solo-first)
 
-DurabilityLoss.OnDeath = 10
+# Solo-first default: no durability loss on ordinary death; spirit healer cost is separate.
+DurabilityLoss.OnDeath = 0
 
 #
 #    DurabilityLossChance.Damage
@@ -2219,20 +2226,22 @@ DurabilityLossChance.Block = 0.05
 #        Example:     11 - (Level 1-10 characters will not be affected,
 #                           Level 11-19 characters will be affected for 1 minute,
 #                           Level 20-MaxPlayerLevel characters will be affected for 10 minutes)
-#         Default:    11               - (Enabled, See Example)
+#         Default:    91               - (Disabled at the MoP level cap)
 #                     MaxPlayerLevel+1 - (Disabled)
 #                     -10              - (Enabled, Level 1+ characters have 10 minute duration)
 
-Death.SicknessLevel = 11
+# Solo-first: above the MoP level cap (90), so resurrection sickness is disabled.
+Death.SicknessLevel = 91
 
 #
 #    Death.CorpseReclaimDelay.PvP
 #    Death.CorpseReclaimDelay.PvE
 #        Description: Increase corpse reclaim delay at PvP/PvE deaths.
-#        Default:     1 - (Enabled)
-#                     0 - (Disabled)
+#        Default:     0 - (Disabled, solo-first)
+#                     1 - (Enabled)
 
-Death.CorpseReclaimDelay.PvP = 1
+# Solo-first: no escalating reclaim delay; PvP still uses the core base delay.
+Death.CorpseReclaimDelay.PvP = 0
 Death.CorpseReclaimDelay.PvE = 0
 
 #
@@ -3832,7 +3841,19 @@ Currency.StartConquestPoints = 0
 #        Default: 1650
 #
 
+# This legacy key cannot disable weekly limits (0 is rejected). Use
+# Currency.WeeklyCaps.Enable instead; see tools/devenv/SOLO_CONFIG.md.
 Currency.ConquestPointsWeekCap = 1650
+
+#
+#    Currency.WeeklyCaps.Enable
+#        Description: Enforce DBC/rating-based weekly earning limits, including Conquest meta currencies.
+#                     0 removes weekly limits; holding caps and weekly accounting/reset remain.
+#                     Valor of the Ancients keeps its original DBC milestone. Takes effect on config reload;
+#                     relog to refresh all client currency/PvP limit displays.
+#        Default:     0 - (Disabled, solo-first)
+
+Currency.WeeklyCaps.Enable = 0
 
 #
 #    Currency.ConquestPointsArenaReward
@@ -5180,12 +5201,12 @@ DungeonFinder.ScenarioDebug = 0
 GM.LogTrade = 0
 GM.AllowFriend = 0
 
-AllowTwoSide.WhoList = 0
+AllowTwoSide.WhoList = 1
 AllowTwoSide.Accounts = 1
-AllowTwoSide.AddFriend = 0
-AllowTwoSide.Interaction.Mail = 0
-AllowTwoSide.Interaction.Chat = 0
-AllowTwoSide.Interaction.DungeonFinder = 0
+AllowTwoSide.AddFriend = 1
+AllowTwoSide.Interaction.Mail = 1
+AllowTwoSide.Interaction.Chat = 1
+AllowTwoSide.Interaction.DungeonFinder = 1
 
 Channel.SilentlyGMJoin = 0
 
