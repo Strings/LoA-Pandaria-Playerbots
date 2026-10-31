@@ -1425,6 +1425,16 @@ void ScriptMgr::OnPlayerSpecializationChanged(Player* player)
     FOREACH_SCRIPT(PlayerScript)->OnSpecializationChanged(player);
 }
 
+void ScriptMgr::OnPlayerKillCredit(Player* player, Creature* killed)
+{
+    FOREACH_SCRIPT(PlayerScript)->OnKillCredit(player, killed);
+}
+
+void ScriptMgr::OnPlayerDungeonCompleted(Player* player, uint32 dungeonId)
+{
+    FOREACH_SCRIPT(PlayerScript)->OnDungeonCompleted(player, dungeonId);
+}
+
 void ScriptMgr::OnPlayerItemDestroyedByPlayer(Player* player, Item* item)
 {
     FOREACH_SCRIPT(PlayerScript)->OnItemDestroyedByPlayer(player, item);

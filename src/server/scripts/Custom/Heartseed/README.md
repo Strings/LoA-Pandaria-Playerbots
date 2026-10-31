@@ -66,6 +66,20 @@ World database (`sql/updates/world/2026_10_31_claude_06_heartseed_feed_prompt.sq
 - Growth past the cap is **banked**. A level-up, a new awakening or a login spends it (`ApplyRankUps`).
 - GM `.heartseed rank` and a bare `.heartseed growth N` set values directly and ignore the cap.
 
+## Story beats
+
+Simple hooks set the story flags until later quests take over (they can call
+`HeartseedMgr::ReachStoryBeat` with the same flags). A beat is set once; the player is told, and when it
+raises the cap (an awakening) banked Growth ranks the Heartseed up at once.
+
+| Flag | Set when | Hook |
+|---|---|---|
+| `first_dungeon` (1) | A dungeon's final encounter is completed (`instance_encounters.lastEncounterDungeon`), for every player in the instance, in or out of a group | `PlayerScript::OnDungeonCompleted`, from `InstanceScript::UpdateEncounterState` |
+| `reached_pandaria` (2) | Entering a map in `Heartseed.Story.PandariaMaps`, or logging in there | `PlayerScript::OnMapChanged`, plus `OnLogin` |
+| `first_world_boss` (3) | Kill credit on a creature in `Heartseed.Story.WorldBosses`, for every credited group member (pet kills too) | `PlayerScript::OnKillCredit`, from `KillRewarder::RewardKillCredit` |
+
+Dungeons whose instance has no script never call `UpdateEncounterState`, so they do not count.
+
 ## Feeding and essences
 
 - **Feeding** consumes a weapon from the bags for `(Heartseed.Feed.GrowthBase + GrowthPerItemLevel * item
@@ -130,6 +144,8 @@ worldserver.conf:
 - Feeding: `Heartseed.Feed.OnReplace` (1), `.GrowthBase` (20), `.GrowthPerItemLevel` (2), `.QualityPct`
   ("50 100 150 250 400 0 0 0", poor to heirloom).
 - Essences: `Heartseed.Essence.ProcCooldown` (3000 ms), `.AutoSlot` (1).
+- Story beats: `Heartseed.Story.Hooks` (1), `.PandariaMaps` ("870"), `.WorldBosses` (MoP and old world boss
+  entries), `.AwakeningSound` (0 = none).
 - All pacing numbers are placeholders until v0.5.
 
 ## GM commands

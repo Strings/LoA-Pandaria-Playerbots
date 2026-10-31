@@ -1,5 +1,5 @@
 /*
- * Heartseed hooks and GM commands (T-020, T-021, T-022, T-024). State lives in HeartseedMgr.
+ * Heartseed hooks and GM commands (T-020, T-021, T-022, T-024, T-026). State lives in HeartseedMgr.
  */
 
 #include "Bag.h"
@@ -64,6 +64,8 @@ public:
         sHeartseedMgr->Refresh(player);
         // The cap settings may have changed since the last session.
         sHeartseedMgr->ApplyRankUps(player);
+        // Characters that were already in Pandaria when the hook arrived.
+        sHeartseedMgr->OnMapChanged(player);
     }
 
     void OnSave(Player* player) override
@@ -131,6 +133,24 @@ public:
     {
         if (menuId == Heartseed::GOSSIP_MENU_FEED)
             sHeartseedMgr->OnFeedGossipSelect(player, action);
+    }
+
+    void OnMapChanged(Player* player) override
+    {
+        if (!player->GetSession()->IsBot())
+            sHeartseedMgr->OnMapChanged(player);
+    }
+
+    void OnKillCredit(Player* player, Creature* killed) override
+    {
+        if (!player->GetSession()->IsBot())
+            sHeartseedMgr->OnKillCredit(player, killed);
+    }
+
+    void OnDungeonCompleted(Player* player, uint32 /*dungeonId*/) override
+    {
+        if (!player->GetSession()->IsBot())
+            sHeartseedMgr->OnDungeonCompleted(player);
     }
 
     void OnSpecializationChanged(Player* player) override

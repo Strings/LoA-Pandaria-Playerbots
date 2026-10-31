@@ -18,6 +18,7 @@
 #include <unordered_map>
 #include <vector>
 
+class Creature;
 class Item;
 class Player;
 class Unit;
@@ -213,6 +214,14 @@ public:
     uint32 GetGrowthForNextRank(uint8 rank) const;
     float GetCapPerLevel() const { return _capPerLevel; }
     uint32 GetCapPerAwakening() const { return _capPerAwakening; }
+
+    // Story beats (T-026): simple hooks set the flags until later quests take over. Each sets its flag once,
+    // tells the player and, for an awakening flag, ranks the Heartseed up to the new cap.
+    void OnDungeonCompleted(Player* player);
+    void OnMapChanged(Player* player);
+    void OnKillCredit(Player* player, Creature* killed);
+    // Sets a story flag the first time it is reached in play. False if already set or no Heartseed.
+    bool ReachStoryBeat(Player* player, uint16 flag);
     std::vector<uint16> GetAwakeningFlags() const;
 
     // Feeding: a weapon in the character's bags is consumed for Growth and a chance at an essence by origin.
@@ -293,6 +302,10 @@ private:
     float _capPerLevel = 1.0f;
     uint32 _capPerAwakening = 0;
     std::vector<uint16> _awakeningFlags;
+    bool _storyHooks = true;
+    std::vector<uint32> _pandariaMaps;
+    std::set<uint32> _worldBossEntries;
+    uint32 _awakeningSound = 0;
     uint32 _rankGrowthBase = 0;
     uint32 _rankGrowthPerRank = 0;
     bool _feedOnReplace = true;

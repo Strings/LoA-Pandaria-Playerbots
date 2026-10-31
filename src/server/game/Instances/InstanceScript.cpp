@@ -30,6 +30,7 @@
 #include "WorldSession.h"
 #include "Opcodes.h"
 #include "ScenarioMgr.h"
+#include "ScriptMgr.h"
 #include "GuildMgr.h"
 #include "SpellHistory.h"
 #include "Config.h"
@@ -824,6 +825,10 @@ void InstanceScript::UpdateEncounterState(EncounterCreditType type, uint32 credi
         }
     }
 
+    if (dungeonId)
+        for (auto&& ref : instance->GetPlayers())
+            if (Player* player = ref.GetSource())
+                sScriptMgr->OnPlayerDungeonCompleted(player, dungeonId);
 
     // Raid challenge is be rewarded for any raid boss, unlike dungeon/scenario
     if (dungeonId || instance->IsRaid())

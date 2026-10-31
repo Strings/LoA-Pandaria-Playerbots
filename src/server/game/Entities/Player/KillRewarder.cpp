@@ -25,6 +25,7 @@
 #include "InstanceScript.h"
 #include "Pet.h"
 #include "Player.h"
+#include "ScriptMgr.h"
 
 // KillRewarder incapsulates logic of rewarding player upon kill with:
 // * XP;
@@ -187,6 +188,7 @@ void KillRewarder::RewardKillCredit(Player* player)
         {
             player->KilledMonster(target->GetCreatureTemplate(), target->GetGUID());
             player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE_TYPE, target->GetCreatureType(), 1, 0, target);
+            sScriptMgr->OnPlayerKillCredit(player, target);
 
             if (Guild* guild = sGuildMgr->GetGuildById(player->GetGuildId()))
             {
@@ -270,7 +272,8 @@ void KillRewarder::RewardGroup()
 void KillRewarder::Reward()
 {
     Creature* target = _victim->ToCreature();
-    if (target && !target->HasNormalLootMode())
+    // Nothing fills the recipient list for world bosses yet, so fall back to the killer and group then.
+    if (target && !target->HasNormalLootMode() && !target->GetLootRecipients().empty())
     {
         // Currently used only for Timeless Isle so don't give a shit about experience.
         for (auto&& guid : target->GetLootRecipients())

@@ -744,6 +744,12 @@ public:
     // Called after the active specialization changes: dual-spec swap, choosing a specialization or resetting it
     virtual void OnSpecializationChanged(Player* /*player*/) { }
 
+    // Called for every player credited with a creature kill (each tapping group member, pet kills included)
+    virtual void OnKillCredit(Player* /*player*/, Creature* /*killed*/) { }
+
+    // Called for every player in the instance when a dungeon's final encounter is completed
+    virtual void OnDungeonCompleted(Player* /*player*/, uint32 /*dungeonId*/) { }
+
     // Called when the player deletes an item from the inventory (CMSG_DESTROY_ITEM), right before it is destroyed
     virtual void OnItemDestroyedByPlayer(Player* /*player*/, Item* /*item*/) { }
 
@@ -1215,6 +1221,8 @@ public: /* PlayerScript */
     void OnPlayerVisibleItemEnchant(Player* player, uint8 slot, Item* item, uint16& tempEnchantVisual);
     void OnPlayerVisibleItemChanged(Player* player, uint8 slot, Item* item);
     void OnPlayerSpecializationChanged(Player* player);
+    void OnPlayerKillCredit(Player* player, Creature* killed);
+    void OnPlayerDungeonCompleted(Player* player, uint32 dungeonId);
     void OnPlayerItemDestroyedByPlayer(Player* player, Item* item);
     void OnPlayerFreeTalentPointsChanged(Player* player, uint32 newPoints);
     void OnPlayerTalentsReset(Player* player, bool noCost);
