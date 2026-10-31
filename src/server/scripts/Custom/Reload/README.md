@@ -44,8 +44,17 @@ recursive reloads fail as busy; unrelated registration/listing does not hold an
 I/O lock. Registry metadata is thread-safe, but each owning cache still needs
 its own reader/publication policy.
 
-Gameplay adapters belong to their owning systems. The unit fixture provides a
-real staged/published callback without introducing a dummy world database table.
+Heartseed registers one coherent group: `heartseed` (bundle alias),
+`heartseed_stage`, `heartseed_glow`, `heartseed_trait`,
+`heartseed_essence_template`, `heartseed_essence_source`, and `twink_item` (its
+feeding lookup). Startup and the existing `.heartseed reload` command use this
+same registration. Every table name reloads the complete related cache under
+one shared guard. Query errors, missing stages and invalid rows retain the prior
+cache. A sentinel row distinguishes an intentionally empty optional table from
+a failed query. Readers and publication use Heartseed's existing manager lock.
+The existing Heartseed alias refreshes the selected player immediately; general
+reload commands refresh character effects at the next normal Heartseed refresh.
+New spell_dbc definitions still require a restart.
 
 ## GM / SOAP commands
 
