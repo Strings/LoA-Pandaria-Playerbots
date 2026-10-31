@@ -5341,3 +5341,18 @@ Load.Locales = 1
 
 #
 ###################################################################################################
+
+###################################################################################################
+# HEARTSEED
+#
+#    Heartseed.Enabled
+#        Description: Turns the Heartseed (the living jewel, src/server/scripts/Custom/Heartseed/) on.
+#                     When off, saved Heartseed state is kept and loaded but has no effect in game
+#                     (no weapon glow).
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
+
+Heartseed.Enabled = 1
+
+#
+###################################################################################################

@@ -734,6 +734,10 @@ public:
     // Called when a player's item changes
     virtual void OnEquipChanged(Player* /*player*/, uint32 /*item*/) { }
 
+    // Called when a visible equipment slot is refreshed; lets a script supply the weapon glow shown in the
+    // temporary-enchant half of the visible item field. Only called while that half is empty.
+    virtual void OnVisibleItemEnchant(Player* /*player*/, uint8 /*slot*/, Item* /*item*/, uint16& /*tempEnchantVisual*/) { }
+
     // Called when a player's free talent points change (right before the change is applied)
     virtual void OnFreeTalentPointsChanged(Player* /*player*/, uint32 /*points*/) { }
 
@@ -1199,6 +1203,7 @@ public: /* PlayerScript */
     void OnPlayerKilledByCreature(Creature* killer, Player* killed);
     void OnPlayerLevelChanged(Player* player, uint8 oldLevel);
     void OnPlayerEquipChanged(Player* player, uint32 item);
+    void OnPlayerVisibleItemEnchant(Player* player, uint8 slot, Item* item, uint16& tempEnchantVisual);
     void OnPlayerFreeTalentPointsChanged(Player* player, uint32 newPoints);
     void OnPlayerTalentsReset(Player* player, bool noCost);
     void OnPlayerMoneyChanged(Player* player, int64& amount);

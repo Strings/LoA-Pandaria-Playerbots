@@ -1410,6 +1410,11 @@ void ScriptMgr::OnPlayerEquipChanged(Player* player, uint32 item)
     FOREACH_SCRIPT(PlayerScript)->OnEquipChanged(player, item);
 }
 
+void ScriptMgr::OnPlayerVisibleItemEnchant(Player* player, uint8 slot, Item* item, uint16& tempEnchantVisual)
+{
+    FOREACH_SCRIPT(PlayerScript)->OnVisibleItemEnchant(player, slot, item, tempEnchantVisual);
+}
+
 void ScriptMgr::OnPlayerFreeTalentPointsChanged(Player* player, uint32 points)
 {
 #ifdef ELUNA

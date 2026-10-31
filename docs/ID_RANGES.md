@@ -22,4 +22,7 @@ Stock MoP data stays well below these ranges (quests below ~34000, items below ~
   Collections and Porting).
 - **Achievements and anything else defined only in client data** need the client patch; reserve a
   block when that pipeline exists.
+- **RBAC permissions** for a system's GM commands use the low end of its gossip block (Heartseed:
+  `90000`, `Command: heartseed`), linked to role 197 (Gamemaster Commands) by an update in
+  `sql/updates/master/auth/`.
 - The SQL validator (T-034) checks new rows against these ranges.
