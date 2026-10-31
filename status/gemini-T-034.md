@@ -11,8 +11,9 @@
     agent in `claude`, `codex`, `gemini`, numeric sequence `NN`, lowercase slug) and detects duplicate
     `(YYYY_MM_DD, agent, NN)` sequences across files. Supports `--legacy-before YYYY-MM-DD` for scanning
     directories that also hold pre-fork upstream SQL files.
-  - **Line endings (`crlf`):** rejects raw `CRLF` (`\r\n`) or bare `CR` (`\r`) line endings on disk
-    (`--ignore-crlf` skips when inspecting Windows `core.autocrlf=true` working trees).
+  - **Line endings (`crlf`):** checks the Git index (`git ls-files --eol -- <paths>`) for tracked files and
+    flags any file whose index EOL (`i/`) is not `lf` (`i/crlf`, `i/mixed`), skipping untracked files so
+    Windows `core.autocrlf=true` checkouts validate cleanly without extra flags.
   - **Idempotence (`idempotence`):** rejects bare `INSERT INTO` without `INSERT IGNORE`, `REPLACE INTO`,
     `ON DUPLICATE KEY UPDATE`, `SELECT ... WHERE NOT EXISTS`, or a preceding `DELETE FROM` on the same
     table; verifies that preceding `DELETE FROM ... WHERE` predicates (`=`, `IN (...)`, `BETWEEN ... AND ...`)
@@ -44,11 +45,10 @@
 - Corpus run against live `world_gemini`, `characters_gemini`, `auth_gemini`, and `gamedata/dbc/Spell.dbc`:
   - **16 agent files (`sql/updates/**/2026_10_31_*.sql`):** **0 issues** (`Checked 16 file(s): 0 issue(s) found`).
   - **All 170 `sql/updates/**/2026_*.sql` files:**
-    - Without `--ignore-crlf`: all 170 working-tree files report `[crlf]` on Windows because
-      `core.autocrlf=true` checks out `i/lf` git index blobs as `w/crlf` on disk.
+    - All 170 tracked files pass the `git ls-files --eol` index check (`i/lf`).
     - Without `--legacy-before 2026-10-30`: the 154 pre-fork upstream files (`2026_01_19_*` to `2026_10_26_*`)
       are flagged on `[filename]`.
-    - With `--legacy-before 2026-10-30 --ignore-crlf`: 168 of 170 files pass cleanly; 2 pre-fork upstream
+    - With `--legacy-before 2026-10-30`: 168 of 170 files pass cleanly; 2 pre-fork upstream
       files report 6 genuine idempotence issues (`2026_09_08_00_world.sql` lines 88–94 inserting 5
       `spell_script_names` rows not covered by earlier `DELETE`s, and
       `2026_10_06_67_world_trinity_string_bg_reward.sql` line 13 bare `INSERT INTO trinity_string`).

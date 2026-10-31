@@ -14,9 +14,9 @@ reference checks, and `Spell.dbc` verification).
    - Use `--legacy-before YYYY-MM-DD` when scanning directories that also include pre-fork upstream
      update files.
 2. **Line endings (`crlf`):**
-   - Rejects files containing `CRLF` (`\r\n`) or bare `CR` (`\r`) bytes on disk.
-   - Use `--ignore-crlf` when inspecting a Windows checkout where `core.autocrlf=true` converted LF
-     blobs on checkout.
+   - Checks the Git index via `git ls-files --eol -- <paths>` and rejects tracked files whose index
+     line endings (`i/`) are not `lf` (e.g. `i/crlf` or `i/mixed`). Untracked files are skipped so
+     Windows `core.autocrlf=true` working trees work out of the box without extra flags.
 3. **Idempotence (`idempotence`):**
    - Rejects bare `INSERT INTO` without `INSERT IGNORE`, `REPLACE INTO`, `ON DUPLICATE KEY UPDATE`,
      `SELECT ... WHERE NOT EXISTS`, or a preceding `DELETE FROM` on the same table.
@@ -54,18 +54,17 @@ reference checks, and `Spell.dbc` verification).
 
 ## Usage
 
-```powershell
-# Static + ID range + collision check on agent SQL updates
-python tools/sql-validator/sql_validator.py "sql/updates/**/2026_10_31_*.sql"
+Run this command before opening a PR that touches SQL updates:
 
-# Full check including live world DB references, schema columns, and Spell.dbc
+```powershell
 $env:MOP_DB_PASSWORD = "ultimatemop"
-python tools/sql-validator/sql_validator.py "sql/updates/**/2026_10_31_*.sql" `
-  --world-db world_gemini `
-  --extra-db characters_gemini `
-  --extra-db auth_gemini `
-  --dbc-dir I:/UltimateMoP/gamedata/dbc `
-  --mysql-bin "C:/Program Files/MySQL/MySQL Server 8.0/bin"
+python tools/sql-validator/sql_validator.py "sql/updates/**/2026_10_31_*.sql" --world-db world_<agent> --extra-db characters_<agent> --extra-db auth_<agent> --dbc-dir I:/UltimateMoP/gamedata/dbc --mysql-bin "C:/Program Files/MySQL/MySQL Server 8.0/bin"
+```
+
+Static + ID range + collision check only (no DB connection required):
+
+```powershell
+python tools/sql-validator/sql_validator.py "sql/updates/**/2026_10_31_*.sql"
 ```
 
 ## Configuration & Environment Variables

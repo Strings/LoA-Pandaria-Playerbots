@@ -53,23 +53,29 @@ class SqlValidatorTests(unittest.TestCase):
             self.assertEqual(v.validate_files([legacy], allow_legacy_before=date(2026, 10, 30)), [])
 
     def test_crlf_line_endings_detected(self):
-        with tempfile.TemporaryDirectory(dir=self.temp_root) as tmp:
-            root = Path(tmp)
-            crlf_file = self._write_sql(
-                root, '2026_10_31_gemini_00_crlf_check.sql',
-                b'-- comment\r\nCREATE TABLE IF NOT EXISTS `heartseed_crlf` (`id` INT PRIMARY KEY);\r\n'
-            )
-            issues = v.validate_files([crlf_file])
-            self.assertEqual(len(issues), 1)
-            self.assertEqual(issues[0].category, 'crlf')
-            self.assertIn('2 CRLF line(s)', issues[0].message)
+        # Verify git ls-files --eol parser flags i/crlf and i/mixed, passes i/lf, and skips untracked
+        eol_output = (
+            "i/lf    w/crlf  attr/                 \tsql/updates/world/2026_10_31_gemini_00_clean.sql\n"
+            "i/crlf  w/crlf  attr/                 \tsql/updates/world/2026_10_31_gemini_01_bad_crlf.sql\n"
+            "i/mixed w/mixed attr/                 \tsql/updates/world/2026_10_31_gemini_02_bad_mixed.sql\n"
+            "i/      w/      attr/                 \tsql/updates/world/2026_10_31_gemini_03_untracked.sql\n"
+        )
+        issues = v.parse_git_eol_output(eol_output)
+        self.assertEqual(len(issues), 2)
+        self.assertEqual(issues[0].file, 'sql/updates/world/2026_10_31_gemini_01_bad_crlf.sql')
+        self.assertIn("i/crlf", issues[0].message)
+        self.assertEqual(issues[1].file, 'sql/updates/world/2026_10_31_gemini_02_bad_mixed.sql')
+        self.assertIn("i/mixed", issues[1].message)
 
-            # Clean LF passes
-            lf_file = self._write_sql(
-                root, '2026_10_31_gemini_01_lf_check.sql',
-                b'-- comment\nCREATE TABLE IF NOT EXISTS `heartseed_crlf` (`id` INT PRIMARY KEY);\n'
-            )
-            self.assertEqual(v.validate_files([lf_file]), [])
+    def test_missing_password_env_raises_clear_error(self):
+        import os
+        from unittest.mock import patch
+        agent_file = str(next((v.ROOT / 'sql/updates').rglob('2026_10_31_*.sql')))
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop('MOP_DB_PASSWORD', None)
+            with self.assertRaises(ValueError) as ctx:
+                v.main([agent_file, '--world-db', 'world_gemini'])
+            self.assertIn('set MOP_DB_PASSWORD (or pass --db-password-env)', str(ctx.exception))
 
     def test_idempotence_rules(self):
         with tempfile.TemporaryDirectory(dir=self.temp_root) as tmp:
@@ -197,7 +203,7 @@ class SqlValidatorTests(unittest.TestCase):
     def test_existing_agent_2026_10_31_corpus(self):
         agent_files = sorted((v.ROOT / 'sql/updates').rglob('2026_10_31_*.sql'))
         self.assertGreaterEqual(len(agent_files), 16)
-        issues = v.validate_files(agent_files, check_crlf=False)
+        issues = v.validate_files(agent_files)
         self.assertEqual(issues, [])
 
 

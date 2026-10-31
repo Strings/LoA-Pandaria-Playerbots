@@ -64,24 +64,44 @@ class Statement:
     primary_key: Tuple[str, ...] = ()
 
 
-def check_line_endings(path: Path, raw_bytes: bytes) -> List[Issue]:
+def check_git_index_line_endings(paths: Sequence[Path], repo_root: Path = ROOT) -> List[Issue]:
+    """Check git index EOL ('i/lf') for tracked files via git ls-files --eol; skip untracked files."""
+    if not paths:
+        return []
+    rel_to_path: Dict[str, Path] = {}
+    query_rels: List[str] = []
+    for p in paths:
+        try:
+            rel = p.resolve().relative_to(repo_root.resolve()).as_posix()
+            rel_to_path[rel] = p
+            query_rels.append(rel)
+        except ValueError:
+            continue
+    if not query_rels:
+        return []
+
+    cmd = ['git', '-C', str(repo_root), 'ls-files', '--eol', '--'] + query_rels
+    res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if res.returncode != 0:
+        return []
+    return parse_git_eol_output(res.stdout.decode('utf-8', errors='replace'), rel_to_path)
+
+
+def parse_git_eol_output(output: str, rel_to_path: Optional[Dict[str, Path]] = None) -> List[Issue]:
     issues: List[Issue] = []
-    rel = _rel_path(path)
-    crlf_count = raw_bytes.count(b'\r\n')
-    bare_cr = raw_bytes.replace(b'\r\n', b'').count(b'\r')
-    if crlf_count or bare_cr:
-        first_line = 1
-        for idx, line in enumerate(raw_bytes.splitlines(keepends=True), start=1):
-            if line.endswith(b'\r\n') or line.endswith(b'\r'):
-                first_line = idx
-                break
-        parts = []
-        if crlf_count:
-            parts.append(f'{crlf_count} CRLF line(s)')
-        if bare_cr:
-            parts.append(f'{bare_cr} CR line(s)')
-        issues.append(Issue(rel, first_line, 'crlf', 'error',
-                            f"File contains {', '.join(parts)}; SQL updates must use LF line endings"))
+    for raw_line in output.splitlines():
+        if '\t' not in raw_line:
+            continue
+        meta, file_rel = raw_line.split('\t', 1)
+        file_rel = file_rel.strip()
+        tokens = meta.split()
+        index_eol = next((t[2:] for t in tokens if t.startswith('i/')), None)
+        if index_eol is not None and index_eol not in ('lf', 'none', '-text', ''):
+            display_rel = _rel_path(rel_to_path[file_rel]) if rel_to_path and file_rel in rel_to_path else file_rel
+            issues.append(Issue(
+                display_rel, 1, 'crlf', 'error',
+                f"Git index has 'i/{index_eol}' line endings; SQL updates must be committed with LF ('i/lf')"
+            ))
     return issues
 
 
@@ -1465,12 +1485,13 @@ def validate_files(
     seen_sequences: Dict[Tuple[str, str, str], str] = {}
     learned_pks: Dict[str, Tuple[str, ...]] = dict(DEFAULT_TABLE_PKS)
 
+    if check_crlf:
+        issues.extend(check_git_index_line_endings(paths))
+
     for raw_path in paths:
         path = Path(raw_path)
         rel = _rel_path(path)
         raw_bytes = path.read_bytes()
-        if check_crlf:
-            issues.extend(check_line_endings(path, raw_bytes))
 
         fn_issues, seq_meta = check_filename(path, known_agents=known_agents, allow_legacy_before=allow_legacy_before)
         issues.extend(fn_issues)
@@ -1559,6 +1580,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     catalog: Optional[WorldReferenceCatalog] = None
     if args.world_db:
+        db_password = os.environ.get(args.db_password_env)
+        if not db_password:
+            raise ValueError(f'set {args.db_password_env} (or pass --db-password-env)')
         dbc_path = Path(args.dbc_dir) if args.dbc_dir else None
         catalog = WorldReferenceCatalog.from_mysql_and_dbc(
             args.world_db,
@@ -1566,7 +1590,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             db_host=args.db_host,
             db_port=args.db_port,
             db_user=args.db_user,
-            db_password=os.environ.get(args.db_password_env, ''),
+            db_password=db_password,
             dbc_dir=dbc_path,
             extra_dbs=args.extra_db,
         )
