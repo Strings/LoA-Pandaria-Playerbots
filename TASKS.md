@@ -18,7 +18,7 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 | ID | Task | Owns | Owner | Status |
 |---|---|---|---|---|
 | T-001 | Fork LoA, turn this folder into the repo, build with `TOOLS=ON`, extract game data from `mop-clean/` into `gamedata/`, import the four databases and the per-agent sets, start the servers, create worktrees. See `HANDOFF.md` | repo setup, `gamedata/`, `.gitignore` | claude | review |
-| T-002 | Dev environment script: create per-agent databases from the dumps, set ports and realmlist, write per-agent conf files | `tools/devenv/` | | open |
+| T-002 | Dev environment script: create per-agent databases from the dumps, set ports and realmlist, write per-agent conf files | `tools/devenv/` | codex | done |
 | T-003 | Baseline `.server info` (median, p95, p99) at 500, 1000 and 2000 bots on the human's play machine; record results in a status fragment | `tools/bench/` | | open |
 | T-004 | Player telemetry logging hook (movement, casts, targets, emotes, loot, chat) behind a config key, off by default. Every decision event carries a context snapshot (self, target, surroundings, place and time) in relative values with stable IDs; outcome events and activity-episode tags; versioned schema; movement sampled at a config rate; chat behind its own key; `.telemetry pause|resume|discard` and automatic pauses (GM mode, GM commands, AFK, idle). Spec: `docs/DESIGN.md`, "Decision context" under human-like bots | `src/server/game/Telemetry/` | | open |
 | T-036 | Server timeline decision (human), then a short doc of the core loops per time scale (minute, session, week, life) drafted by an agent | `docs/TIMELINE.md`, `docs/LOOPS.md` | human | open |
@@ -28,7 +28,7 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 
 | ID | Task | Owns | Owner | Status |
 |---|---|---|---|---|
-| T-005 | Test profile config: bots off or minimal, smaller logs, grid preloading off, short timers; bot load profiles (none, local, scale) | `tools/devenv/` | | open |
+| T-005 | Test profile config: bots off or minimal, smaller logs, grid preloading off, short timers; bot load profiles (none, local, scale) | `tools/devenv/` | codex | done |
 | T-006 | Startup profiling script that ranks the server's loader timings from the log; report the top costs in a fragment | `tools/bench/` | | open |
 | T-007 | Fixture characters (levels 1, 30, 60, 85, 90 with gear), pre-generated bot snapshot, file-copy database restore | `tools/devenv/`, `sql/fixtures/` | | open |
 | T-008 | Unit test framework in CMake behind an option, with one example test; document how to add tests | `tests/`, `CMakeLists.txt` | | open |
