@@ -75,7 +75,7 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 | T-025 | Granting quest at level 1 as the canonical "has a Heartseed" marker. The full Theramore intro scenario comes later and completes the same quest; it waits on T-036 (timeline) and the Horde figure decision | `src/server/scripts/Custom/Heartseed/`, `sql/updates/world/` | claude | review |
 | T-026 | Story flags set by simple hooks: first dungeon, reached Pandaria, first world boss | `src/server/scripts/Custom/Heartseed/` | claude | review |
 | T-049 | Heartseed account-wide (DESIGN.md, One seed per account): move the marker, rank, Growth, essence collection and morph gallery to account tables; keep loadouts, essence slotting and body story flags per character; effective rank = min(account rank, the character's own cap); alt playerbots earn no Growth. Migration of existing per-character rows, checked against a copy of a real save (T-037). Fresh-seed challenge and bot recognition wait for their systems | `src/server/scripts/Custom/Heartseed/`, `sql/updates/characters/` | claude | review |
-| T-050 | Commit the T-045 twink buff generator: regenerates `2026_10_31_codex_00_twink_gear.sql` (or a successor) with the target percentage, stat weights and brackets as arguments, so twink tuning can change after playtests without redoing the research | `tools/twink-tuning/` | gemini | open |
+| T-050 | Commit the T-045 twink buff generator: regenerates `2026_10_31_codex_00_twink_gear.sql` (or a successor) with the target percentage, stat weights and brackets as arguments, so twink tuning can change after playtests without redoing the research | `tools/twink-tuning/` | gemini | review |
 
 ### Tooling (v0.1, cheap first)
 
