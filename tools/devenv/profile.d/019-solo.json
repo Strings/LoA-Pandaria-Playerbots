@@ -1,0 +1,62 @@
+{
+  "dev": {
+    "world": {
+      "AllFlightPaths": "1",
+      "SkillChance.Orange": "100",
+      "SkillChance.Yellow": "100",
+      "SkillChance.Green": "100",
+      "SkillChance.Grey": "100",
+      "SkillChance.MiningSteps": "0",
+      "SkillChance.SkinningSteps": "0",
+      "SkillChance.Prospecting": "1",
+      "SkillChance.Milling": "1",
+      "DurabilityLoss.InPvP": "0",
+      "DurabilityLoss.OnDeath": "0",
+      "Death.SicknessLevel": "91",
+      "Death.CorpseReclaimDelay.PvP": "0",
+      "Death.CorpseReclaimDelay.PvE": "0",
+      "AllowTwoSide.Interaction.Calendar": "1",
+      "AllowTwoSide.Interaction.Channel": "1",
+      "AllowTwoSide.Interaction.Group": "1",
+      "AllowTwoSide.Interaction.Guild": "1",
+      "AllowTwoSide.Interaction.Auction": "1",
+      "AllowTwoSide.Trade": "1",
+      "AllowTwoSide.WhoList": "1",
+      "AllowTwoSide.Accounts": "1",
+      "AllowTwoSide.AddFriend": "1",
+      "AllowTwoSide.Interaction.Mail": "1",
+      "AllowTwoSide.Interaction.Chat": "1",
+      "AllowTwoSide.Interaction.DungeonFinder": "1"
+    }
+  },
+  "test": {
+    "world": {
+      "AllFlightPaths": "1",
+      "SkillChance.Orange": "100",
+      "SkillChance.Yellow": "100",
+      "SkillChance.Green": "100",
+      "SkillChance.Grey": "100",
+      "SkillChance.MiningSteps": "0",
+      "SkillChance.SkinningSteps": "0",
+      "SkillChance.Prospecting": "1",
+      "SkillChance.Milling": "1",
+      "DurabilityLoss.InPvP": "0",
+      "DurabilityLoss.OnDeath": "0",
+      "Death.SicknessLevel": "91",
+      "Death.CorpseReclaimDelay.PvP": "0",
+      "Death.CorpseReclaimDelay.PvE": "0",
+      "AllowTwoSide.Interaction.Calendar": "1",
+      "AllowTwoSide.Interaction.Channel": "1",
+      "AllowTwoSide.Interaction.Group": "1",
+      "AllowTwoSide.Interaction.Guild": "1",
+      "AllowTwoSide.Interaction.Auction": "1",
+      "AllowTwoSide.Trade": "1",
+      "AllowTwoSide.WhoList": "1",
+      "AllowTwoSide.Accounts": "1",
+      "AllowTwoSide.AddFriend": "1",
+      "AllowTwoSide.Interaction.Mail": "1",
+      "AllowTwoSide.Interaction.Chat": "1",
+      "AllowTwoSide.Interaction.DungeonFinder": "1"
+    }
+  }
+}
