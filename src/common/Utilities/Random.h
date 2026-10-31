@@ -20,6 +20,7 @@
 
 #include "Define.h"
 #include "Duration.h"
+#include "RandomSeedState.h"
 #include <limits>
 
 /* Return a random number in the range min..max. */
@@ -33,6 +34,11 @@ TC_COMMON_API uint32 urandms(uint32 min, uint32 max);
 
 /* Return a random number in the range 0 .. UINT32_MAX. */
 TC_COMMON_API uint32 rand32();
+
+// Test-only global stream; normal operation uses thread-local SFMT when disabled.
+TC_COMMON_API void SetRandomSeed(uint32 seed);
+TC_COMMON_API void ClearRandomSeed();
+TC_COMMON_API Trinity::RandomSeedState GetRandomSeedState();
 
 /* Return a random time in the range min..max (up to millisecond precision). Only works for values where millisecond difference is a valid uint32. */
 TC_COMMON_API Milliseconds randtime(Milliseconds min, Milliseconds max);
