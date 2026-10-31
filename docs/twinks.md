@@ -31,16 +31,363 @@ Craft-only and DBC-only items can be missing. Do not apply blanket buffs from th
 - Heirlooms use ScalingStatDistribution; their item_template zero stats are not the
   comparison baseline. Compare effective values at every endpoint using server DBC curves.
 
-## Pending balance decision
+## Applied target (user decision)
 
-The design does not define a numerical margin or whether "better stats" means the
-primary/stat budget alone or also weapon DPS and armor. Proposed target for review:
-5% above the matching heirloom's effective primary-stat and stamina budgets, preserving
-secondary-stat ratios, with weapon DPS also at least 5% above. Keep already stronger
-items unchanged. Validate chosen items per spec and acquisition gate before generating
-idempotent absolute-value SQL; never multiply existing values on each application.
+The user selected **7%, weighted toward damage**, on 2026-10-31. The SQL uses the
+highest offense-scoring matching heirloom at the first endpoint where the candidate
+is shortlisted. Matching requires item class, weapon/armor subclass, slot (robes
+share the chest slot), identical primary-stat types and caster-weapon flag.
+The comparison respects the heirloom scaling distribution's maximum level.
 
-No SQL buff has been applied. In-game and client hotfix validation remains outstanding.
+Primary and existing heirloom offensive stats get a 107% floor (rounded up);
+missing offensive stats use empty stat slots. Existing stronger values remain.
+Stamina is retained without increases: damage gets the extra budget. The comparator
+ranking weights stamina 0.25, crit/haste 1.25, attack power 0.5, and other supported
+offense 1. These weights choose a comparator; they are a heuristic, **not a combat
+simulation or a guarantee of 7% more character DPS**. A 7% rating increase is not
+seven percentage points of crit. No universal raw-crit bonus is added.
+
+Weapon DPS also gets a 107% floor using the same subclass's effective heirloom
+curve; the smallest sufficient item level is used. Armor and durability derived
+from that item level consequently change for affected weapons. Required levels,
+class/faction restrictions, acquisition, sockets, procs and set bonuses remain.
+Spell power remains spell power instead of being converted into intellect; the
+caster heirloom's additional ScalingStatValues spell power is included.
+
+All modified stat allocations are rebased on the final item level, including socket
+costs, so normal upgrade scaling follows the new budget. Random-property/suffix
+items are excluded. Slots without a matching heirloom remain stock. This is a
+first data pass; class-specific proc, socket and acquisition optimization still
+needs playtesting. The shortlist is not an exhaustive per-spec BiS assertion.
+
+Migration: `sql/updates/world/2026_10_31_codex_00_twink_gear.sql` (314 item updates).
+Applied by hand twice to world_codex; full selected item/hotfix snapshots were
+identical. Main and Claude databases were not updated. SQL uses absolute values
+and a fixed Item-sparse hotfix timestamp; the DB2 table hash was verified from the
+local client data header. Restart the world server to load templates/hotfix notices.
+
+## Modified-item audit
+
+Comparators are selected from effective heirloom stats at the indicated endpoint.
+The original and modified item levels show weapon-DPS changes. Item stat changes
+are listed explicitly in the SQL migration.
+
+| Endpoint | ID | Item | Comparator heirloom | Old iLvl | New iLvl |
+|---|---|---|---|---|---|
+| 19 | 1455 | Blackrock Champion's Axe | 42943 | 24 | 25 |
+| 19 | 59023 | Loch Modan Musket | 44093 | 20 | 20 |
+| 19 | 56696 | Legacy of Teronis | 69893 | 25 | 44 |
+| 19 | 1482 | Shadowfang | 42945 | 24 | 38 |
+| 19 | 890 | Twisted Chanter's Staff | 42947 | 24 | 24 |
+| 19 | 2042 | Staff of Westfall | 42947 | 24 | 24 |
+| 19 | 58978 | Filthy Paw | 92948 | 11 | 31 |
+| 19 | 56679 | Dissector | 42944 | 24 | 38 |
+| 19 | 20441 | Scout's Blade | 42944 | 23 | 38 |
+| 19 | 24118 | Signet of Argas | 62036 | 32 | 32 |
+| 19 | 5820 | Faerie Mantle | 42985 | 32 | 32 |
+| 19 | 3324 | Ghostly Mantle | 42985 | 28 | 28 |
+| 19 | 6282 | Sacred Burial Trousers | 62029 | 32 | 32 |
+| 19 | 2231 | Inferno Robe | 48691 | 40 | 40 |
+| 19 | 7334 | Efflorescent Robe | 48691 | 28 | 28 |
+| 19 | 5254 | Rugged Spaulders | 38694 | 21 | 21 |
+| 19 | 28051 | Jerkin of the Untamed Spirit | 48689 | 85 | 85 |
+| 19 | 65985 | Cleansed Pauldrons | 42951 | 21 | 21 |
+| 19 | 3761 | Deadskull Shield | 93902 | 32 | 32 |
+| 29 | 17042 | Nail Spitter | 44093 | 45 | 45 |
+| 29 | 19553 | Legionnaire's Sword | 69893 | 33 | 55 |
+| 29 | 7710 | Loksey's Training Stick | 79131 | 34 | 34 |
+| 29 | 7713 | Illusionary Rod | 42947 | 34 | 34 |
+| 29 | 7683 | Bloody Brass Knuckles | 92948 | 31 | 36 |
+| 29 | 7682 | Torturing Poker | 42944 | 34 | 55 |
+| 29 | 6757 | Jaina's Signet Ring | 62035 | 38 | 38 |
+| 29 | 7749 | Omega Orb | 93904 | 41 | 41 |
+| 29 | 4197 | Berylline Pads | 42985 | 35 | 35 |
+| 29 | 3560 | Mantle of Honor | 42985 | 35 | 35 |
+| 29 | 14398 | Resilient Tunic | 48691 | 33 | 33 |
+| 29 | 17043 | Zealot's Robe | 48691 | 45 | 45 |
+| 29 | 6720 | Spirit Hunter Headdress | 61937 | 37 | 37 |
+| 29 | 55910 | Defiant Spire Shoulderguard | 38694 | 33 | 33 |
+| 29 | 7747 | Vile Protector | 93902 | 41 | 41 |
+| 39 | 6830 | Bonebiter | 42943 | 44 | 44 |
+| 39 | 65973 | Fras Siabi's Cigar Cutter | 42943 | 44 | 44 |
+| 39 | 19560 | Outrider's Bow | 42946 | 43 | 43 |
+| 39 | 19564 | Outrunner's Bow | 42946 | 43 | 43 |
+| 39 | 63656 | Lakota's Mace | 48716 | 45 | 80 |
+| 39 | 4134 | Nimboya's Mystical Staff | 42947 | 46 | 46 |
+| 39 | 65994 | Staff of Athen'a | 42947 | 44 | 44 |
+| 39 | 89570 | Initiate's Handwraps | 92948 | 35 | 52 |
+| 39 | 11859 | Jademoon Orb | 93904 | 45 | 45 |
+| 39 | 6429 | Mistscape Wizard Hat | 61958 | 44 | 44 |
+| 39 | 62999 | Corpseburner's Mantle | 42985 | 44 | 44 |
+| 39 | 14417 | Silksand Tunic | 48691 | 44 | 44 |
+| 39 | 11123 | Rainstrider Leggings | 62029 | 55 | 55 |
+| 39 | 19129 | Everglowing Robe | 48691 | 49 | 49 |
+| 39 | 19039 | Zorbin's Water Resistant Hat | 61942 | 48 | 48 |
+| 39 | 63664 | Withering Mask | 61942 | 45 | 45 |
+| 39 | 9647 | Failed Flying Experiment | 38694 | 48 | 48 |
+| 39 | 11502 | Loreskin Shoulders | 38694 | 46 | 46 |
+| 39 | 63668 | Leggings of the Thousand Needles | 62027 | 45 | 45 |
+| 39 | 63674 | Leggings of the Thousand Needles | 62027 | 45 | 45 |
+| 39 | 11124 | Helm of Exile | 61935 | 55 | 55 |
+| 39 | 63671 | Pauldrons of the Thousand Needles | 42951 | 45 | 45 |
+| 39 | 63677 | Pauldrons of the Thousand Needles | 42951 | 45 | 45 |
+| 39 | 63670 | Chestguard of the Thousand Needles | 48677 | 45 | 45 |
+| 39 | 63017 | Legwraps of the Slain | 62025 | 45 | 45 |
+| 39 | 63665 | Dirty Work Greaves | 62025 | 45 | 45 |
+| 39 | 63672 | Helm of the Thousand Needles | 61931 | 45 | 45 |
+| 39 | 63678 | Helm of the Thousand Needles | 61931 | 45 | 45 |
+| 39 | 88357 | Vigorsteel Spaulders | 42949 | 43 | 43 |
+| 39 | 63636 | Legguards of Disfavor | 62023 | 43 | 43 |
+| 39 | 63639 | Legguards of Disfavor | 62023 | 43 | 43 |
+| 39 | 63657 | Well Hammered Shield | 93903 | 45 | 45 |
+| 49 | 53584 | Beastkiller | 42943 | 53 | 53 |
+| 49 | 10652 | Will of the Mountain Giant | 42943 | 51 | 51 |
+| 49 | 18729 | Screeching Bow | 42946 | 53 | 53 |
+| 49 | 11629 | Houndmaster's Rifle | 44093 | 52 | 52 |
+| 49 | 53569 | Confiscated Poacher's Gun | 44093 | 52 | 52 |
+| 49 | 15705 | Tidecrest Blade | 69893 | 57 | 97 |
+| 49 | 812 | Glowing Brightwood Staff | 42947 | 54 | 54 |
+| 49 | 15706 | Hunt Tracker Blade | 42944 | 57 | 97 |
+| 49 | 12038 | Lagrave's Seal | 62037 | 56 | 56 |
+| 49 | 12544 | Thrall's Resolve | 62035 | 56 | 56 |
+| 49 | 11904 | Spirit of Aquementas | 93904 | 56 | 56 |
+| 49 | 3075 | Eye of Flame | 61958 | 55 | 55 |
+| 49 | 10751 | Gemburst Circlet | 61958 | 54 | 54 |
+| 49 | 13374 | Soulstealer Mantle | 42985 | 53 | 53 |
+| 49 | 8251 | Imperial Red Pants | 62029 | 54 | 54 |
+| 49 | 9649 | Royal Highmark Vestments | 48691 | 55 | 55 |
+| 49 | 8261 | Serpentskin Helm | 61942 | 54 | 54 |
+| 49 | 11963 | Penance Spaulders | 38694 | 56 | 56 |
+| 49 | 11874 | Clouddrift Mantle | 38694 | 56 | 56 |
+| 49 | 12041 | Windshear Leggings | 62026 | 56 | 56 |
+| 49 | 45052 | Gruffscale Leggings | 62026 | 55 | 55 |
+| 49 | 11747 | Flamestrider Robes | 48687 | 52 | 52 |
+| 49 | 12018 | Conservator Helm | 61936 | 56 | 56 |
+| 49 | 13538 | Windshrieker Pauldrons | 42951 | 53 | 53 |
+| 49 | 21320 | Vest of the Den Watcher | 48677 | 58 | 58 |
+| 49 | 21316 | Leggings of the Ursa | 62023 | 55 | 55 |
+| 59 | 29108 | Blade of the Unyielding | 42945 | 87 | 121 |
+| 59 | 27733 | Warden's Ring of Precision | 62036 | 93 | 93 |
+| 59 | 27734 | Expedition Caster's Band | 62037 | 93 | 93 |
+| 59 | 31715 | Demoniac Soul Prison | 93904 | 87 | 87 |
+| 59 | 25718 | Mantle of Magical Might | 42985 | 85 | 85 |
+| 59 | 31717 | Shadowcast Tunic | 48691 | 88 | 88 |
+| 59 | 25711 | Deadly Borer Leggings | 62029 | 88 | 88 |
+| 59 | 27730 | Watcher's Cloak of Vigilance | 62038 | 93 | 93 |
+| 59 | 20033 | Zandalar Demoniac's Robe | 48691 | 65 | 65 |
+| 59 | 20034 | Zandalar Illusionist's Robe | 48691 | 65 | 65 |
+| 59 | 25710 | Moonkin Headdress | 61942 | 88 | 88 |
+| 59 | 27724 | Wild Shoulderpads | 38694 | 93 | 93 |
+| 59 | 31718 | Darkstorm Tunic | 48689 | 88 | 88 |
+| 59 | 31719 | Stormstrike Vest | 48683 | 88 | 88 |
+| 59 | 25702 | Scaled Legs of Ruination | 62025 | 88 | 88 |
+| 59 | 25701 | Breastplate of Retribution | 48685 | 88 | 88 |
+| 59 | 25979 | Flintlocke's Piloting Pants | 62023 | 87 | 87 |
+| 60 | 25496 | Mag'har Bow | 42946 | 93 | 93 |
+| 60 | 31134 | Blade of Misfortune | 44092 | 85 | 85 |
+| 60 | 89573 | Handwraps of Meditation | 92948 | 93 | 101 |
+| 60 | 25485 | Amaan's Signet | 62035 | 93 | 93 |
+| 60 | 25488 | Signet of Aeranas | 62037 | 93 | 93 |
+| 60 | 25620 | Ancient Crystal Talisman | 42992 | 96 | 96 |
+| 60 | 23587 | Mirren's Drinking Hat | 61958 | 90 | 90 |
+| 60 | 31659 | Researcher's Mantle | 42985 | 90 | 90 |
+| 60 | 31657 | Chemise of Rebirth | 48691 | 90 | 90 |
+| 60 | 22497 | Frostfire Leggings | 62029 | 88 | 88 |
+| 60 | 25489 | Windtalker's Cloak | 62040 | 93 | 93 |
+| 60 | 25510 | Ceremonial Robes | 48691 | 93 | 93 |
+| 60 | 22496 | Frostfire Robe | 48691 | 92 | 92 |
+| 60 | 25513 | Clefthoof Hide Mask | 61937 | 93 | 93 |
+| 60 | 25508 | Omenai Vest | 48687 | 93 | 93 |
+| 60 | 22476 | Bonescythe Breastplate | 48689 | 92 | 92 |
+| 60 | 25507 | Leggings of Telhamat | 62026 | 93 | 93 |
+| 60 | 25518 | Explorer's Leggings | 62027 | 93 | 93 |
+| 60 | 16833 | Cenarion Vestments | 48687 | 66 | 66 |
+| 60 | 25506 | Vindicator's Chain Helm | 61935 | 93 | 93 |
+| 60 | 31786 | Blacksting Shoulders | 42950 | 90 | 90 |
+| 60 | 25614 | Feralfen Beastmaster's Hauberk | 48677 | 102 | 102 |
+| 60 | 25512 | Tribal Hauberk | 48677 | 93 | 93 |
+| 60 | 27717 | Expedition Forager Leggings | 62024 | 90 | 90 |
+| 60 | 16841 | Earthfury Vestments | 48683 | 66 | 66 |
+| 60 | 27715 | Circle's Stalwart Helmet | 61931 | 90 | 90 |
+| 60 | 25522 | Marshstrider's Spaulders | 42949 | 93 | 93 |
+| 60 | 22416 | Dreadnaught Breastplate | 48685 | 92 | 92 |
+| 69 | 38237 | Axe of Frozen Death | 42943 | 138 | 138 |
+| 69 | 36882 | Warsong Longbow | 42946 | 138 | 138 |
+| 69 | 38241 | Fury of the Raging Dragon | 44093 | 138 | 138 |
+| 69 | 38238 | Borean Smasher | 92948 | 138 | 151 |
+| 69 | 38242 | Fang of the Desolate Soul | 42944 | 138 | 165 |
+| 69 | 38219 | Ring of Decimation | 62037 | 155 | 155 |
+| 69 | 35858 | Tome of Alacrity | 93904 | 138 | 138 |
+| 69 | 35814 | Benevolent Hood | 61958 | 138 | 138 |
+| 69 | 35844 | Shock-Resistant Hood | 61958 | 138 | 138 |
+| 69 | 43181 | Shoulders of the Northern Lights | 42985 | 155 | 155 |
+| 69 | 35818 | Stretch-Hide Spaulders | 42985 | 138 | 138 |
+| 69 | 35859 | Fire-Purifying Tunic | 48691 | 138 | 138 |
+| 69 | 35863 | Earth-Infused Leggings | 62029 | 138 | 138 |
+| 69 | 35884 | Regal Pantaloons | 62029 | 138 | 138 |
+| 69 | 38222 | Mantle of Keristrasza | 62040 | 159 | 159 |
+| 69 | 35871 | Indigo Robe of Replenishment | 48691 | 138 | 138 |
+| 69 | 35833 | Imperious Worghide Cap | 61942 | 138 | 138 |
+| 69 | 35864 | Fizznik's Patented Earwarmer | 61937 | 138 | 138 |
+| 69 | 43182 | Cured Mammoth Hide Mantle | 38694 | 155 | 155 |
+| 69 | 35877 | Worgskin Shoulders | 38694 | 138 | 138 |
+| 69 | 35815 | Bone-Threaded Harness | 48689 | 138 | 138 |
+| 69 | 35885 | Tribal Chestguard | 48687 | 138 | 138 |
+| 69 | 35868 | Grounded Pants | 62027 | 138 | 138 |
+| 69 | 35872 | Iron-Studded Leggings | 62026 | 138 | 138 |
+| 69 | 34796 | Robes of Summer Flame | 48687 | 115 | 115 |
+| 69 | 35869 | Hex-Linked Stronghelm | 61935 | 138 | 138 |
+| 69 | 35882 | Magispike Helm | 61936 | 138 | 138 |
+| 69 | 43183 | Tundra Tracker's Shoulderguards | 42950 | 155 | 155 |
+| 69 | 35890 | Magdun Spaulders | 42950 | 138 | 138 |
+| 69 | 35842 | Azure Chain Hauberk | 48677 | 138 | 138 |
+| 69 | 35898 | Reinforced Tuskhide Hauberk | 48683 | 138 | 138 |
+| 69 | 35878 | Dusk-Linked Leggings | 62024 | 138 | 138 |
+| 69 | 35891 | Runeplate Helm | 61931 | 138 | 138 |
+| 69 | 43184 | Tundra Pauldrons | 42949 | 155 | 155 |
+| 69 | 35843 | Ramshorn-Inlaid Shoulders | 42949 | 138 | 138 |
+| 69 | 35822 | Scavenged Tirasian Plate | 48685 | 138 | 138 |
+| 69 | 35835 | Antique Reinforced Legguards | 62023 | 138 | 138 |
+| 69 | 35817 | Nerubian Inner Husk | 93902 | 138 | 138 |
+| 69 | 35857 | Munificent Bulwark | 93903 | 138 | 138 |
+| 70 | 35576 | Ingvar's Monolithic Cleaver | 42943 | 155 | 155 |
+| 70 | 34334 | Thori'dal, the Stars' Fury | 42946 | 164 | 164 |
+| 70 | 35015 | Brutal Gladiator's Greatsword | 44092 | 154 | 154 |
+| 70 | 30313 | Staff of Disintegration | 42947 | 175 | 175 |
+| 70 | 34329 | Crux of the Apocalypse | 42944 | 164 | 164 |
+| 70 | 35008 | Brutal Gladiator's Endgame | 93904 | 159 | 159 |
+| 70 | 35016 | Brutal Gladiator's Grimoire | 93904 | 159 | 159 |
+| 70 | 34339 | Cowl of Light's Purity | 61958 | 164 | 164 |
+| 70 | 34340 | Dark Conjuror's Collar | 61958 | 164 | 164 |
+| 70 | 34202 | Shawl of Wonderment | 42985 | 159 | 159 |
+| 70 | 34210 | Amice of the Convoker | 42985 | 159 | 159 |
+| 70 | 37005 | D.E.H.T.A. Overshirt | 48691 | 138 | 138 |
+| 70 | 34170 | Pantaloons of Calming Strife | 62029 | 159 | 159 |
+| 70 | 34181 | Leggings of Calamity | 62029 | 159 | 159 |
+| 70 | 34241 | Cloak of Unforgivable Sin | 62039 | 164 | 164 |
+| 70 | 34242 | Tattered Cape of Antonidas | 62040 | 164 | 164 |
+| 70 | 34232 | Fel Conquerer Raiments | 48691 | 159 | 159 |
+| 70 | 34399 | Robes of Ghostly Hatred | 48691 | 159 | 159 |
+| 70 | 34244 | Duplicitous Guise | 61937 | 164 | 164 |
+| 70 | 34245 | Cover of Ursol the Wise | 61942 | 164 | 164 |
+| 70 | 34195 | Shoulderpads of Vehemence | 38694 | 159 | 159 |
+| 70 | 34209 | Spaulders of Reclamation | 42984 | 159 | 159 |
+| 70 | 34211 | Harness of Carnal Instinct | 48689 | 159 | 159 |
+| 70 | 34212 | Sunglow Vest | 48687 | 159 | 159 |
+| 70 | 34188 | Leggings of the Immortal Night | 62026 | 159 | 159 |
+| 70 | 31041 | Thunderheart Tunic | 48687 | 146 | 146 |
+| 70 | 31042 | Thunderheart Chestguard | 48689 | 146 | 146 |
+| 70 | 34333 | Coif of Alleria | 61935 | 164 | 164 |
+| 70 | 34208 | Equilibrium Epaulets | 42951 | 159 | 159 |
+| 70 | 34390 | Erupting Epaulets | 42951 | 159 | 159 |
+| 70 | 34228 | Vicious Hawkstrider Hauberk | 48677 | 159 | 159 |
+| 70 | 34229 | Garments of Serene Shores | 48683 | 159 | 159 |
+| 70 | 34168 | Starstalker Legguards | 62024 | 159 | 159 |
+| 70 | 35042 | Brutal Gladiator's Linked Armor | 48677 | 159 | 159 |
+| 70 | 35048 | Brutal Gladiator's Mail Armor | 48683 | 159 | 159 |
+| 70 | 34345 | Crown of Anasterian | 61931 | 164 | 164 |
+| 70 | 34192 | Pauldrons of Perseverance | 42949 | 159 | 159 |
+| 70 | 34193 | Spaulders of the Thalassian Savior | 44100 | 159 | 159 |
+| 70 | 34215 | Warharness of Reckless Fury | 48685 | 159 | 159 |
+| 70 | 34216 | Heroic Judicator's Chestguard | 48685 | 159 | 159 |
+| 70 | 34180 | Felfury Legplates | 62023 | 159 | 159 |
+| 78 | 55272 | Steelbender's Masterpiece | 42944 | 308 | 308 |
+| 78 | 55790 | Toxidunk Dagger | 42944 | 308 | 308 |
+| 78 | 55201 | Entwined Nereis | 62035 | 308 | 308 |
+| 78 | 55236 | Anthia's Ring | 62037 | 308 | 308 |
+| 78 | 55259 | Bioluminescent Lamp | 93904 | 308 | 308 |
+| 78 | 55277 | Beauty's Favorite Bone | 93904 | 308 | 308 |
+| 78 | 55198 | Aurelian Mitre | 61958 | 308 | 308 |
+| 78 | 55786 | Kyrstel Mantle | 42985 | 308 | 308 |
+| 78 | 55202 | Periwinkle Cloak | 62040 | 308 | 308 |
+| 78 | 55206 | Eagle Ray Cloak | 62038 | 308 | 308 |
+| 78 | 55278 | Inquisition Robes | 48691 | 308 | 308 |
+| 78 | 55204 | Caridean Epaulettes | 38694 | 308 | 308 |
+| 78 | 55273 | Beauty's Chew Toy | 62026 | 308 | 308 |
+| 78 | 35677 | Cosmos Vestments | 48687 | 183 | 183 |
+| 78 | 55263 | Renouncer's Cowl | 61935 | 308 | 308 |
+| 78 | 55205 | Chromis Chestpiece | 48683 | 308 | 308 |
+| 78 | 55229 | Anomuran Helm | 61931 | 308 | 308 |
+| 78 | 55207 | Harp Shell Pauldrons | 44100 | 308 | 308 |
+| 78 | 55779 | Raz's Pauldrons | 42949 | 308 | 308 |
+| 78 | 55274 | Beauty's Plate | 48685 | 308 | 308 |
+| 78 | 55249 | Triton Legplates | 62023 | 308 | 308 |
+| 78 | 55260 | Alpheus Legguards | 62023 | 308 | 308 |
+| 80 | 87477 | Penate's Penance-Procuring Pistol | 44093 | 409 | 409 |
+| 80 | 87515 | Ced's Crusher | 48716 | 409 | 409 |
+| 80 | 89575 | Handwraps of Serenity | 92948 | 289 | 289 |
+| 80 | 87442 | Signet of the Scorned | 62035 | 409 | 409 |
+| 80 | 65659 | Kelp Forest Vest | 48689 | 308 | 308 |
+| 80 | 66886 | Acid-Eaten Vest | 48687 | 308 | 308 |
+| 80 | 87456 | Hexu's Amplifying Helm | 61935 | 409 | 409 |
+| 80 | 59783 | Damselfish Shoulderguards | 42951 | 288 | 288 |
+| 80 | 87464 | Leggings of the Scorched Man | 62025 | 409 | 409 |
+| 80 | 51497 | Wrathful Gladiator's Ringmail Armor | 48683 | 270 | 270 |
+| 80 | 87426 | Deathspite Breastplate | 48685 | 409 | 409 |
+| 84 | 87508 | Lhakaz's Missing Ribspreader | 93857 | 442 | 442 |
+| 84 | 87514 | Sharpened Multi-Prong Dagger | 93857 | 417 | 417 |
+| 84 | 87438 | Signet of the Binding Wall | 62037 | 433 | 433 |
+| 84 | 87439 | Pestilential Ring | 62035 | 433 | 433 |
+| 84 | 87458 | Bone-Inlaid Fan | 93904 | 433 | 433 |
+| 84 | 87450 | Hood of Alchemical Vapors | 61958 | 442 | 442 |
+| 84 | 87491 | Spaulders of Five Rings | 93859 | 417 | 417 |
+| 84 | 87463 | Very Manly Leggings | 62029 | 425 | 425 |
+| 84 | 87429 | Drape of Flowing Gauze | 62040 | 442 | 442 |
+| 84 | 87493 | Enokian Growth Shoulderguards | 93864 | 425 | 425 |
+| 84 | 87492 | Mantle of Bestial Force | 93862 | 417 | 417 |
+| 84 | 87425 | Chestguard of the Solicitious Pandaren | 93865 | 442 | 442 |
+| 84 | 87462 | Leggings of Perfect Balance | 62026 | 425 | 425 |
+| 84 | 87459 | Dills' Primal Leggings | 62024 | 442 | 442 |
+| 84 | 87453 | Endwyn's Toothy Visage | 61931 | 433 | 433 |
+| 84 | 87461 | Greatheart Pants | 62023 | 425 | 425 |
+| 84 | 87460 | Legplates of the Wandering Warrior | 62023 | 417 | 417 |
+| 85 | 87474 | Ennadee's Twirling Longbow | 93855 | 450 | 450 |
+| 85 | 78471 | Vishanka, Jaws of the Earth | 93855 | 416 | 416 |
+| 85 | 73427 | Cataclysmic Gladiator's Rifle | 93841 | 410 | 410 |
+| 85 | 87419 | Kaleiki's Lost Training Staff | 93844 | 450 | 450 |
+| 85 | 87509 | Fist of Fate | 93858 | 450 | 450 |
+| 85 | 87437 | Anaxo's Multi-Layered Seal | 62037 | 450 | 450 |
+| 85 | 87604 | Beachcomber's Hat | 61958 | 420 | 420 |
+| 85 | 65174 | Corsair's Overshirt | 93860 | 346 | 346 |
+| 85 | 78719 | Legwraps of Dying Light | 62029 | 410 | 410 |
+| 85 | 87427 | Blade-Dulling Greatcloak | 62038 | 450 | 450 |
+| 85 | 87634 | Mazu's Robe | 93860 | 450 | 450 |
+| 85 | 87635 | Amber-Starched Robes | 93860 | 450 | 450 |
+| 85 | 87452 | Zom's Misty Hood | 61937 | 450 | 450 |
+| 85 | 87605 | Crest of the Red Crane | 61942 | 420 | 420 |
+| 85 | 87631 | Jiao-Skin Tunic | 93865 | 440 | 440 |
+| 85 | 78708 | Blackfang Battleweave Legguards | 62026 | 410 | 410 |
+| 85 | 78660 | Deep Earth Robes | 93865 | 410 | 410 |
+| 85 | 78662 | Deep Earth Vestment | 93865 | 410 | 410 |
+| 85 | 87451 | Helm of Elemental Binding | 61936 | 450 | 450 |
+| 85 | 78435 | Imperfect Specimens 27 and 28 | 93876 | 410 | 410 |
+| 85 | 78704 | Spiritwalker's Legguards | 62024 | 410 | 410 |
+| 85 | 78723 | Spiritwalker's Hauberk | 93885 | 410 | 410 |
+| 85 | 78724 | Spiritwalker's Cuirass | 93888 | 410 | 410 |
+| 85 | 78367 | Brackenshell Shoulderplates | 93890 | 410 | 410 |
+| 85 | 87627 | Kunchong Carapace Chestguard | 93891 | 440 | 440 |
+| 85 | 71512 | Immolation Battleplate | 93891 | 391 | 391 |
+| 89 | 85183 | Claws of Gekkan | 93858 | 450 | 450 |
+| 89 | 80933 | Mantid Trochanter | 93857 | 450 | 450 |
+| 89 | 85188 | Blade Trap Signet | 62035 | 450 | 450 |
+| 89 | 80920 | Fallout Filter | 61958 | 450 | 450 |
+| 89 | 100971 | Breezeswept Hood | 61958 | 450 | 450 |
+| 89 | 85194 | Regal Silk Shoulderpads | 93859 | 450 | 450 |
+| 89 | 100972 | Whisperwind Spaulders | 93859 | 450 | 450 |
+| 89 | 80926 | Leggings of the Frenzy | 62029 | 450 | 450 |
+| 89 | 90721 | Cournith Waterstrider's Silken Finery | 62029 | 440 | 440 |
+| 89 | 85182 | Cloak of Cleansing Flame | 62040 | 450 | 450 |
+| 89 | 80929 | Wall-Breaker Legguards | 62026 | 450 | 450 |
+| 89 | 90720 | Silent Leggings of the Ghostpaw | 62026 | 440 | 440 |
+| 89 | 80925 | Swarmcall Helm | 61935 | 450 | 450 |
+| 89 | 85175 | Crest of the Clan Lords | 61935 | 450 | 450 |
+| 89 | 100968 | Galedodger Chestguard | 93888 | 450 | 450 |
+| 89 | 90723 | Arness's Scaled Leggings | 62025 | 440 | 440 |
+| 89 | 85179 | Meteoric Greathelm | 61931 | 450 | 450 |
+| 89 | 100959 | Sightfinder Helm | 61931 | 450 | 450 |
+| 89 | 100970 | Spaulders of Immovable Stone | 93890 | 450 | 450 |
+| 89 | 100954 | Sap-Encrusted Legplates | 62023 | 450 | 450 |
+| 89 | 90717 | Qu'nas' Apocryphal Legplates | 62023 | 440 | 440 |
 
 ## Candidate catalogue
 
@@ -1779,3 +2126,13 @@ AND (i.RequiredLevel>0 OR q.lvl<=l.lvl)
 AND i.name NOT REGEXP '(^QA|Deprecated|Test |PH]|OLD|UNUSED)' )
 SELECT bracket,entry,name,Class,SubClass,InventoryType,ItemLevel,RequiredLevel,COALESCE(quest_min,'-') quest_min FROM ranked WHERE rnk<=2 ORDER BY bracket,Class,SubClass,InventoryType,rnk;
 ```
+
+## Verification commands
+
+Run the migration twice against world_codex and compare ordered item_template rows
+for the migration's item IDs and ordered hotfix_data rows. Repetition must not change
+either snapshot. Restart the Codex worldserver and verify 315 hotfix notices load
+(one pre-existing plus 314 additions). Use the headless client on auth 3744/world
+8105, then request Item-sparse entry 1482: Shadowfang must report item level 38,
+stat slot 2 type 32 (crit) and value 4. Visual tooltip rendering still needs a
+human client check; the headless client can verify the server's payload only.
