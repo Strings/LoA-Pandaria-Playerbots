@@ -31,7 +31,7 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 | T-005 | Test profile config: bots off or minimal, smaller logs, grid preloading off, short timers; bot load profiles (none, local, scale) | `tools/devenv/` | codex | done |
 | T-006 | Startup profiling script that ranks the server's loader timings from the log; report the top costs in a fragment | `tools/bench/` | | open |
 | T-007 | Fixture characters (levels 1, 30, 60, 85, 90 with gear), pre-generated bot snapshot, file-copy database restore | `tools/devenv/`, `sql/fixtures/` | | open |
-| T-008 | Unit test framework in CMake behind an option, with one example test; document how to add tests | `tests/`, `CMakeLists.txt` | | open |
+| T-008 | Unit test framework in CMake behind an option, with one example test; document how to add tests | `tests/`, `CMakeLists.txt` | codex | done |
 | T-009 | Enable Eluna in the dev and test profiles; `lua_scripts/` layout and a README for prototypes | `lua_scripts/`, `tools/devenv/` | codex | review |
 | T-035 | Headless-client regression suite runner with assertions; one example scenario | `tests/regression/`, `contrib/headless-client/` | codex | done |
 | T-038 | Hot reload framework for custom tables (`.reload <table>`), settable global RNG seed for tests, faster links (lld-link where it works with MSVC) | `src/server/scripts/Custom/Reload/`, build config | | open |
