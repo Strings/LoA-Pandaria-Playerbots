@@ -1415,6 +1415,16 @@ void ScriptMgr::OnPlayerVisibleItemEnchant(Player* player, uint8 slot, Item* ite
     FOREACH_SCRIPT(PlayerScript)->OnVisibleItemEnchant(player, slot, item, tempEnchantVisual);
 }
 
+void ScriptMgr::OnPlayerVisibleItemChanged(Player* player, uint8 slot, Item* item)
+{
+    FOREACH_SCRIPT(PlayerScript)->OnVisibleItemChanged(player, slot, item);
+}
+
+void ScriptMgr::OnPlayerSpecializationChanged(Player* player)
+{
+    FOREACH_SCRIPT(PlayerScript)->OnSpecializationChanged(player);
+}
+
 void ScriptMgr::OnPlayerFreeTalentPointsChanged(Player* player, uint32 points)
 {
 #ifdef ELUNA

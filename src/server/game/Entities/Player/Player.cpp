@@ -4379,6 +4379,7 @@ bool Player::ResetTalents(bool noCost, bool resetTalents, bool resetSpecializati
         RemoveSpecializationSpells();
         SetTalentSpecialization(GetActiveSpec(), SPEC_NONE);
         SetUInt32Value(PLAYER_FIELD_CURRENT_SPEC_ID, 0);
+        sScriptMgr->OnPlayerSpecializationChanged(this);
     }
 
     CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
@@ -13290,6 +13291,8 @@ void Player::SetVisibleItemSlot(uint8 slot, Item* pItem)
         SetUInt32Value(PLAYER_FIELD_VISIBLE_ITEMS + (slot * 2), 0);
         SetUInt32Value(PLAYER_FIELD_VISIBLE_ITEMS + 1 + (slot * 2), 0);
     }
+
+    sScriptMgr->OnPlayerVisibleItemChanged(this, slot, pItem);
 }
 
 void Player::VisualizeItem(uint8 slot, Item* pItem)
@@ -28997,6 +29000,8 @@ void Player::ActivateSpec(uint8 spec)
     // Needs for some trinkets which depends on spec
     ReapplyItemsBonuses();
 
+    sScriptMgr->OnPlayerSpecializationChanged(this);
+
 }
 
 void Player::ResetTimeSync()
@@ -31376,6 +31381,7 @@ void Player::ResetBothSpec(bool disable, bool allTalents)
 
     RemoveSpecializationSpells();
     SetUInt32Value(PLAYER_FIELD_CURRENT_SPEC_ID, 0);
+    sScriptMgr->OnPlayerSpecializationChanged(this);
 
     CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
     _SaveTalents(trans);

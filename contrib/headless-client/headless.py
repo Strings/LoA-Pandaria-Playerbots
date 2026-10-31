@@ -222,6 +222,7 @@ CMSG_GAMEOBJ_USE = 0x06D8
 CMSG_GAMEOBJ_REPORT_USE = 0x06D9
 CMSG_ATTACKSWING = 0x02E7
 CMSG_ATTACKSTOP = 0x0345
+CMSG_SET_PRIMARY_TALENT_TREE = 0x06C6
 CMSG_SPELLCLICK = 0x067A
 SMSG_GOSSIP_MESSAGE = 0x0244
 HIGHGUID_GAMEOBJECT = 0xF11
@@ -2085,6 +2086,13 @@ class WorldClient:
         self.send_packet(CMSG_ATTACKSWING, bw.flush() + guid_byte_seq(guid, (6, 7, 1, 3, 2, 0, 4, 5)))
         log("sent CMSG_ATTACKSWING guid=%d" % guid)
         self.emit("attack", guid=guid)
+
+    def set_spec(self, tab):
+        """CMSG_SET_PRIMARY_TALENT_TREE (SkillHandler.cpp HandeSetTalentSpecialization): uint32 talent tab
+        index (0-3 in the class's specialization order). The server ignores it while a spec is set."""
+        self.send_packet(CMSG_SET_PRIMARY_TALENT_TREE, struct.pack("<I", tab))
+        log("sent CMSG_SET_PRIMARY_TALENT_TREE tab=%d" % tab)
+        self.emit("set_spec", tab=tab)
 
     def attack_stop(self):
         """CMSG_ATTACKSTOP (CombatHandler.cpp:90): empty body."""
@@ -4547,6 +4555,11 @@ def run_verb(w, args_cli, line):
             log("attack: need <npc|rawguid>")
             return
         w.attack(g)
+    elif verb == "set-spec":
+        if not rest or not rest[0].isdigit():
+            log("set-spec: need <talent tab 0-3>")
+            return
+        w.set_spec(int(rest[0]))
     elif verb == "attack-stop":
         w.attack_stop()
     elif verb == "spellclick":

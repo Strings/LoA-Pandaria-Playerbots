@@ -5348,11 +5348,49 @@ Load.Locales = 1
 #    Heartseed.Enabled
 #        Description: Turns the Heartseed (the living jewel, src/server/scripts/Custom/Heartseed/) on.
 #                     When off, saved Heartseed state is kept and loaded but has no effect in game
-#                     (no weapon glow).
+#                     (no weapon glow, traits or core passive).
 #        Default:     1 - (Enabled)
 #                     0 - (Disabled)
 
 Heartseed.Enabled = 1
+
+#
+#    Heartseed.Core.WeaponDamagePct
+#        Description: Core passive bonus weapon damage, as a percentage of the main-hand weapon's own
+#                     average damage per swing (so it follows the weapon's item level).
+#        Default:     5
+
+Heartseed.Core.WeaponDamagePct = 5
+
+#
+#    Heartseed.Proc.SpellId
+#        Description: Spell the core passive proc's damage is dealt as: its name and school show in the
+#                     combat log and its bonuses apply. The damage itself comes from the weapon (below).
+#                     0 turns the proc off. The default is a placeholder.
+#        Default:     16614 - (Lightning Strike)
+
+Heartseed.Proc.SpellId = 16614
+
+#
+#    Heartseed.Proc.Chance
+#        Description: Chance in percent for damage the character deals to roll the core proc.
+#        Default:     10
+
+Heartseed.Proc.Chance = 10
+
+#
+#    Heartseed.Proc.WeaponDamagePct
+#        Description: Proc damage as a percentage of the character's current average weapon damage.
+#        Default:     50
+
+Heartseed.Proc.WeaponDamagePct = 50
+
+#
+#    Heartseed.Proc.Cooldown
+#        Description: Milliseconds after a proc before the next can roll.
+#        Default:     3000
+
+Heartseed.Proc.Cooldown = 3000
 
 #
 ###################################################################################################

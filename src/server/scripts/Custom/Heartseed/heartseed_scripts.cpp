@@ -1,5 +1,5 @@
 /*
- * Heartseed hooks and GM commands (T-020). State lives in HeartseedMgr.
+ * Heartseed hooks and GM commands (T-020, T-021, T-024). State lives in HeartseedMgr.
  */
 
 #include "Chat.h"
@@ -16,6 +16,18 @@
 
 // Heartseed block of docs/ID_RANGES.md; linked to role 197 by sql/updates/master/auth/2026_10_31_claude_02_heartseed_command.sql
 static rbac::RBACPermissions const RBAC_PERM_COMMAND_HEARTSEED = static_cast<rbac::RBACPermissions>(90000);
+
+static char const* GetPathName(Heartseed::Path path)
+{
+    switch (path)
+    {
+        case Heartseed::Path::Xuen:   return "Xuen";
+        case Heartseed::Path::ChiJi:  return "Chi-Ji";
+        case Heartseed::Path::Niuzao: return "Niuzao";
+        case Heartseed::Path::Yulon:  return "Yu'lon";
+        default:                      return "none";
+    }
+}
 
 class heartseed_worldscript : public WorldScript
 {
@@ -45,8 +57,8 @@ public:
             return;
 
         sHeartseedMgr->LoadPlayer(player);
-        // The inventory was visualized before the state loaded, so send the glow now.
-        sHeartseedMgr->RefreshGlow(player);
+        // The inventory was equipped before the state loaded, so apply traits and send the glow now.
+        sHeartseedMgr->Refresh(player);
     }
 
     void OnSave(Player* player) override
@@ -60,10 +72,27 @@ public:
         sHeartseedMgr->UnloadPlayer(player);
     }
 
-    void OnLevelChanged(Player* player, uint8 /*oldLevel*/) override
+    void OnLevelChanged(Player* player, uint8 oldLevel) override
     {
-        if (sHeartseedMgr->HasHeartseed(player))
-            sHeartseedMgr->RefreshGlow(player);
+        Heartseed::State state;
+        if (!sHeartseedMgr->GetState(player, state))
+            return;
+
+        sHeartseedMgr->Refresh(player);
+
+        // The shrine gossip (T-023) is where the choice is made; this tells the player a choice is waiting.
+        uint16 specId = uint16(player->GetTalentSpecialization());
+        auto loadout = state.Loadouts.find(specId);
+        for (uint8 tier = 0; tier < Heartseed::MaxMajorTiers; ++tier)
+        {
+            uint8 tierLevel = Heartseed::MajorTierLevels[tier];
+            bool chosen = loadout != state.Loadouts.end() && loadout->second[tier];
+            if (oldLevel < tierLevel && player->GetLevel() >= tierLevel && !chosen)
+            {
+                ChatHandler(player->GetSession()).SendSysMessage("Your Heartseed stirs. A Celestial path waits for your choice.");
+                break;
+            }
+        }
     }
 
     void OnVisibleItemEnchant(Player* player, uint8 slot, Item* /*item*/, uint16& tempEnchantVisual) override
@@ -71,6 +100,36 @@ public:
         // The Heartseed rides on the main-hand weapon (ranged weapons sit there too in MoP).
         if (slot == EQUIPMENT_SLOT_MAINHAND)
             tempEnchantVisual = sHeartseedMgr->GetGlowEnchant(player);
+    }
+
+    void OnVisibleItemChanged(Player* player, uint8 slot, Item* /*item*/) override
+    {
+        // Traits scale with the main-hand weapon. During login the inventory loads before the state; OnLogin
+        // applies the traits then.
+        if (slot == EQUIPMENT_SLOT_MAINHAND && player->IsInWorld() && !player->GetSession()->IsBot())
+            sHeartseedMgr->RefreshTraits(player);
+    }
+
+    void OnSpecializationChanged(Player* player) override
+    {
+        // Each specialization has its own loadout, and the glow follows its dominant path.
+        if (!player->GetSession()->IsBot())
+            sHeartseedMgr->Refresh(player);
+    }
+};
+
+class heartseed_unitscript : public UnitScript
+{
+public:
+    heartseed_unitscript() : UnitScript("heartseed_unitscript") { }
+
+    void OnDamage(Unit* attacker, Unit* victim, uint32& damage) override
+    {
+        if (!damage || !attacker || !victim || attacker->GetTypeId() != TYPEID_PLAYER)
+            return;
+        Player* player = attacker->ToPlayer();
+        if (!player->GetSession()->IsBot())
+            sHeartseedMgr->OnDamageDealt(player, victim);
     }
 };
 
@@ -95,6 +154,9 @@ public:
             { "rank",   &HandleRankCommand,   RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "growth", &HandleGrowthCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "flag",   flagCommandTable,     RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
+            { "traits", &HandleTraitsCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
+            { "major",  &HandleMajorCommand,  RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
+            { "reload", &HandleReloadCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
         };
         static std::vector<ChatCommand> commandTable =
         {
@@ -145,10 +207,117 @@ public:
             target->GetName().c_str(), uint32(state.Rank), state.Growth, uint32(stage), sHeartseedMgr->GetStageName(stage).c_str(), uint32(target->GetLevel()));
         handler->PSendSysMessage("Spec %u: %u of %u majors chosen, %u loadouts saved. Essences: %u collected, %u active.",
             uint32(specId), majors, uint32(Heartseed::MaxMajorTiers), uint32(state.Loadouts.size()), uint32(state.Essences.size()), activeEssences);
-        handler->PSendSysMessage("Glow enchant %u, dominant path %u. Story flags: %s. Granted %u s ago.%s",
-            uint32(sHeartseedMgr->GetGlowEnchant(target)), uint32(sHeartseedMgr->GetDominantPath(target)), DescribeFlags(state).c_str(),
+        Heartseed::Path dominant = sHeartseedMgr->GetDominantPath(target);
+        handler->PSendSysMessage("Glow enchant %u, dominant path %u (%s). Story flags: %s. Granted %u s ago.%s",
+            uint32(sHeartseedMgr->GetGlowEnchant(target)), uint32(dominant), GetPathName(dominant), DescribeFlags(state).c_str(),
             uint32(time(nullptr)) - state.GrantedTime, sHeartseedMgr->IsEnabled() ? "" : " (Heartseed.Enabled = 0)");
+        handler->PSendSysMessage("Loadout: %s.", DescribeLoadout(state, specId).c_str());
+
+        std::string auras;
+        for (auto const& [spellId, amount] : state.AppliedAuras)
+        {
+            if (!auras.empty())
+                auras += ", ";
+            auras += std::to_string(spellId) + "=" + std::to_string(amount);
+        }
+        handler->PSendSysMessage("Applied auras (spell=amount; %u is the core weapon bonus): %s. Core proc: spell %u for %u damage, %u procs since login.",
+            Heartseed::SPELL_CORE_WEAPON_BONUS, auras.empty() ? "none" : auras.c_str(), sHeartseedMgr->GetProcSpellId(),
+            sHeartseedMgr->GetProcDamage(target), state.ProcCount);
         handler->SendSysMessage(visible.c_str());
+        return true;
+    }
+
+    static std::string DescribeLoadout(Heartseed::State const& state, uint16 specId)
+    {
+        auto loadout = state.Loadouts.find(specId);
+        std::string text;
+        for (uint8 tier = 0; tier < Heartseed::MaxMajorTiers; ++tier)
+        {
+            uint32 traitId = loadout != state.Loadouts.end() ? loadout->second[tier] : 0;
+            if (!traitId)
+                continue;
+            Heartseed::TraitInfo trait;
+            if (!text.empty())
+                text += ", ";
+            text += "level " + std::to_string(Heartseed::MajorTierLevels[tier]) + " " + std::to_string(traitId) + " " +
+                (sHeartseedMgr->GetTrait(traitId, trait) ? trait.Name : std::string("(unknown trait)"));
+        }
+        return text.empty() ? "no majors chosen" : text;
+    }
+
+    static bool HandleTraitsCommand(ChatHandler* handler, char const* /*args*/)
+    {
+        Player* target = GetTarget(handler);
+        Heartseed::State state;
+        bool hasState = target && sHeartseedMgr->GetState(target, state);
+
+        std::vector<Heartseed::TraitInfo> traits = sHeartseedMgr->GetTraits();
+        handler->PSendSysMessage("%u Heartseed traits (* = active on %s):", uint32(traits.size()), hasState ? target->GetName().c_str() : "nobody");
+        for (Heartseed::TraitInfo const& trait : traits)
+        {
+            bool active = hasState && state.AppliedAuras.count(trait.SpellId);
+            std::string when = trait.Kind == Heartseed::TraitKind::Major
+                ? "major, level " + std::to_string(Heartseed::MajorTierLevels[trait.Tier])
+                : "minor, rank " + std::to_string(trait.MinRank);
+            handler->PSendSysMessage("%s%u %s [%s, %s] spell %u, %d + %.3f per item level: %s", active ? "*" : " ", trait.Id, trait.Name.c_str(),
+                GetPathName(trait.TraitPath), when.c_str(), trait.SpellId, trait.BaseAmount, trait.AmountPerItemLevel, trait.Description.c_str());
+        }
+        return true;
+    }
+
+    static bool HandleMajorCommand(ChatHandler* handler, char const* args)
+    {
+        Player* target = GetTarget(handler);
+        if (!target)
+            return false;
+
+        // ".heartseed major <tier level> <trait id | 0>"; the tier is named by its level (10, 25, ...).
+        char* end = nullptr;
+        long level = args ? strtol(args, &end, 10) : 0;
+        uint8 tier = level > 0 && level < 256 ? Heartseed::MajorTierForLevel(uint8(level)) : Heartseed::MaxMajorTiers;
+        long traitId = end && end != args ? strtol(end, &end, 10) : -1;
+        if (tier >= Heartseed::MaxMajorTiers || traitId < 0)
+        {
+            handler->SendSysMessage("Usage: .heartseed major <10|25|40|55|70|85> <trait id, or 0 to clear>; see .heartseed traits");
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+
+        // GM choices skip the level check, like .heartseed rank skips the level cap.
+        switch (sHeartseedMgr->ChooseMajor(target, tier, uint32(traitId), true))
+        {
+            case Heartseed::ChoiceResult::Ok:
+                handler->PSendSysMessage("%s: level %ld major is now %ld for spec %u.", target->GetName().c_str(), level, traitId,
+                    uint32(target->GetTalentSpecialization()));
+                return true;
+            case Heartseed::ChoiceResult::NoHeartseed:
+                handler->PSendSysMessage("%s has no Heartseed.", target->GetName().c_str());
+                return true;
+            case Heartseed::ChoiceResult::UnknownTrait:
+                handler->PSendSysMessage("Trait %ld does not exist.", traitId);
+                break;
+            case Heartseed::ChoiceResult::NotMajor:
+                handler->PSendSysMessage("Trait %ld is a minor; minors fill in by rank.", traitId);
+                break;
+            case Heartseed::ChoiceResult::WrongTier:
+                handler->PSendSysMessage("Trait %ld is not a level %ld major.", traitId, level);
+                break;
+            case Heartseed::ChoiceResult::TierLocked:
+                handler->PSendSysMessage("%s is below level %ld.", target->GetName().c_str(), level);
+                break;
+        }
+        handler->SetSentErrorMessage(true);
+        return false;
+    }
+
+    static bool HandleReloadCommand(ChatHandler* handler, char const* /*args*/)
+    {
+        // Stages, glows and traits. New spells in spell_dbc still need a restart.
+        sHeartseedMgr->LoadData();
+        Player* target = GetTarget(handler);
+        if (target && sHeartseedMgr->HasHeartseed(target))
+            sHeartseedMgr->Refresh(target);
+        handler->SendSysMessage("Heartseed stages, glows and traits reloaded. Other characters pick up trait changes at their next refresh (relog, level, weapon or spec change).");
         return true;
     }
 
@@ -329,5 +498,6 @@ void AddSC_heartseed()
 {
     new heartseed_worldscript();
     new heartseed_playerscript();
+    new heartseed_unitscript();
     new heartseed_commandscript();
 }
