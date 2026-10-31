@@ -9,13 +9,15 @@ Stock MoP data stays well below these ranges (quests below ~34000, items below ~
 
 | System | Quests | Creatures | Game objects | Items | Spells | Gossip menus and texts | Tables |
 |---|---|---|---|---|---|---|---|
-| Heartseed | 90000–90999 | 900000–900999 | 900000–900999 | 190000–190999 | 300000–300999 | 90000–90999 | `heartseed_*` |
-| Next system | 91000–91999 | 901000–901999 | 901000–901999 | 191000–191999 | 301000–301999 | 91000–91999 | `<system>_*` |
+| Heartseed | 90000–90999 | 900000–900999 | 900000–900999 | 190000–190999 | 310000–310999 | 90000–90999 | `heartseed_*` |
+| Next system | 91000–91999 | 901000–901999 | 901000–901999 | 191000–191999 | 311000–311999 | 91000–91999 | `<system>_*` |
 
 ## Notes
 
-- **Spells:** spells in the 300000 block exist only on the server (`spell_dbc`) until the client
-  patch adds matching rows, so they have no client visuals or tooltips yet. Until then, prefer
+- **Spells:** custom spell blocks start at 310000 because upstream already uses 300000–300109 (and
+  scattered ids from 200000 up) in `spell_dbc` for its own server-side spells. Spells in these blocks
+  exist only on the server (`spell_dbc`) until the client patch adds matching rows, so they have no
+  client visuals or tooltips yet. Until then, prefer
   existing spell IDs for anything the player sees, and use the reserved block for server-side
   helper spells and auras.
 - **Items:** new items need hotfix rows so the client shows them correctly (see `docs/DESIGN.md`,

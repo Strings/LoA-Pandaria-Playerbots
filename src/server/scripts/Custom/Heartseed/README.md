@@ -7,9 +7,9 @@ The living jewel that rides on a character's main-hand weapon and grows with it.
 
 | File | What |
 |---|---|
-| `HeartseedRules.h` | Pure rules with no server dependencies (stage by level, dominant path). Unit-test these. |
-| `HeartseedMgr.h/.cpp` | State cache per character, loading and saving, stage and glow lookup. |
-| `heartseed_scripts.cpp` | World, player and command scripts. |
+| `HeartseedRules.h` | Pure rules with no server dependencies (stage by level, dominant path, tier levels, minor activation, trait and core passive amounts). Unit-test these. |
+| `HeartseedMgr.h/.cpp` | State cache per character, loading and saving, stage and glow lookup, traits, major choice, core proc. |
+| `heartseed_scripts.cpp` | World, player, unit and command scripts. |
 
 ## Data
 
@@ -26,6 +26,35 @@ World database (`sql/updates/world/2026_10_31_claude_01_heartseed_stage.sql`):
 - `heartseed_stage`: stage number, starting character level, name.
 - `heartseed_glow`: glow enchant per stage and dominant path (path 0 = none).
 
+World database (`sql/updates/world/2026_10_31_claude_03_heartseed_trait.sql`):
+
+- `heartseed_trait`: one row per trait: path, kind (1 minor, 2 major), major tier or minor rank, the
+  passive aura spell it applies, and its amount (`base_amount + amount_per_ilvl * main-hand item level`,
+  written to the spell's effect 0).
+- The aura spells are server-side rows in `spell_dbc`, `spellmisc_dbc` and `spelleffect_dbc`, in the
+  Heartseed spell block (310000+). The server reads those tables at startup only.
+
+## Traits and the core passive
+
+- **Majors** are chosen, one per tier (levels 10, 25, 40, 55, 70, 85), into the loadout of the active
+  specialization. `HeartseedMgr::ChooseMajor` validates the choice; the shrine gossip (T-023) calls it.
+- **Minors** fill in by rank on every path the active loadout has at least one major in (path 0 = every
+  Heartseed).
+- **Loadouts per specialization:** a specialization with no saved loadout starts from the one the
+  character just left, so choosing a spec after the level 10 major, or adding a second spec, keeps it.
+- **Core passive**, every Heartseed:
+  - bonus weapon damage: `Heartseed.Core.WeaponDamagePct` of the main-hand weapon's average damage per
+    swing, applied as a flat physical damage aura (spell 310008), so it follows the weapon's item level;
+  - a proc: damage the character deals rolls `Heartseed.Proc.Chance`; a hit deals
+    `Heartseed.Proc.WeaponDamagePct` of the current average weapon damage to the target as spell
+    `Heartseed.Proc.SpellId` (name and school in the combat log), then waits `Heartseed.Proc.Cooldown` ms.
+    The damage is dealt directly, not cast, because casts check range and facing even when triggered.
+- `RefreshTraits` diffs the wanted auras against the applied ones and runs on login, level change,
+  main-hand change (`PlayerScript::OnVisibleItemChanged`), specialization change
+  (`PlayerScript::OnSpecializationChanged`) and every state change. Passive auras are not saved with the
+  character and are not sent to the client.
+- Trait effects are placeholders until the trait design is written.
+
 ## Weapon glow
 
 The glow is display only. `Player::SetVisibleItemSlot` asks `PlayerScript::OnVisibleItemEnchant` for a
@@ -38,7 +67,11 @@ The glow enchant IDs shipped are placeholders that have a visual; pick the final
 
 ## Config
 
-`Heartseed.Enabled` (worldserver.conf, default 1): off keeps state but shows no glow.
+worldserver.conf:
+
+- `Heartseed.Enabled` (default 1): off keeps state but shows no glow and applies no traits or core passive.
+- `Heartseed.Core.WeaponDamagePct` (5), `Heartseed.Proc.SpellId` (16614, placeholder look),
+  `Heartseed.Proc.Chance` (10), `Heartseed.Proc.WeaponDamagePct` (50), `Heartseed.Proc.Cooldown` (3000 ms).
 
 ## GM commands
 
@@ -52,5 +85,11 @@ Permission 90000 (`Command: heartseed`, Gamemaster role). Target is the selected
 - `.heartseed growth <n> | +<n> | -<n>`: set Growth, or add to or take from it (never below 0).
 - `.heartseed flag list | set <name|id> | clear <name|id>`: story flags by name (`first_dungeon`,
   `reached_pandaria`, `first_world_boss`) or number. Setting keeps the first time a flag was set.
+- `.heartseed traits`: every trait, marking the ones active on the target.
+- `.heartseed major <10|25|40|55|70|85> <trait id | 0>`: set or clear a major in the active spec's
+  loadout. Skips the level check.
+- `.heartseed reload`: reload stages, glows and traits, and refresh the target.
+
+`.heartseed info` also shows the loadout, the applied auras with their amounts, and the proc damage.
 
 Every change is saved at once, not with the next character save.

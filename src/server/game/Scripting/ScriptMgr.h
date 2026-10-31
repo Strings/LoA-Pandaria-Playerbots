@@ -738,6 +738,12 @@ public:
     // temporary-enchant half of the visible item field. Only called while that half is empty.
     virtual void OnVisibleItemEnchant(Player* /*player*/, uint8 /*slot*/, Item* /*item*/, uint16& /*tempEnchantVisual*/) { }
 
+    // Called when an equipment slot's visible item is set: equipping, unequipping or swapping (item is null when empty)
+    virtual void OnVisibleItemChanged(Player* /*player*/, uint8 /*slot*/, Item* /*item*/) { }
+
+    // Called after the active specialization changes: dual-spec swap, choosing a specialization or resetting it
+    virtual void OnSpecializationChanged(Player* /*player*/) { }
+
     // Called when a player's free talent points change (right before the change is applied)
     virtual void OnFreeTalentPointsChanged(Player* /*player*/, uint32 /*points*/) { }
 
@@ -1204,6 +1210,8 @@ public: /* PlayerScript */
     void OnPlayerLevelChanged(Player* player, uint8 oldLevel);
     void OnPlayerEquipChanged(Player* player, uint32 item);
     void OnPlayerVisibleItemEnchant(Player* player, uint8 slot, Item* item, uint16& tempEnchantVisual);
+    void OnPlayerVisibleItemChanged(Player* player, uint8 slot, Item* item);
+    void OnPlayerSpecializationChanged(Player* player);
     void OnPlayerFreeTalentPointsChanged(Player* player, uint32 newPoints);
     void OnPlayerTalentsReset(Player* player, bool noCost);
     void OnPlayerMoneyChanged(Player* player, int64& amount);

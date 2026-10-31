@@ -22,6 +22,7 @@
 #include "Opcodes.h"
 #include "Player.h"
 #include "Pet.h"
+#include "ScriptMgr.h"
 #include "UpdateMask.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
@@ -47,6 +48,7 @@ void WorldSession::HandeSetTalentSpecialization(WorldPacket& recvData)
 
     _player->LearnSpecializationSpells();
     _player->UpdatePvpPower();
+    sScriptMgr->OnPlayerSpecializationChanged(_player);
 
     _player->SaveToDB();
 }
