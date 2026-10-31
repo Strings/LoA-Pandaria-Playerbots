@@ -2,7 +2,7 @@
 
 **Agent:** codex
 **Branch:** codex/T-032-live-server-mcp
-**Task status:** review
+**Task status:** done
 
 ## What changed
 - Standalone read-only Python startup profiler; text/JSON output, run selection, source line numbers, ms/seconds support and runtime-message exclusion.
@@ -17,3 +17,9 @@
 
 ## Map additions
 - tools/bench/startup_profile.py and README.md.
+
+## Final merge checks (2026-10-31)
+- Rebased onto the latest merged playerbot. All three MCP and two startup-profiler tests pass; Python compilation passes.
+- Live MCP server_info and authenticated Shadowfang Item-sparse smoke pass on the rebuilt private test/none server.
+- Gear migration and Heartseed twink_item whitelist match exactly: 314 IDs. No gear-list change was needed.
+- Startup profiler parses 207 timed loader rows from the rebuilt server; loader sums remain distinct from wall time.

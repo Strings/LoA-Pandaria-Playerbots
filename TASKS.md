@@ -29,7 +29,7 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 | ID | Task | Owns | Owner | Status |
 |---|---|---|---|---|
 | T-005 | Test profile config: bots off or minimal, smaller logs, grid preloading off, short timers; bot load profiles (none, local, scale) | `tools/devenv/` | codex | done |
-| T-006 | Startup profiling script that ranks the server's loader timings from the log; report the top costs in a fragment | `tools/bench/` | codex | review |
+| T-006 | Startup profiling script that ranks the server's loader timings from the log; report the top costs in a fragment | `tools/bench/` | codex | done |
 | T-007 | Fixture characters (levels 1, 30, 60, 85, 90 with gear), pre-generated bot snapshot, file-copy database restore | `tools/devenv/`, `sql/fixtures/` | | open |
 | T-008 | Unit test framework in CMake behind an option, with one example test; document how to add tests | `tests/`, `CMakeLists.txt` | codex | done |
 | BUG-001 | Guard unknown phase groups in Creature::Create so .npc add cannot dereference null | `src/server/game/Entities/Creature/Creature.cpp` | codex | done |
@@ -59,7 +59,7 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 | T-042 | 36-slot bags: expensive vendor (gold sink); hooks to plant them in rare loot later | `sql/updates/world/` | | open |
 | T-043 | Reagent bank in detached storage, with crafting drawing from it | `src/server/scripts/Custom/ReagentBank/` | | open |
 | T-044 | Free XP on/off toggle (command now, settings panel later); no separate battleground queue for XP-off characters | `src/server/scripts/Custom/Twinks/` | | open |
-| T-045 | **Priority:** twink gear buffs above heirlooms via item hotfixes, per bracket and breakpoint (compile the current best non-heirloom items first) | `sql/updates/world/`, `docs/twinks.md` | codex | review |
+| T-045 | **Priority:** twink gear buffs above heirlooms via item hotfixes, per bracket and breakpoint (compile the current best non-heirloom items first) | `sql/updates/world/`, `docs/twinks.md` | codex | done |
 | T-046 | Dungeon finder for outleveled dungeons: solo teleport at 20+ levels over the dungeon's level (config key). Bot groups wait for the instance pool (Phase 5) | `src/server/game/DungeonFinding/` hooks, `src/server/scripts/Custom/` | | open |
 | T-047 | Multi-type tracking test: combine tracking bitmasks behind a config key; test whether the client draws several types and shows several checkmarks | `src/server/scripts/Custom/Tracking/` | | open |
 
@@ -79,7 +79,7 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 
 | ID | Task | Owns | Owner | Status |
 |---|---|---|---|---|
-| T-032 | Live server MCP: thin wrapper over SOAP and logs (bots near a position, bot state, `.botscenario`, `.server info`, log tail, GM commands). Standalone module | `tools/live-server-mcp/` | codex | review |
+| T-032 | Live server MCP: thin wrapper over SOAP and logs (bots near a position, bot state, `.botscenario`, `.server info`, log tail, GM commands). Standalone module | `tools/live-server-mcp/` | codex | done |
 | T-033 | Crash triage: read crash dumps and core logs, map to source, suggest the likely commit | `tools/crash-triage/` | | open |
 | T-034 | SQL validator: lint new SQL against schema and references (givers, items, ID collisions) | `tools/sql-validator/` | | open |
 | T-031 | Balance sim: `.botscenario` dummy room that reports DPS for a given Heartseed loadout | `tools/balance-sim/`, `modules/mod_playerbots/src/Scenario/` | | open |

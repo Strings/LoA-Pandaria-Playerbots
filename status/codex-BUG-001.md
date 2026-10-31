@@ -2,7 +2,7 @@
 
 **Agent:** codex
 **Branch:** codex/BUG-001-npc-phase-group
-**Task status:** done (draft pending compiled reproduction)
+**Task status:** done
 
 ## What changed
 - Creature::Create now iterates phase IDs only when GetPhasesForGroup returns a vector. Unknown groups leave the existing phase mask/explicit phase intact and continue creation; valid groups follow the same loop.
