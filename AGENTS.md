@@ -43,7 +43,8 @@ You are expected to finish tasks mostly on your own. Inside your task's scope, a
   anything that contradicts a decided rule, or a requirement ambiguous enough that a wrong guess
   is costly to undo.
 - **Destructive or shared actions:** deleting files or directories you didn't create, dropping or
-  rewriting tables in existing databases, schema changes to existing core tables, force-pushing,
+  rewriting tables in existing databases (routine merged updates to the main databases are fine, see
+  SQL updates), schema changes to existing core tables, force-pushing,
   rewriting history, pushing to `playerbot` other than by merging a PR, major merges (a batch of many
   PRs, one that is risky to undo, or one that conflicts with another agent's work), touching another
   agent's worktree, databases or ports.
@@ -90,6 +91,11 @@ These files are edited by everyone. Keep edits minimal and append-only where pos
   `UPDATE`s), matching the existing files.
 - `Updates.EnableDatabases = 0` is the shipped default, so apply your updates to your own
   databases by hand and say so in the fragment.
+- Once your PR is merged, also apply its updates to the human's main databases (`world`,
+  `characters`, `auth`, `playerbots`) without asking: they can be re-downloaded. Back up the touched
+  databases with `mysqldump` into `build/` before anything sizable, and apply only `.sql` files. Ask
+  first for massive changes to existing data: rewriting or deleting many existing rows, or schema
+  changes to core tables.
 
 ## Your test environment
 
