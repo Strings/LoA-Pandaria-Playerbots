@@ -22,7 +22,7 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 | T-003 | Baseline `.server info` (median, p95, p99) at 500, 1000 and 2000 bots on the human's play machine; record results in a status fragment | `tools/bench/` | | open |
 | T-004 | Player telemetry logging hook (movement, casts, targets, emotes, loot, chat) behind a config key, off by default | `src/server/game/Telemetry/` | | open |
 | T-036 | Server timeline decision (human), then a short doc of the core loops per time scale (minute, session, week, life) drafted by an agent | `docs/TIMELINE.md`, `docs/LOOPS.md` | human | open |
-| T-037 | Save safety: nightly snapshots of all databases with rotation (file-copy restore), and a migration check that runs new custom-table SQL against a copy of the real save first | `tools/devenv/`, `tools/backup/` | | open |
+| T-037 | Save safety: nightly snapshots of all databases with rotation (file-copy restore), and a migration check that runs new custom-table SQL against a copy of the real save first | `tools/devenv/`, `tools/backup/` | codex | review |
 
 ### Fast iteration (Phase 0a, do first)
 
