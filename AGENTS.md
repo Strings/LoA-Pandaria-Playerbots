@@ -29,7 +29,8 @@ You are expected to finish tasks mostly on your own. Inside your task's scope, a
 - Build, run tests, start and stop the auth and world servers on your own ports, use your own
   databases, run `.botscenario` and the headless client.
 - Install packages from the standard registries when a task needs them for tooling or tests.
-- Commit on your branch, rebase on `playerbot`, push your branch, open a PR.
+- Commit on your branch, rebase on `playerbot`, push your branch, open a PR, and merge a routine PR of
+  your own once it is rebased, builds cleanly and passes its tests.
 - Implement items marked provisional in `docs/DESIGN.md` when your task asks for them, exactly as
   described. Note in your status fragment that they were provisional.
 
@@ -42,7 +43,9 @@ You are expected to finish tasks mostly on your own. Inside your task's scope, a
   is costly to undo.
 - **Destructive or shared actions:** deleting files or directories you didn't create, dropping or
   rewriting tables in existing databases, schema changes to existing core tables, force-pushing,
-  rewriting history, pushing to `playerbot`, touching another agent's worktree, databases or ports.
+  rewriting history, pushing to `playerbot` other than by merging a PR, major merges (a batch of many
+  PRs, one that is risky to undo, or one that conflicts with the other agent's work), touching another
+  agent's worktree, databases or ports.
 - **Dependencies:** adding a third-party library to the build or changing toolchain versions.
 - **Computer use:** anything that drives the GUI: launching or controlling the game client,
   browser automation, desktop apps. Use the headless client for tests instead.
@@ -62,7 +65,8 @@ of the task that doesn't depend on the answer.
   the area (`Jewel:`, `Bots:`, `Travel:`, `Tools:`, `Docs:`).
 - Before opening a PR: rebase on `playerbot`, build cleanly, run the relevant tests, add your
   status fragment, and update your task's line in `TASKS.md`.
-- The other agent reviews your PR when asked; the human merges.
+- The other agent reviews your PR when asked. You merge routine PRs yourself; ask the human before a
+  major merge (see Stop and ask first). Never edit the other agent's branch to make a merge go through.
 
 ## Shared hotspots
 
