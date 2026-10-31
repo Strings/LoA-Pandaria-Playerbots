@@ -1,5 +1,5 @@
 /*
- * Heartseed hooks and GM commands (T-020 to T-022, T-024 to T-026). State lives in HeartseedMgr.
+ * Heartseed hooks and commands (T-020 to T-026). State lives in HeartseedMgr.
  */
 
 #include "Bag.h"
@@ -19,6 +19,8 @@
 
 // Heartseed block of docs/ID_RANGES.md; linked to role 197 by sql/updates/master/auth/2026_10_31_claude_02_heartseed_command.sql
 static rbac::RBACPermissions const RBAC_PERM_COMMAND_HEARTSEED = static_cast<rbac::RBACPermissions>(90000);
+// Player command '.seed'; linked to role 199 (Player Commands) by sql/updates/master/auth/2026_10_31_claude_11_seed_command.sql
+static rbac::RBACPermissions const RBAC_PERM_COMMAND_SEED = static_cast<rbac::RBACPermissions>(90001);
 
 static char const* GetPathName(Heartseed::Path path)
 {
@@ -66,8 +68,9 @@ public:
         sHeartseedMgr->ApplyRankUps(player);
         // Characters that were already in Pandaria when the hook arrived.
         sHeartseedMgr->OnMapChanged(player);
-        // No Heartseed yet: offer the granting quest.
+        // No Heartseed yet: offer the granting quest. A choice waiting: open it.
         sHeartseedMgr->ScheduleGrantOffer(player);
+        sHeartseedMgr->ScheduleChoicePrompt(player);
     }
 
     void OnQuestAdded(Player* player, Quest const* quest) override
@@ -103,16 +106,18 @@ public:
         // A level raises the rank cap; Growth banked at the old cap is spent now.
         sHeartseedMgr->ApplyRankUps(player);
 
-        // The shrine gossip (T-023) is where the choice is made; this tells the player a choice is waiting.
+        // A tier that opens with this level and has no major yet: tell the player and open the choice.
         uint16 specId = uint16(player->GetTalentSpecialization());
         auto loadout = state.Loadouts.find(specId);
         for (uint8 tier = 0; tier < Heartseed::MaxMajorTiers; ++tier)
         {
             uint8 tierLevel = Heartseed::MajorTierLevels[tier];
             bool chosen = loadout != state.Loadouts.end() && loadout->second[tier];
-            if (oldLevel < tierLevel && player->GetLevel() >= tierLevel && !chosen)
+            if (oldLevel < tierLevel && player->GetLevel() >= tierLevel && !chosen && sHeartseedMgr->TierHasMajors(tier))
             {
                 ChatHandler(player->GetSession()).SendSysMessage("Your Heartseed stirs. A Celestial path waits for your choice.");
+                if (!player->GetSession()->IsBot())
+                    sHeartseedMgr->SendChoiceMenu(player);
                 break;
             }
         }
@@ -143,10 +148,12 @@ public:
             sHeartseedMgr->OnItemDestroyedByPlayer(player, item);
     }
 
-    void OnGossipSelect(Player* player, uint32 menuId, uint32 /*sender*/, uint32 action) override
+    void OnGossipSelect(Player* player, uint32 menuId, uint32 sender, uint32 action) override
     {
         if (menuId == Heartseed::GOSSIP_MENU_FEED)
             sHeartseedMgr->OnFeedGossipSelect(player, action);
+        else if (menuId == Heartseed::GOSSIP_MENU_CHOICE)
+            sHeartseedMgr->OnChoiceGossipSelect(player, sender, action);
     }
 
     void OnMapChanged(Player* player) override
@@ -230,10 +237,12 @@ public:
             { "traits", &HandleTraitsCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "major",  &HandleMajorCommand,  RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "reload", &HandleReloadCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
+            { "shrines", &HandleShrinesCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
         };
         static std::vector<ChatCommand> commandTable =
         {
             { "heartseed", heartseedCommandTable, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
+            { "seed",      &HandleSeedCommand,    RBAC_PERM_COMMAND_SEED,      Trinity::ChatCommands::Console::No },
         };
         return commandTable;
     }
@@ -847,6 +856,46 @@ public:
             return true;
         }
         handler->PSendSysMessage("Granted a Heartseed to %s.", target->GetName().c_str());
+        return true;
+    }
+
+    // Player command: opens the Heartseed's choice window for yourself.
+    static bool HandleSeedCommand(ChatHandler* handler, char const* /*args*/)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+        if (!sHeartseedMgr->HasHeartseed(player))
+        {
+            handler->SendSysMessage("You do not carry a Heartseed.");
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+        if (player->IsInCombat())
+        {
+            handler->SendSysMessage("Your Heartseed will not listen while you fight.");
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+        sHeartseedMgr->SendChoiceMenu(player);
+        return true;
+    }
+
+    static bool HandleShrinesCommand(ChatHandler* handler, char const* /*args*/)
+    {
+        Player* target = GetTarget(handler);
+        if (!target)
+            return false;
+
+        std::vector<Heartseed::ShrineInfo> shrines = sHeartseedMgr->GetShrines();
+        handler->PSendSysMessage("%u Celestial shrines (changes %s):", uint32(shrines.size()),
+            sHeartseedMgr->IsChangeAtShrineOnly() ? "only at a shrine" : "anywhere");
+        for (Heartseed::ShrineInfo const& shrine : shrines)
+            handler->PSendSysMessage(" %u %s: map %u (%.1f, %.1f, %.1f), radius %.0f", shrine.Id, shrine.Name.c_str(), shrine.MapId,
+                shrine.X, shrine.Y, shrine.Z, shrine.Radius);
+        Heartseed::ShrineInfo at;
+        if (sHeartseedMgr->GetShrineAt(target, at))
+            handler->PSendSysMessage("%s is at %s.", target->GetName().c_str(), at.Name.c_str());
+        else
+            handler->PSendSysMessage("%s is not at a shrine.", target->GetName().c_str());
         return true;
     }
 

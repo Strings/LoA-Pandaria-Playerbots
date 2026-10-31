@@ -85,6 +85,35 @@ namespace
         Player* _player;
     };
 
+    // Opens the choice window a moment after login, after any granting-quest window.
+    class HeartseedChoicePromptEvent : public BasicEvent
+    {
+    public:
+        explicit HeartseedChoicePromptEvent(Player* player) : _player(player) { }
+
+        bool Execute(uint64 /*time*/, uint32 /*diff*/) override
+        {
+            if (sHeartseedMgr->HasUnchosenOpenTier(_player))
+                sHeartseedMgr->SendChoiceMenu(_player);
+            return true;
+        }
+
+    private:
+        Player* _player;
+    };
+
+    char const* PathName(Heartseed::Path path)
+    {
+        switch (path)
+        {
+            case Heartseed::Path::Xuen:   return "Xuen";
+            case Heartseed::Path::ChiJi:  return "Chi-Ji";
+            case Heartseed::Path::Niuzao: return "Niuzao";
+            case Heartseed::Path::Yulon:  return "Yu'lon";
+            default:                      return "none";
+        }
+    }
+
     // Opens the reward window right after the quest is accepted, outside the accept handler.
     class HeartseedGrantRewardEvent : public BasicEvent
     {
@@ -162,6 +191,9 @@ void HeartseedMgr::LoadConfig()
     _grantQuestId = sConfigMgr->GetIntDefault("Heartseed.Grant.QuestId", 90000);
     _grantOfferOnLogin = sConfigMgr->GetBoolDefault("Heartseed.Grant.OfferOnLogin", true);
     _grantOfferDelay = sConfigMgr->GetIntDefault("Heartseed.Grant.OfferDelay", 5000);
+    _choicePromptOnLogin = sConfigMgr->GetBoolDefault("Heartseed.Choice.PromptOnLogin", true);
+    _choicePromptDelay = sConfigMgr->GetIntDefault("Heartseed.Choice.PromptDelay", 6000);
+    _choiceShrineOnly = sConfigMgr->GetBoolDefault("Heartseed.Choice.ChangeAtShrineOnly", true);
 }
 
 void HeartseedMgr::LoadData()
@@ -324,6 +356,29 @@ void HeartseedMgr::LoadData()
         while (result->NextRow());
     }
 
+    std::vector<Heartseed::ShrineInfo> shrines;
+    if (QueryResult result = WorldDatabase.Query("SELECT `id`, `map`, `position_x`, `position_y`, `position_z`, `radius`, `name` FROM `heartseed_shrine`"))
+    {
+        do
+        {
+            Field* fields = result->Fetch();
+            Heartseed::ShrineInfo shrine;
+            shrine.Id = fields[0].GetUInt32();
+            shrine.MapId = fields[1].GetUInt32();
+            shrine.X = fields[2].GetFloat();
+            shrine.Y = fields[3].GetFloat();
+            shrine.Z = fields[4].GetFloat();
+            shrine.Radius = fields[5].GetFloat();
+            shrine.Name = fields[6].GetString();
+            if (shrine.Radius <= 0.0f)
+            {
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_shrine`: shrine %u has no radius, skipped.", shrine.Id);
+                continue;
+            }
+            shrines.push_back(shrine);
+        } while (result->NextRow());
+    }
+
     if (!sSpellMgr->GetSpellInfo(Heartseed::SPELL_CORE_WEAPON_BONUS))
         TC_LOG_ERROR("sql.sql", "Heartseed: core passive spell %u is missing from `spell_dbc`; no bonus weapon damage.", Heartseed::SPELL_CORE_WEAPON_BONUS);
     if (_procSpellId && !sSpellMgr->GetSpellInfo(_procSpellId))
@@ -338,6 +393,7 @@ void HeartseedMgr::LoadData()
         _essences = std::move(essences);
         _essenceSources = std::move(essenceSources);
         _twinkItems = std::move(twinkItems);
+        _shrines = std::move(shrines);
     }
 
     TC_LOG_INFO("server.loading", ">> Loaded %u Heartseed stages, %u glows, %u traits, %u essences, %u essence sources and %u twink items in %u ms",
@@ -557,6 +613,164 @@ bool HeartseedMgr::SetStoryFlag(Player* player, uint16 flag, bool set)
     if (set)
         ApplyRankUps(player);
     return true;
+}
+
+bool HeartseedMgr::HasUnchosenOpenTier(Player* player) const
+{
+    Heartseed::State state;
+    if (!GetState(player, state))
+        return false;
+    auto loadout = state.Loadouts.find(uint16(player->GetTalentSpecialization()));
+    for (uint8 tier = 0; tier < Heartseed::MaxMajorTiers; ++tier)
+        if (Heartseed::MajorTierOpen(tier, player->GetLevel()) && (loadout == state.Loadouts.end() || !loadout->second[tier])
+            && TierHasMajors(tier))
+            return true;
+    return false;
+}
+
+bool HeartseedMgr::TierHasMajors(uint8 tier) const
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    for (auto const& [id, trait] : _traits)
+        if (trait.Kind == Heartseed::TraitKind::Major && trait.Tier == tier)
+            return true;
+    return false;
+}
+
+void HeartseedMgr::ScheduleChoicePrompt(Player* player)
+{
+    if (_choicePromptOnLogin && HasUnchosenOpenTier(player))
+        player->m_Events.AddEvent(new HeartseedChoicePromptEvent(player), player->m_Events.CalculateTime(_choicePromptDelay));
+}
+
+bool HeartseedMgr::GetShrineAt(Player const* player, Heartseed::ShrineInfo& out) const
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    for (Heartseed::ShrineInfo const& shrine : _shrines)
+    {
+        if (shrine.MapId == player->GetMapId() && player->IsWithinDist3d(shrine.X, shrine.Y, shrine.Z, shrine.Radius))
+        {
+            out = shrine;
+            return true;
+        }
+    }
+    return false;
+}
+
+std::vector<Heartseed::ShrineInfo> HeartseedMgr::GetShrines() const
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    return _shrines;
+}
+
+void HeartseedMgr::SendChoiceMenu(Player* player)
+{
+    Heartseed::State state;
+    if (!GetState(player, state))
+        return;
+    auto loadout = state.Loadouts.find(uint16(player->GetTalentSpecialization()));
+    Heartseed::ShrineInfo shrine;
+    bool canChange = !_choiceShrineOnly || GetShrineAt(player, shrine);
+
+    player->PlayerTalkClass->ClearMenus();
+    GossipMenu& menu = player->PlayerTalkClass->GetGossipMenu();
+    menu.SetMenuId(Heartseed::GOSSIP_MENU_CHOICE);
+    for (uint8 tier = 0; tier < Heartseed::MaxMajorTiers; ++tier)
+    {
+        std::string text = "Level " + std::to_string(Heartseed::MajorTierLevels[tier]) + ": ";
+        if (!Heartseed::MajorTierOpen(tier, player->GetLevel()))
+        {
+            // Only the next locked tier is shown, as something to look forward to.
+            menu.AddMenuItem(-1, GOSSIP_ICON_DOT, text + "not yet.", Heartseed::CHOICE_SENDER_CLOSE, 0, "", 0);
+            break;
+        }
+
+        uint32 chosen = loadout != state.Loadouts.end() ? loadout->second[tier] : 0;
+        Heartseed::TraitInfo trait;
+        if (chosen && GetTrait(chosen, trait))
+            text += trait.Name + " (" + PathName(trait.TraitPath) + ")" + (canChange ? ". Change it." : ".");
+        else if (!TierHasMajors(tier))
+        {
+            menu.AddMenuItem(-1, GOSSIP_ICON_DOT, text + "the Celestials are silent here for now.", Heartseed::CHOICE_SENDER_BACK, 0, "", 0);
+            continue;
+        }
+        else
+            text += "choose a path.";
+        menu.AddMenuItem(-1, chosen ? GOSSIP_ICON_TRAINER : GOSSIP_ICON_CHAT, text, Heartseed::CHOICE_SENDER_TIER, tier, "", 0);
+    }
+    menu.AddMenuItem(-1, GOSSIP_ICON_CHAT, "Let it rest.", Heartseed::CHOICE_SENDER_CLOSE, 0, "", 0);
+    player->PlayerTalkClass->SendGossipMenu(Heartseed::NPC_TEXT_CHOICE, player->GetGUID());
+}
+
+void HeartseedMgr::SendChoiceTierMenu(Player* player, uint8 tier)
+{
+    player->PlayerTalkClass->ClearMenus();
+    GossipMenu& menu = player->PlayerTalkClass->GetGossipMenu();
+    menu.SetMenuId(Heartseed::GOSSIP_MENU_CHOICE);
+    for (Heartseed::TraitInfo const& trait : GetTraits())
+    {
+        if (trait.Kind != Heartseed::TraitKind::Major || trait.Tier != tier)
+            continue;
+        std::string path = PathName(trait.TraitPath);
+        std::string confirm = "Walk the path of " + path + " with " + trait.Name + "?"
+            + (_choiceShrineOnly ? " Once chosen, it can be changed only at a Celestial shrine." : "");
+        menu.AddMenuItem(-1, GOSSIP_ICON_CHAT, path + ": " + trait.Name + ". " + trait.Description,
+            Heartseed::CHOICE_SENDER_PICK, tier * Heartseed::CHOICE_PICK_STRIDE + trait.Id, confirm, 0);
+    }
+    menu.AddMenuItem(-1, GOSSIP_ICON_DOT, "Back.", Heartseed::CHOICE_SENDER_BACK, 0, "", 0);
+    player->PlayerTalkClass->SendGossipMenu(Heartseed::NPC_TEXT_CHOICE_TIER, player->GetGUID());
+}
+
+void HeartseedMgr::OnChoiceGossipSelect(Player* player, uint32 sender, uint32 action)
+{
+    Heartseed::State state;
+    if (!GetState(player, state))
+    {
+        player->PlayerTalkClass->SendCloseGossip();
+        return;
+    }
+    auto loadout = state.Loadouts.find(uint16(player->GetTalentSpecialization()));
+    auto chosenAt = [&](uint8 tier) { return loadout != state.Loadouts.end() ? loadout->second[tier] : 0u; };
+    Heartseed::ShrineInfo shrine;
+    auto lockedHere = [&](uint8 tier) { return chosenAt(tier) && _choiceShrineOnly && !GetShrineAt(player, shrine); };
+    ChatHandler handler(player->GetSession());
+
+    switch (sender)
+    {
+        case Heartseed::CHOICE_SENDER_TIER:
+        {
+            uint8 tier = uint8(action);
+            if (tier >= Heartseed::MaxMajorTiers || !Heartseed::MajorTierOpen(tier, player->GetLevel()))
+                break;
+            if (lockedHere(tier))
+            {
+                handler.SendSysMessage("Your Heartseed holds to the path it took. Visit a Celestial shrine to change it.");
+                SendChoiceMenu(player);
+                return;
+            }
+            SendChoiceTierMenu(player, tier);
+            return;
+        }
+        case Heartseed::CHOICE_SENDER_PICK:
+        {
+            uint8 tier = uint8(action / Heartseed::CHOICE_PICK_STRIDE);
+            uint32 traitId = action % Heartseed::CHOICE_PICK_STRIDE;
+            // Checked again: the player may have walked away from the shrine with the window open.
+            if (tier >= Heartseed::MaxMajorTiers || lockedHere(tier))
+                break;
+            Heartseed::TraitInfo trait;
+            if (ChooseMajor(player, tier, traitId, false) == Heartseed::ChoiceResult::Ok && GetTrait(traitId, trait))
+                handler.PSendSysMessage("Your Heartseed turns toward %s: %s.", PathName(trait.TraitPath), trait.Name.c_str());
+            SendChoiceMenu(player);
+            return;
+        }
+        case Heartseed::CHOICE_SENDER_BACK:
+            SendChoiceMenu(player);
+            return;
+        default:
+            break;
+    }
+    player->PlayerTalkClass->SendCloseGossip();
 }
 
 void HeartseedMgr::ScheduleGrantOffer(Player* player)
