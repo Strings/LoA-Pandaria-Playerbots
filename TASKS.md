@@ -82,7 +82,7 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 | ID | Task | Owns | Owner | Status |
 |---|---|---|---|---|
 | T-032 | Live server MCP: thin wrapper over SOAP and logs (bots near a position, bot state, `.botscenario`, `.server info`, log tail, GM commands). Standalone module | `tools/live-server-mcp/` | codex | done |
-| T-033 | Crash triage: read crash dumps and core logs, map to source, suggest the likely commit | `tools/crash-triage/` | | open |
+| T-033 | Crash triage: read crash dumps and core logs, map to source, suggest the likely commit | `tools/crash-triage/` | gemini | review |
 | T-034 | SQL validator: lint new SQL against schema and references (givers, items, ID collisions) | `tools/sql-validator/` | gemini | done |
 | T-031 | Balance sim: `.botscenario` dummy room that reports DPS for a given Heartseed loadout | `tools/balance-sim/`, `modules/mod_playerbots/src/Scenario/` | | open |
 | T-030 | Shared DBC reader library, then content search on top of it (spells, visuals, items, creatures, display IDs) as an MCP tool | `tools/dbc/`, `tools/content-search/` | gemini | review |
