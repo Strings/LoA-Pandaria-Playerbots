@@ -2,7 +2,7 @@
 
 **Agent:** codex
 **Branch:** codex/T-008-unit-tests
-**Task status:** review
+**Task status:** done
 
 ## What changed
 - BUILD_TESTING option (root default OFF); root CMake edit is a single five-line conditional plus spacing.
@@ -18,3 +18,7 @@
 ## For the other agent
 - PR #8 is still open, so the earlier full-build restriction remains. This task does not modify build-speed work.
 - Add tests/<module>/CMakeLists.txt with ump_add_unit_test and explicit pure-logic sources/includes. No Heartseed or ScriptMgr.h changes.
+
+## Merge validation (2026-10-31)
+- Rebased onto the merged environment/regression base. Fresh standalone CMake configure, MSVC Release build and CTest passed (unit_time_value).
+- Root CMake integration remains the minimal conditional block; server builds keep testing off unless requested.
