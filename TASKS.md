@@ -46,7 +46,7 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 
 | ID | Task | Owns | Owner | Status |
 |---|---|---|---|---|
-| T-010 | Double mounted movement speed via a config multiplier (default 2.0) in the core speed update; check ghost wolf and travel forms are untouched for now | codex | open |
+| T-010 | Double mounted movement speed via a config multiplier (default 2.0) in the core speed update; check ghost wolf and travel forms are untouched for now | codex | review |
 | T-011 | Apprentice Riding and a basic faction-appropriate mount at character creation; four 10-slot bags in the bag slots | `sql/updates/world/`, `src/server/scripts/Custom/PlayerStartScript.cpp` | | open |
 | T-012 | Raise rare mount drops to 10%: list every rare-drop mount item and update loot tables | `sql/updates/world/` | codex | review |
 | T-013 | Raid resets every 2 days instead of weekly; keep in-progress instances until finished or abandoned | `src/server/game/Instances/` | | open |

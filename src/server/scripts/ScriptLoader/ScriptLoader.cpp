@@ -2152,6 +2152,7 @@ void AddSC_solocraft_system();
 void AddSC_heartseed();
 void AddSC_gmtools_checkpoints();
 void AddSC_custom_reload();
+void AddSC_mounted_speed();
 
 void AddCustomScripts()
 {
@@ -2166,6 +2167,7 @@ void AddCustomScripts()
     AddSC_heartseed();
     AddSC_gmtools_checkpoints();
     AddSC_custom_reload();
+    AddSC_mounted_speed();
 
 #endif
     AddSC_Anticheat();

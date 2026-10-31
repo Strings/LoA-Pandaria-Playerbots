@@ -5579,3 +5579,14 @@ Heartseed.Choice.ChangeAtShrineOnly = 1
 
 #
 ###################################################################################################
+
+#
+#    Rate.MountedSpeed
+#        Description: Multiplier for player mounted run/flying speed bonuses.
+#                     2.0 changes +60/+100/+150/+280/+310% to +120/+200/+300/+560/+620%.
+#                     1.0 restores stock speed. Must be finite and positive.
+#                     Excludes ghost wolf, travel/flight forms, taxis and non-player units.
+#                     Reloadable; remount or use .mountspeed to refresh an active mount.
+#        Default:     2.0
+
+Rate.MountedSpeed = 2.0
