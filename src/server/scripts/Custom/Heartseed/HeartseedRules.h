@@ -111,6 +111,90 @@ namespace Heartseed
         float damage = (weaponMinDamage + weaponMaxDamage) * 0.5f * damagePct / 100.0f;
         return damage > 0.0f ? uint32_t(std::lround(damage)) : 0;
     }
+
+    constexpr uint8_t MaxRank = 255;           // rank is saved as TINYINT UNSIGNED
+
+    // Character level at which each essence slot opens (1 at 10, 2 at 40, 3 at 70).
+    constexpr std::array<uint8_t, MaxEssenceSlots> EssenceSlotLevels = { 10, 40, 70 };
+
+    inline uint8_t EssenceSlotsForLevel(uint8_t level)
+    {
+        uint8_t slots = 0;
+        for (uint8_t openLevel : EssenceSlotLevels)
+            if (level >= openLevel)
+                ++slots;
+        return slots;
+    }
+
+    // Rank cap: the character level sets it, each awakening (story flag that counts) raises it.
+    // Never below 1, so a fresh Heartseed always has its first rank.
+    inline uint8_t RankCap(uint8_t level, float capPerLevel, uint32_t awakenings, uint32_t capPerAwakening)
+    {
+        double cap = std::floor(double(level) * double(capPerLevel)) + double(awakenings) * double(capPerAwakening);
+        if (cap < 1.0)
+            return 1;
+        return cap > double(MaxRank) ? MaxRank : uint8_t(cap);
+    }
+
+    // Growth needed to go from rank to rank + 1. Never 0, so a rank-up loop always ends.
+    inline uint32_t GrowthForNextRank(uint8_t rank, uint32_t base, uint32_t perRank)
+    {
+        uint64_t cost = uint64_t(base) + uint64_t(perRank) * uint64_t(rank > 0 ? rank - 1 : 0);
+        if (cost == 0)
+            return 1;
+        return cost > UINT32_MAX ? UINT32_MAX : uint32_t(cost);
+    }
+
+    struct RankProgress
+    {
+        uint8_t Rank;
+        uint32_t Growth;      // left over toward the next rank
+    };
+
+    // Spends Growth on ranks up to the cap. Growth past the cap stays banked, so raising the cap (a level
+    // or an awakening) ranks the Heartseed up at once. A rank already above the cap (GM) is kept.
+    inline RankProgress ApplyGrowth(uint8_t rank, uint32_t growth, uint8_t cap, uint32_t base, uint32_t perRank)
+    {
+        while (rank < cap)
+        {
+            uint32_t cost = GrowthForNextRank(rank, base, perRank);
+            if (growth < cost)
+                break;
+            growth -= cost;
+            ++rank;
+        }
+        return { rank, growth };
+    }
+
+    // Growth from feeding a weapon: grows with its item level, scaled by its quality.
+    inline uint32_t FeedGrowth(uint32_t itemLevel, uint32_t base, float perItemLevel, float qualityPct)
+    {
+        double growth = (double(base) + double(perItemLevel) * double(itemLevel)) * double(qualityPct) / 100.0;
+        if (growth <= 0.0)
+            return 0;
+        return growth >= double(UINT32_MAX) ? UINT32_MAX : uint32_t(std::lround(growth));
+    }
+
+    // Saturating add, for Growth and essence counts.
+    inline uint32_t AddCapped(uint32_t value, uint32_t amount)
+    {
+        return amount > UINT32_MAX - value ? UINT32_MAX : value + amount;
+    }
+
+    // First essence slot (1-based) that is open at this level and not taken, or 0 when none is free.
+    inline uint8_t FreeEssenceSlot(std::vector<uint8_t> const& takenSlots, uint8_t level)
+    {
+        uint8_t open = EssenceSlotsForLevel(level);
+        for (uint8_t slot = 1; slot <= open; ++slot)
+        {
+            bool taken = false;
+            for (uint8_t used : takenSlots)
+                taken = taken || used == slot;
+            if (!taken)
+                return slot;
+        }
+        return 0;
+    }
 }
 
 #endif

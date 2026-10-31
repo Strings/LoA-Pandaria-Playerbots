@@ -5393,4 +5393,81 @@ Heartseed.Proc.WeaponDamagePct = 50
 Heartseed.Proc.Cooldown = 3000
 
 #
+#    Heartseed.Rank.CapPerLevel
+#        Description: Rank cap per character level (the cap is level x this, rounded down, plus the
+#                     awakening bonus). Pacing numbers are placeholders until v0.5.
+#        Default:     1
+
+Heartseed.Rank.CapPerLevel = 1
+
+#
+#    Heartseed.Rank.CapPerAwakening
+#        Description: Ranks each awakening adds to the cap. An awakening is a story flag listed in
+#                     Heartseed.Rank.AwakeningFlags that the character has reached.
+#        Default:     5
+
+Heartseed.Rank.CapPerAwakening = 5
+
+#
+#    Heartseed.Rank.AwakeningFlags
+#        Description: Story flags (space-separated ids) that count as awakenings for the rank cap.
+#                     1 = first dungeon, 2 = reached Pandaria, 3 = first world boss.
+#        Default:     "1 2 3"
+
+Heartseed.Rank.AwakeningFlags = "1 2 3"
+
+#
+#    Heartseed.Rank.GrowthBase
+#    Heartseed.Rank.GrowthPerRank
+#        Description: Growth needed from rank R to R + 1: GrowthBase + GrowthPerRank x (R - 1).
+#                     Growth past the cap is banked and spent when the cap rises.
+#        Default:     100, 20
+
+Heartseed.Rank.GrowthBase = 100
+Heartseed.Rank.GrowthPerRank = 20
+
+#
+#    Heartseed.Feed.OnReplace
+#        Description: Feed the replaced weapon when a weapon gained since login goes into the main hand
+#                     with a higher item level and the old weapon lands in the bags.
+#                     0 = only GM feeding (.heartseed feed) and later systems feed weapons.
+#        Default:     1
+
+Heartseed.Feed.OnReplace = 1
+
+#
+#    Heartseed.Feed.GrowthBase
+#    Heartseed.Feed.GrowthPerItemLevel
+#        Description: Growth from feeding a weapon: (GrowthBase + GrowthPerItemLevel x item level) x the
+#                     quality percentage below.
+#        Default:     20, 2
+
+Heartseed.Feed.GrowthBase = 20
+Heartseed.Feed.GrowthPerItemLevel = 2
+
+#
+#    Heartseed.Feed.QualityPct
+#        Description: Percentage of feeding Growth by item quality, space-separated from poor (0) to
+#                     heirloom (7). 0 means weapons of that quality are never fed.
+#        Default:     "50 100 150 250 400 0 0 0" (legendary, artifact and heirloom never fed)
+
+Heartseed.Feed.QualityPct = "50 100 150 250 400 0 0 0"
+
+#
+#    Heartseed.Essence.ProcCooldown
+#        Description: Milliseconds after an essence procs before that essence can roll again. Each
+#                     essence's chance and damage are rows in world heartseed_essence_template.
+#        Default:     3000
+
+Heartseed.Essence.ProcCooldown = 3000
+
+#
+#    Heartseed.Essence.AutoSlot
+#        Description: Put a newly collected essence into the first free essence slot the character's
+#                     level opens (1 at 10, 2 at 40, 3 at 70).
+#        Default:     1
+
+Heartseed.Essence.AutoSlot = 1
+
+#
 ###################################################################################################

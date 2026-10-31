@@ -7,8 +7,8 @@ The living jewel that rides on a character's main-hand weapon and grows with it.
 
 | File | What |
 |---|---|
-| `HeartseedRules.h` | Pure rules with no server dependencies (stage by level, dominant path, tier levels, minor activation, trait and core passive amounts). Unit-test these. |
-| `HeartseedMgr.h/.cpp` | State cache per character, loading and saving, stage and glow lookup, traits, major choice, core proc. |
+| `HeartseedRules.h` | Pure rules with no server dependencies (stage by level, dominant path, tier levels, minor activation, trait and core passive amounts, rank cap, Growth per rank, feeding Growth, essence slots). Unit-test these. |
+| `HeartseedMgr.h/.cpp` | State cache per character, loading and saving, stage and glow lookup, traits, major choice, core and essence procs, Growth and rank-ups, feeding, essences. |
 | `heartseed_scripts.cpp` | World, player, unit and command scripts. |
 
 ## Data
@@ -20,6 +20,11 @@ Characters database (`sql/updates/characters/2026_10_31_claude_00_heartseed_stat
 - `heartseed_loadout`: the major chosen at each of the six major tiers, per specialization.
 - `heartseed_essence`: essences collected and which slot (1 to 3) each is active in.
 - `heartseed_story_flag`: story beats reached and when (`Heartseed::StoryFlag`).
+
+Characters database (`sql/updates/characters/2026_10_31_claude_05_heartseed_fed_weapon.sql`):
+
+- `heartseed_fed_weapon`: every weapon entry the Heartseed has eaten, how often and when first. Kept for
+  the appearance collection (consumed weapons become transmog options later).
 
 World database (`sql/updates/world/2026_10_31_claude_01_heartseed_stage.sql`):
 
@@ -33,6 +38,37 @@ World database (`sql/updates/world/2026_10_31_claude_03_heartseed_trait.sql`):
   written to the spell's effect 0).
 - The aura spells are server-side rows in `spell_dbc`, `spellmisc_dbc` and `spelleffect_dbc`, in the
   Heartseed spell block (310000+). The server reads those tables at startup only.
+
+World database (`sql/updates/world/2026_10_31_claude_04_heartseed_essence.sql`):
+
+- `heartseed_essence_template`: essence types: name, the spell shown for its proc, proc chance and
+  damage as a share of weapon damage. Placeholders: 1 Sha-touched (shadow), 2 Mogu (lightning).
+- `heartseed_essence_source`: which fed weapons can leave an essence, by item entry or by a text in the
+  item name (`sha-`, `mogu`), and the chance per weapon.
+
+## Growth, rank and the cap
+
+- **Growth** is earned through `HeartseedMgr::AddGrowth` (feeding now; quests, rares, events and dungeons
+  later). It is spent on ranks: rank R to R + 1 costs `Heartseed.Rank.GrowthBase + GrowthPerRank * (R - 1)`.
+- **Rank cap** = `level * Heartseed.Rank.CapPerLevel + awakenings * Heartseed.Rank.CapPerAwakening`, at least
+  1. Awakenings are the story flags listed in `Heartseed.Rank.AwakeningFlags` that the character has.
+- Growth past the cap is **banked**. A level-up, a new awakening or a login spends it (`ApplyRankUps`).
+- GM `.heartseed rank` and a bare `.heartseed growth N` set values directly and ignore the cap.
+
+## Feeding and essences
+
+- **Feeding** consumes a weapon from the bags for `(Heartseed.Feed.GrowthBase + GrowthPerItemLevel * item
+  level) * Heartseed.Feed.QualityPct[quality] / 100` Growth, and rolls each essence whose source matches it.
+  Fishing poles, miscellaneous weapons, quest items, refundable items and qualities worth 0 (legendary,
+  artifact, heirloom by default) are never fed. Each feed is logged in `heartseed_fed_weapon`.
+- **On replacement** (`Heartseed.Feed.OnReplace`): when a weapon gained since login goes into the main hand
+  with a higher item level, the weapon it replaced is fed one update later if it is now in the bags.
+  Swapping between weapons the character already carried never feeds one of them, and a weapon moved to
+  the off hand, the bank or a vendor is left alone.
+- **Essences** fill the first free open slot when first collected (`Heartseed.Essence.AutoSlot`). Slots
+  open at 10, 40 and 70; an essence in an open slot rolls its proc on damage the character deals, with its
+  own `Heartseed.Essence.ProcCooldown`, dealt like the core proc. `SetEssenceSlot` is what the shrine
+  gossip (T-023) will call.
 
 ## Traits and the core passive
 
@@ -72,6 +108,12 @@ worldserver.conf:
 - `Heartseed.Enabled` (default 1): off keeps state but shows no glow and applies no traits or core passive.
 - `Heartseed.Core.WeaponDamagePct` (5), `Heartseed.Proc.SpellId` (16614, placeholder look),
   `Heartseed.Proc.Chance` (10), `Heartseed.Proc.WeaponDamagePct` (50), `Heartseed.Proc.Cooldown` (3000 ms).
+- Cap and ranks: `Heartseed.Rank.CapPerLevel` (1), `.CapPerAwakening` (5), `.AwakeningFlags` ("1 2 3"),
+  `.GrowthBase` (100), `.GrowthPerRank` (20).
+- Feeding: `Heartseed.Feed.OnReplace` (1), `.GrowthBase` (20), `.GrowthPerItemLevel` (2), `.QualityPct`
+  ("50 100 150 250 400 0 0 0", poor to heirloom).
+- Essences: `Heartseed.Essence.ProcCooldown` (3000 ms), `.AutoSlot` (1).
+- All pacing numbers are placeholders until v0.5.
 
 ## GM commands
 
@@ -82,13 +124,22 @@ Permission 90000 (`Command: heartseed`, Gamemaster role). Target is the selected
 - `.heartseed grant`: give a Heartseed (rank 1, no Growth).
 - `.heartseed revoke`: remove it with all its rows.
 - `.heartseed rank <1-255>`: set the rank. Ignores the level cap, so states can be tested without leveling.
-- `.heartseed growth <n> | +<n> | -<n>`: set Growth, or add to or take from it (never below 0).
+- `.heartseed growth <n> | +<n> | -<n>`: set Growth or take from it (never below 0); `+<n>` earns it,
+  ranking up to the cap like real Growth.
 - `.heartseed flag list | set <name|id> | clear <name|id>`: story flags by name (`first_dungeon`,
   `reached_pandaria`, `first_world_boss`) or number. Setting keeps the first time a flag was set.
 - `.heartseed traits`: every trait, marking the ones active on the target.
 - `.heartseed major <10|25|40|55|70|85> <trait id | 0>`: set or clear a major in the active spec's
   loadout. Skips the level check.
-- `.heartseed reload`: reload stages, glows and traits, and refresh the target.
+- `.heartseed reload`: reload stages, glows, traits and essences, and refresh the target.
+- `.heartseed cap`: the cap and how it is made up (level, awakening flags), rank, Growth, next rank cost.
+- `.heartseed feed <item link | entry>`: feed one such weapon from the target's bags (no upgrade check).
+- `.heartseed feed preview <item link | entry>`: Growth and essence chances, and whether a carried copy
+  can be fed, without consuming anything.
+- `.heartseed essence list`: essence types, their sources and what the target holds.
+- `.heartseed essence add <id> [count]` / `remove <id>`: give or take an essence.
+- `.heartseed essence slot <id> <0-3>`: move an essence to a slot (0 = out). Skips the level check; a slot
+  the level has not opened stays inactive.
 
 `.heartseed info` also shows the loadout, the applied auras with their amounts, and the proc damage.
 
