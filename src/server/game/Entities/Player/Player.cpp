@@ -13278,7 +13278,12 @@ void Player::SetVisibleItemSlot(uint8 slot, Item* pItem)
     {
         SetUInt32Value(PLAYER_FIELD_VISIBLE_ITEMS + (slot * 2), pItem->GetVisibleEntry());
         SetUInt16Value(PLAYER_FIELD_VISIBLE_ITEMS + 1 + (slot * 2), 0, pItem->GetEnchantmentId(PERM_ENCHANTMENT_SLOT));
-        SetUInt16Value(PLAYER_FIELD_VISIBLE_ITEMS + 1 + (slot * 2), 1, pItem->GetEnchantmentId(TEMP_ENCHANTMENT_SLOT));
+        // A real temporary enchant (poison, oil, shaman imbue) keeps its own visual; otherwise scripts may
+        // supply a display-only glow (Heartseed). Nothing is written to the item, so no enchant effects apply.
+        uint16 tempEnchantVisual = uint16(pItem->GetEnchantmentId(TEMP_ENCHANTMENT_SLOT));
+        if (!tempEnchantVisual)
+            sScriptMgr->OnPlayerVisibleItemEnchant(this, slot, pItem, tempEnchantVisual);
+        SetUInt16Value(PLAYER_FIELD_VISIBLE_ITEMS + 1 + (slot * 2), 1, tempEnchantVisual);
     }
     else
     {
@@ -15360,7 +15365,13 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
         SetUInt16Value(PLAYER_FIELD_VISIBLE_ITEMS + 1 + (item->GetSlot() * 2), 0, apply ? item->GetEnchantmentId(slot) : 0);
 
     if (slot == TEMP_ENCHANTMENT_SLOT)
-        SetUInt16Value(PLAYER_FIELD_VISIBLE_ITEMS + 1 + (item->GetSlot() * 2), 1, apply ? item->GetEnchantmentId(slot) : 0);
+    {
+        // when the temporary enchant ends, a script glow (Heartseed) takes the field back
+        uint16 tempEnchantVisual = apply ? uint16(item->GetEnchantmentId(slot)) : 0;
+        if (!tempEnchantVisual)
+            sScriptMgr->OnPlayerVisibleItemEnchant(this, item->GetSlot(), item, tempEnchantVisual);
+        SetUInt16Value(PLAYER_FIELD_VISIBLE_ITEMS + 1 + (item->GetSlot() * 2), 1, tempEnchantVisual);
+    }
 
     if (apply_dur)
     {
