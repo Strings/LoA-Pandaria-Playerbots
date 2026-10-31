@@ -18,11 +18,17 @@
 #include "Random.h"
 #include "Errors.h"
 #include "SFMTRand.h"
+#include "DeterministicRandom.h"
 #include <memory>
 #include <random>
 
 static thread_local std::unique_ptr<SFMTRand> sfmtRand;
 static RandomEngine engine;
+static Trinity::DeterministicRandom& GetTestRandom()
+{
+    static Trinity::DeterministicRandom random;
+    return random;
+}
 
 static SFMTRand* GetRng()
 {
@@ -69,7 +75,25 @@ Milliseconds randtime(Milliseconds min, Milliseconds max)
 
 uint32 rand32()
 {
+    uint32 value;
+    if (GetTestRandom().TryNext(value))
+        return value;
     return GetRng()->RandomUInt32();
+}
+
+void SetRandomSeed(uint32 seed)
+{
+    GetTestRandom().Seed(seed);
+}
+
+void ClearRandomSeed()
+{
+    GetTestRandom().Disable();
+}
+
+Trinity::RandomSeedState GetRandomSeedState()
+{
+    return GetTestRandom().Inspect();
 }
 
 double rand_norm()

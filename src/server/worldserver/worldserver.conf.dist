@@ -5298,6 +5298,21 @@ Rate.XP.Gather = 1
 Rate.Modw.InGame = 1
 
 ###################################################################################################################
+#  CORE TEST RANDOM STREAM
+#
+#    Random.TestSeed.Enabled
+#        Description: Use the shared seeded test stream for core Random.h draws.
+#                     Default: 0 (normal thread-local SFMT). Test profiles opt in.
+#    Random.TestSeed.Value
+#        Description: Seed as decimal uint32 (0..4294967295). Default: 1.
+#                     Explicit GM reseed resets draw count/sequence, including the same value.
+#                     Config reload reconciles mode/seed without resetting an unchanged enabled stream.
+#                     Independent C/std/Lua RNGs and thread scheduling are outside this setting.
+#
+Random.TestSeed.Enabled = 0
+Random.TestSeed.Value = 1
+
+###################################################################################################################
 #  ELUNA SETTINGS
 #
 #    Eluna.Enabled

@@ -224,22 +224,29 @@ bool HeartseedMgr::ShouldLoad(Player const* player) const
     return _seedAccounts.count(player->GetSession()->GetAccountId()) != 0;
 }
 
-void HeartseedMgr::LoadData()
+bool HeartseedMgr::LoadData(std::size_t* loadedRows)
 {
+    if (loadedRows)
+        *loadedRows = 0;
     uint32 oldMSTime = getMSTime();
 
+    // The sentinel distinguishes empty tables from failed queries; failures keep the live cache.
     std::vector<Heartseed::StageInfo> stages;
     std::vector<uint8> minLevels;
-    if (QueryResult result = WorldDatabase.Query("SELECT `stage`, `min_level`, `name` FROM `heartseed_stage` ORDER BY `stage`"))
     {
+        QueryResult result = WorldDatabase.Query("SELECT `stage`, `min_level`, `name`, NULL AS sentinel FROM `heartseed_stage` UNION ALL SELECT NULL, NULL, NULL, 'end' ORDER BY sentinel, `stage`");
+        if (!result)
+            return false;
         do
         {
             Field* fields = result->Fetch();
+            if (!fields[3].IsNull())
+                continue;
             uint8 stage = fields[0].GetUInt8();
             if (stage != stages.size())
             {
-                TC_LOG_ERROR("sql.sql", "Table `heartseed_stage`: stages must be numbered 0, 1, 2, ... without gaps; stopped at stage %u.", stage);
-                break;
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_stage`: stages must be numbered 0, 1, 2, ... without gaps; reload aborted at stage %u.", stage);
+                return false;
             }
 
             Heartseed::StageInfo info;
@@ -247,8 +254,8 @@ void HeartseedMgr::LoadData()
             info.Name = fields[2].GetString();
             if (!minLevels.empty() && info.MinLevel < minLevels.back())
             {
-                TC_LOG_ERROR("sql.sql", "Table `heartseed_stage`: stage %u starts below the stage before it; stopped there.", stage);
-                break;
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_stage`: stage %u starts below the stage before it; reload aborted.", stage);
+                return false;
             }
 
             minLevels.push_back(info.MinLevel);
@@ -257,34 +264,42 @@ void HeartseedMgr::LoadData()
     }
 
     std::map<std::pair<uint8, uint8>, uint16> glow;
-    if (QueryResult result = WorldDatabase.Query("SELECT `stage`, `path`, `enchant_id` FROM `heartseed_glow`"))
     {
+        QueryResult result = WorldDatabase.Query("SELECT `stage`, `path`, `enchant_id`, NULL AS sentinel FROM `heartseed_glow` UNION ALL SELECT NULL, NULL, NULL, 'end'");
+        if (!result)
+            return false;
         do
         {
             Field* fields = result->Fetch();
+            if (!fields[3].IsNull())
+                continue;
             uint8 stage = fields[0].GetUInt8();
             uint8 path = fields[1].GetUInt8();
             uint16 enchantId = fields[2].GetUInt16();
             if (stage >= stages.size() || path >= Heartseed::MaxPaths)
             {
-                TC_LOG_ERROR("sql.sql", "Table `heartseed_glow`: stage %u path %u does not exist, skipped.", stage, path);
-                continue;
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_glow`: stage %u path %u does not exist, reload aborted.", stage, path);
+                return false;
             }
             if (enchantId && !sSpellItemEnchantmentStore.LookupEntry(enchantId))
             {
-                TC_LOG_ERROR("sql.sql", "Table `heartseed_glow`: stage %u path %u uses unknown enchant %u, skipped.", stage, path, enchantId);
-                continue;
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_glow`: stage %u path %u uses unknown enchant %u, reload aborted.", stage, path, enchantId);
+                return false;
             }
             glow[{ stage, path }] = enchantId;
         } while (result->NextRow());
     }
 
     std::map<uint32, Heartseed::TraitInfo> traits;
-    if (QueryResult result = WorldDatabase.Query("SELECT `id`, `path`, `kind`, `tier`, `min_rank`, `spell_id`, `base_amount`, `amount_per_ilvl`, `name`, `description` FROM `heartseed_trait`"))
     {
+        QueryResult result = WorldDatabase.Query("SELECT `id`, `path`, `kind`, `tier`, `min_rank`, `spell_id`, `base_amount`, `amount_per_ilvl`, `name`, `description`, NULL AS sentinel FROM `heartseed_trait` UNION ALL SELECT NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'end'");
+        if (!result)
+            return false;
         do
         {
             Field* fields = result->Fetch();
+            if (!fields[10].IsNull())
+                continue;
             Heartseed::TraitInfo trait;
             trait.Id = fields[0].GetUInt32();
             uint8 path = fields[1].GetUInt8();
@@ -299,37 +314,41 @@ void HeartseedMgr::LoadData()
 
             if (!trait.Id || path >= Heartseed::MaxPaths)
             {
-                TC_LOG_ERROR("sql.sql", "Table `heartseed_trait`: trait %u has id 0 or unknown path %u, skipped.", trait.Id, path);
-                continue;
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_trait`: trait %u has id 0 or unknown path %u, reload aborted.", trait.Id, path);
+                return false;
             }
             if (kind != uint8(Heartseed::TraitKind::Minor) && kind != uint8(Heartseed::TraitKind::Major))
             {
-                TC_LOG_ERROR("sql.sql", "Table `heartseed_trait`: trait %u has unknown kind %u (1 = minor, 2 = major), skipped.", trait.Id, kind);
-                continue;
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_trait`: trait %u has unknown kind %u (1 = minor, 2 = major), reload aborted.", trait.Id, kind);
+                return false;
             }
             trait.TraitPath = Heartseed::Path(path);
             trait.Kind = Heartseed::TraitKind(kind);
             if (trait.Kind == Heartseed::TraitKind::Major && trait.Tier >= Heartseed::MaxMajorTiers)
             {
-                TC_LOG_ERROR("sql.sql", "Table `heartseed_trait`: major %u is in tier %u; tiers are 0 to %u. Skipped.", trait.Id, trait.Tier, Heartseed::MaxMajorTiers - 1);
-                continue;
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_trait`: major %u is in tier %u; tiers are 0 to %u. Reload aborted.", trait.Id, trait.Tier, Heartseed::MaxMajorTiers - 1);
+                return false;
             }
             SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(trait.SpellId);
             if (!spellInfo || !spellInfo->IsPassive() || !spellInfo->Effects[EFFECT_0].IsAura())
             {
-                TC_LOG_ERROR("sql.sql", "Table `heartseed_trait`: trait %u uses spell %u, which is missing, not passive or has no aura in effect 0. Skipped.", trait.Id, trait.SpellId);
-                continue;
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_trait`: trait %u uses spell %u, which is missing, not passive or has no aura in effect 0. Reload aborted.", trait.Id, trait.SpellId);
+                return false;
             }
             traits[trait.Id] = std::move(trait);
         } while (result->NextRow());
     }
 
     std::map<uint32, Heartseed::EssenceInfo> essences;
-    if (QueryResult result = WorldDatabase.Query("SELECT `id`, `name`, `proc_spell_id`, `proc_chance`, `weapon_damage_pct`, `description` FROM `heartseed_essence_template`"))
     {
+        QueryResult result = WorldDatabase.Query("SELECT `id`, `name`, `proc_spell_id`, `proc_chance`, `weapon_damage_pct`, `description`, NULL AS sentinel FROM `heartseed_essence_template` UNION ALL SELECT NULL, NULL, NULL, NULL, NULL, NULL, 'end'");
+        if (!result)
+            return false;
         do
         {
             Field* fields = result->Fetch();
+            if (!fields[6].IsNull())
+                continue;
             Heartseed::EssenceInfo essence;
             essence.Id = fields[0].GetUInt32();
             essence.Name = fields[1].GetString();
@@ -339,24 +358,28 @@ void HeartseedMgr::LoadData()
             essence.Description = fields[5].GetString();
             if (!essence.Id)
             {
-                TC_LOG_ERROR("sql.sql", "Table `heartseed_essence_template`: essence id 0 is reserved for the core proc, skipped.");
-                continue;
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_essence_template`: essence id 0 is reserved for the core proc, reload aborted.");
+                return false;
             }
             if (essence.ProcSpellId && !sSpellMgr->GetSpellInfo(essence.ProcSpellId))
             {
-                TC_LOG_ERROR("sql.sql", "Table `heartseed_essence_template`: essence %u uses unknown spell %u; it is collected but never procs.", essence.Id, essence.ProcSpellId);
-                essence.ProcSpellId = 0;
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_essence_template`: essence %u uses unknown spell %u; reload aborted.", essence.Id, essence.ProcSpellId);
+                return false;
             }
             essences[essence.Id] = std::move(essence);
         } while (result->NextRow());
     }
 
     std::vector<Heartseed::EssenceSource> essenceSources;
-    if (QueryResult result = WorldDatabase.Query("SELECT `essence_id`, `item_entry`, `name_pattern`, `chance` FROM `heartseed_essence_source`"))
     {
+        QueryResult result = WorldDatabase.Query("SELECT `essence_id`, `item_entry`, `name_pattern`, `chance`, NULL AS sentinel FROM `heartseed_essence_source` UNION ALL SELECT NULL, NULL, NULL, NULL, 'end'");
+        if (!result)
+            return false;
         do
         {
             Field* fields = result->Fetch();
+            if (!fields[4].IsNull())
+                continue;
             Heartseed::EssenceSource source;
             source.EssenceId = fields[0].GetUInt32();
             source.ItemEntry = fields[1].GetUInt32();
@@ -364,32 +387,41 @@ void HeartseedMgr::LoadData()
             source.Chance = fields[3].GetFloat();
             if (!essences.count(source.EssenceId))
             {
-                TC_LOG_ERROR("sql.sql", "Table `heartseed_essence_source`: essence %u does not exist, skipped.", source.EssenceId);
-                continue;
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_essence_source`: essence %u does not exist, reload aborted.", source.EssenceId);
+                return false;
             }
             if (!source.ItemEntry && source.NamePattern.empty())
             {
-                TC_LOG_ERROR("sql.sql", "Table `heartseed_essence_source`: a row for essence %u has neither an item entry nor a name pattern, skipped.", source.EssenceId);
-                continue;
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_essence_source`: a row for essence %u has neither an item entry nor a name pattern, reload aborted.", source.EssenceId);
+                return false;
             }
             essenceSources.push_back(std::move(source));
         } while (result->NextRow());
     }
 
     std::set<uint32> twinkItems;
-    if (QueryResult result = WorldDatabase.Query("SELECT `entry` FROM `twink_item`"))
     {
-        do
-            twinkItems.insert(result->Fetch()[0].GetUInt32());
-        while (result->NextRow());
-    }
-
-    std::vector<Heartseed::ShrineInfo> shrines;
-    if (QueryResult result = WorldDatabase.Query("SELECT `id`, `map`, `position_x`, `position_y`, `position_z`, `radius`, `name` FROM `heartseed_shrine`"))
-    {
+        QueryResult result = WorldDatabase.Query("SELECT `entry`, NULL AS sentinel FROM `twink_item` UNION ALL SELECT NULL, 'end'");
+        if (!result)
+            return false;
         do
         {
             Field* fields = result->Fetch();
+            if (fields[1].IsNull())
+                twinkItems.insert(fields[0].GetUInt32());
+        } while (result->NextRow());
+    }
+
+    std::vector<Heartseed::ShrineInfo> shrines;
+    {
+        QueryResult result = WorldDatabase.Query("SELECT `id`, `map`, `position_x`, `position_y`, `position_z`, `radius`, `name`, NULL AS sentinel FROM `heartseed_shrine` UNION ALL SELECT NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'end'");
+        if (!result)
+            return false;
+        do
+        {
+            Field* fields = result->Fetch();
+            if (!fields[7].IsNull())
+                continue;
             Heartseed::ShrineInfo shrine;
             shrine.Id = fields[0].GetUInt32();
             shrine.MapId = fields[1].GetUInt32();
@@ -400,8 +432,8 @@ void HeartseedMgr::LoadData()
             shrine.Name = fields[6].GetString();
             if (shrine.Radius <= 0.0f)
             {
-                TC_LOG_ERROR("sql.sql", "Table `heartseed_shrine`: shrine %u has no radius, skipped.", shrine.Id);
-                continue;
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_shrine`: shrine %u has no radius; reload aborted.", shrine.Id);
+                return false;
             }
             shrines.push_back(shrine);
         } while (result->NextRow());
@@ -412,21 +444,30 @@ void HeartseedMgr::LoadData()
     if (_procSpellId && !sSpellMgr->GetSpellInfo(_procSpellId))
         TC_LOG_ERROR("server.loading", "Heartseed.Proc.SpellId %u does not exist; the core proc stays off.", _procSpellId);
 
+    if (stages.empty())
+    {
+        TC_LOG_ERROR("sql.sql", "Heartseed reload aborted: heartseed_stage must contain at least stage 0.");
+        return false;
+    }
+    auto stageCount = stages.size(), glowCount = glow.size(), traitCount = traits.size();
+    auto essenceCount = essences.size(), sourceCount = essenceSources.size(), twinkCount = twinkItems.size(), shrineCount = shrines.size();
     {
         std::lock_guard<std::mutex> guard(_lock);
-        _stages = std::move(stages);
-        _stageMinLevels = std::move(minLevels);
-        _glow = std::move(glow);
-        _traits = std::move(traits);
-        _essences = std::move(essences);
-        _essenceSources = std::move(essenceSources);
-        _twinkItems = std::move(twinkItems);
-        _shrines = std::move(shrines);
+        _stages.swap(stages);
+        _stageMinLevels.swap(minLevels);
+        _glow.swap(glow);
+        _traits.swap(traits);
+        _essences.swap(essences);
+        _essenceSources.swap(essenceSources);
+        _twinkItems.swap(twinkItems);
+        _shrines.swap(shrines);
     }
 
-    TC_LOG_INFO("server.loading", ">> Loaded %u Heartseed stages, %u glows, %u traits, %u essences, %u essence sources and %u twink items in %u ms",
-        uint32(_stages.size()), uint32(_glow.size()), uint32(_traits.size()), uint32(_essences.size()), uint32(_essenceSources.size()),
-        uint32(_twinkItems.size()), GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded %u Heartseed stages, %u glows, %u traits, %u essences, %u essence sources, %u twink items and %u shrines in %u ms", uint32(stageCount),
+        uint32(glowCount), uint32(traitCount), uint32(essenceCount), uint32(sourceCount), uint32(twinkCount), uint32(shrineCount), GetMSTimeDiffToNow(oldMSTime));
+    if (loadedRows)
+        *loadedRows = stageCount + glowCount + traitCount + essenceCount + sourceCount + twinkCount + shrineCount;
+    return true;
 }
 
 void HeartseedMgr::LoadPlayer(Player* player)
