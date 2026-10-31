@@ -1,0 +1,12 @@
+{
+  "name": "login",
+  "timeout_seconds": 60,
+  "args": ["--cmd", "play", "--hold", "1"],
+  "steps": [],
+  "assertions": [
+    {"type": "contains", "text": "LOGIN-OK map="},
+    {"type": "event", "kind": "login", "minimum": 1, "maximum": 1},
+    {"type": "not_contains", "text": "SESSION-TIMEOUT"},
+    {"type": "not_contains", "text": "Traceback (most recent call last)"}
+  ]
+}
