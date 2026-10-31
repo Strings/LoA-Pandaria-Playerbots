@@ -45,7 +45,9 @@ Claude test server, headless client, character `Seedtest` (human warrior 30). SQ
 ## Decisions made
 - **Minors fill in on paths with at least one major** (path 0 minors on every Heartseed). DESIGN.md says
   minors "fill in automatically" without saying which; this is one rule in `HeartseedRules.h::MinorActive`.
-  Please confirm.
+  The user left the call to me; kept it: committing to a path is what unlocks its minors, so each major
+  choice shapes the whole jewel and the four paths stay distinct, while path 0 minors keep rank growth
+  rewarding for everyone. Changing it later is one function.
 - **Core bonus is a share of weapon damage** (5%) rather than a flat number per item level; weapon damage
   already grows with item level and stays proportionate at every level. Trait amounts use item level.
 - **The proc deals its damage directly** (`Unit::SpellNonMeleeDamageLog`) instead of casting: in this core
