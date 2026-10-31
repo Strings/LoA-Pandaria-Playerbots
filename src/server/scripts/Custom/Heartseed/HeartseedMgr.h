@@ -39,6 +39,29 @@ namespace Heartseed
         FEED_ACTION_KEEP = 2,
     };
 
+    // Gossip for the major choices (T-023), opened from the player: the tier list, then one tier's majors.
+    constexpr uint32 GOSSIP_MENU_CHOICE = 90002;
+    constexpr uint32 NPC_TEXT_CHOICE = 90002;
+    constexpr uint32 NPC_TEXT_CHOICE_TIER = 90003;
+    enum ChoiceGossipSender : uint32
+    {
+        CHOICE_SENDER_TIER   = 1,                     // action = tier: open that tier's majors
+        CHOICE_SENDER_PICK   = 2,                     // action = tier * CHOICE_PICK_STRIDE + trait id
+        CHOICE_SENDER_BACK   = 3,
+        CHOICE_SENDER_CLOSE  = 4,
+    };
+    constexpr uint32 CHOICE_PICK_STRIDE = 1000000;
+
+    // A Celestial shrine where chosen majors can be changed (world heartseed_shrine).
+    struct ShrineInfo
+    {
+        uint32 Id = 0;
+        uint32 MapId = 0;
+        float X = 0.0f, Y = 0.0f, Z = 0.0f;
+        float Radius = 0.0f;
+        std::string Name;
+    };
+
     // Story beats; stored as rows in heartseed_story_flag. Append only: the values are saved.
     enum StoryFlag : uint16
     {
@@ -216,6 +239,18 @@ public:
     float GetCapPerLevel() const { return _capPerLevel; }
     uint32 GetCapPerAwakening() const { return _capPerAwakening; }
 
+    // Major choices (T-023). An open tier with no major can be chosen anywhere; changing a chosen major needs a
+    // Celestial shrine unless Heartseed.Choice.ChangeAtShrineOnly is 0.
+    void SendChoiceMenu(Player* player);
+    void SendChoiceTierMenu(Player* player, uint8 tier);
+    void OnChoiceGossipSelect(Player* player, uint32 sender, uint32 action);
+    bool HasUnchosenOpenTier(Player* player) const;
+    bool TierHasMajors(uint8 tier) const;               // a tier with no major rows offers no choice yet
+    void ScheduleChoicePrompt(Player* player);          // on login, when a choice is waiting
+    bool GetShrineAt(Player const* player, Heartseed::ShrineInfo& out) const;
+    std::vector<Heartseed::ShrineInfo> GetShrines() const;
+    bool IsChangeAtShrineOnly() const { return _choiceShrineOnly; }
+
     // Granting quest (T-025). Its completion grants the Heartseed, whichever way it is completed.
     void ScheduleGrantOffer(Player* player);        // on login, after Heartseed.Grant.OfferDelay
     bool CanOfferGrantQuest(Player* player) const;
@@ -318,6 +353,10 @@ private:
     uint32 _grantQuestId = 0;
     bool _grantOfferOnLogin = true;
     uint32 _grantOfferDelay = 0;
+    bool _choicePromptOnLogin = true;
+    uint32 _choicePromptDelay = 0;
+    bool _choiceShrineOnly = true;
+    std::vector<Heartseed::ShrineInfo> _shrines;
     uint32 _rankGrowthBase = 0;
     uint32 _rankGrowthPerRank = 0;
     bool _feedOnReplace = true;

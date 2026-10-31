@@ -5526,4 +5526,26 @@ Heartseed.Grant.OfferOnLogin = 1
 Heartseed.Grant.OfferDelay = 5000
 
 #
+#    Heartseed.Choice.PromptOnLogin
+#        Description: Open the choice window at login when an open major tier has no major yet.
+#        Default:     1
+
+Heartseed.Choice.PromptOnLogin = 1
+
+#
+#    Heartseed.Choice.PromptDelay
+#        Description: Milliseconds after login before the choice window opens (after the granting quest).
+#        Default:     6000
+
+Heartseed.Choice.PromptDelay = 6000
+
+#
+#    Heartseed.Choice.ChangeAtShrineOnly
+#        Description: A major that is already chosen can be changed only at a Celestial shrine
+#                     (heartseed_shrine). 0 lets players change it anywhere with .seed.
+#        Default:     1
+
+Heartseed.Choice.ChangeAtShrineOnly = 1
+
+#
 ###################################################################################################
