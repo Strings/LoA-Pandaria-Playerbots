@@ -911,9 +911,9 @@ bool Creature::Create(uint32 guidlow, Map* map, uint32 phaseMask, uint32 Entry, 
 
     if (data && data->phaseGroup)
     {
-        std::vector<uint32> const* phasesInGroup = sDBCManager.GetPhasesForGroup(data->phaseGroup);
-        for (uint32 phaseId : *phasesInGroup)
-            SetPhased(phaseId, false, true);
+        if (std::vector<uint32> const* phasesInGroup = sDBCManager.GetPhasesForGroup(data->phaseGroup))
+            for (uint32 phaseId : *phasesInGroup)
+                SetPhased(phaseId, false, true);
     }
 
     CreatureTemplate const* cinfo = sObjectMgr->GetCreatureTemplate(Entry);
