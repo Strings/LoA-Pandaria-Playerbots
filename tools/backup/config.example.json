@@ -1,0 +1,15 @@
+{
+  "mysql_bin": "C:/Program Files/MySQL/MySQL Server 8.0/bin",
+  "host": "127.0.0.1",
+  "port": 3306,
+  "user": "ultimatemop",
+  "password_env": "MOP_DB_PASSWORD",
+  "databases": ["auth_codex", "characters_codex", "world_codex", "playerbots_codex"],
+  "capture_port": 3344,
+  "snapshot_root": "build/save-snapshots",
+  "check_root": "build/migration-checks",
+  "retention": 7,
+  "snapshot_interval_seconds": 86400,
+  "start_timeout_seconds": 120,
+  "source_lock_timeout_seconds": 30
+}
