@@ -10,7 +10,8 @@ Stock MoP data stays well below these ranges (quests below ~34000, items below ~
 | System | Quests | Creatures | Game objects | Items | Spells | Gossip menus and texts | Tables |
 |---|---|---|---|---|---|---|---|
 | Heartseed | 90000–90999 | 900000–900999 | 900000–900999 | 190000–190999 | 310000–310999 | 90000–90999 | `heartseed_*` |
-| Next system | 91000–91999 | 901000–901999 | 901000–901999 | 191000–191999 | 311000–311999 | 91000–91999 | `<system>_*` |
+| GM tools (T-039, T-048) | 91000–91999 | 901000–901999 | 901000–901999 | 191000–191999 | 311000–311999 | 91000–91999 | `gmtools_*` |
+| Next system | 92000–92999 | 902000–902999 | 902000–902999 | 192000–192999 | 312000–312999 | 92000–92999 | `<system>_*` |
 
 ## Notes
 

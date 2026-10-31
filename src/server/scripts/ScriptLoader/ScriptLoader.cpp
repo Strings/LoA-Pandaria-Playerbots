@@ -2150,6 +2150,7 @@ void AddSC_boost_profession();
 void AddSC_custom_items();
 void AddSC_solocraft_system();
 void AddSC_heartseed();
+void AddSC_gmtools_checkpoints();
 
 void AddCustomScripts()
 {
@@ -2162,6 +2163,7 @@ void AddCustomScripts()
 //AddSC_custom_items();
 	AddSC_solocraft_system();
     AddSC_heartseed();
+    AddSC_gmtools_checkpoints();
 
 #endif
     AddSC_Anticheat();
