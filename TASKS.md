@@ -82,11 +82,35 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 | ID | Task | Owns | Owner | Status |
 |---|---|---|---|---|
 | T-032 | Live server MCP: thin wrapper over SOAP and logs (bots near a position, bot state, `.botscenario`, `.server info`, log tail, GM commands). Standalone module | `tools/live-server-mcp/` | codex | done |
-| T-033 | Crash triage: read crash dumps and core logs, map to source, suggest the likely commit | `tools/crash-triage/` | | open |
+| T-033 | Crash triage: read crash dumps and core logs, map to source, suggest the likely commit | `tools/crash-triage/` | gemini | open |
 | T-034 | SQL validator: lint new SQL against schema and references (givers, items, ID collisions) | `tools/sql-validator/` | gemini | done |
 | T-031 | Balance sim: `.botscenario` dummy room that reports DPS for a given Heartseed loadout | `tools/balance-sim/`, `modules/mod_playerbots/src/Scenario/` | | open |
-| T-030 | Shared DBC reader library, then content search on top of it (spells, visuals, items, creatures, display IDs) as an MCP tool | `tools/dbc/`, `tools/content-search/` | gemini | review |
+| T-030 | Shared DBC reader library, then content search on top of it (spells, visuals, items, creatures, display IDs) as an MCP tool | `tools/dbc/`, `tools/content-search/` | gemini | done |
 | T-048 | GM test suite for human playtests. **Checkpoint templates** as data rows, applied in one command (`.checkpoint apply <name>`, `.checkpoint list`, `.checkpoint explain <name>`): level, gear set, spells and talents, Heartseed rank, Growth, majors, essences and story flags, legacy projects done, quests, reputations, location. First checkpoints at each Heartseed major tier (10, 25, 40, 55, 70, 85) and at the first and second legendary unlocks (placeholder levels until the pacing pass). **Twink kits** per bracket from T-045's gear. **Ability tester:** learn a spell, reset cooldowns, refill power, set level. **Addon panel** (no client patch) listing checkpoints and kits with one-click apply; the server does the work, the addon only sends commands. Each later system adds its fields to the template. Builds on T-007 fixtures and T-039 GM tools | `src/server/scripts/Custom/GMTools/Checkpoints/`, `sql/updates/world/`, `addons/GMSuite/` | claude | review |
+
+## Flash queue
+
+Small, checkable tasks for the Flash model (Antigravity, `gemini` worktree, branch prefix and databases). Work
+top to bottom. Rules:
+
+- One task per branch and PR (`gemini/<task-id>-<slug>`), one commit per logical step.
+- Run the task's check before opening the PR and paste its output into the PR description.
+- Touch only the task's paths. Never touch Heartseed, `Custom/Reload`, core server files or the shared hotspots
+  (AGENTS.md) unless the task says so.
+- If the check fails twice, or the task needs a decision it doesn't state, set it to `blocked` here with a one-line
+  question and move on to the next task.
+- Never merge: Claude Code reviews every PR first.
+
+| ID | Task | Owns | Check | Owner | Status |
+|---|---|---|---|---|---|
+| T-051 | Default data path from the repo, not `I:/`: `tools/dbc/reader.py`, `tools/content-search/server.py` and both tests resolve `<repo>/gamedata/dbc` from `__file__` when `MOP_DBC_DIR` is unset | `tools/dbc/`, `tools/content-search/` | both unittest suites pass; no `I:/` left (grep) | flash | open |
+| T-052 | SQL validator reads Spell.dbc through `tools/dbc` instead of its own `load_wdbc_first_uint32_ids`; same results | `tools/sql-validator/` | validator unittests pass; validator output on `sql/updates/world` unchanged (diff before and after) | flash | open |
+| T-053 | Run the SQL validator over every agent update in `sql/updates/` and write the findings to `docs/agents/sql-audit.md` (file, finding, suggested fix). Report only: never edit an update that has been applied | `docs/agents/sql-audit.md` | the report lists every file checked | flash | open |
+| T-054 | Regression scenario for the Heartseed GM commands (`.heartseed grant`, `info`, `cap`, `rank`, `growth +N`, `flag set/clear`, `essence add/slot`, `revoke`), expecting the messages in `status/claude-T-049.md` and the Heartseed README | `tests/regression/scenarios/` | `python tests/regression/run.py` passes it against the gemini server | flash | open |
+| T-055 | Regression scenario for checkpoints: `.checkpoint list`, `.checkpoint explain hs-10`, `.checkpoint apply hs-10` on a fresh character, then `.heartseed info` shows level 10 and the seed | `tests/regression/scenarios/` | as T-054 | flash | open |
+| T-056 | Bring `docs/MAP.md` up to date from the "Map additions" of every status fragment in `status/` | `docs/MAP.md` | every path listed in a fragment's Map additions appears in MAP.md and exists | flash | open |
+| T-057 | Config key audit: every key read by `sConfigMgr` under `src/server/scripts/Custom/` is documented in `worldserver.conf.dist`. Write missing keys to `docs/agents/config-audit.md`; do not edit the `.conf.dist` | `docs/agents/config-audit.md` | the report lists each key with its file and line | flash | open |
+| T-058 | Heartseed glow candidates: with `tools/content-search`, list weapon-glow enchants that fit each path (Xuen: lightning or white tiger; Chi-Ji: red or gold fire; Niuzao: earth or stone; Yu'lon: jade or green water) per stage, with enchant ids and models, in `docs/agents/heartseed-glows.md`. Data only; Claude picks | `docs/agents/heartseed-glows.md` | 3 to 6 candidates per path, each id found by the tool | flash | open |
 
 ## Suggested split
 
@@ -96,5 +120,6 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 2. **Codex**, once T-001 is done: fast iteration (T-005 to T-009, T-035, T-037 to T-040) and the cheap
    tools (T-032 to T-034), then the quick wins, starting with T-045 (priority) and T-010 to T-013.
 3. **Gemini:** tooling first, no full server builds while it settles in: T-034 (SQL validator), then
-   T-030 (DBC reader and content search). Claude Code reviews its PRs.
+   T-030 (DBC reader and content search), then T-050 and T-033. When Argon's weekly quota runs out, Flash
+   works through the Flash queue. Claude Code reviews its PRs.
 4. **Human:** T-036 (timeline), the hardware target for T-003, and PR reviews.
