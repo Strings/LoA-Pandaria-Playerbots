@@ -95,3 +95,8 @@ if (USE_MODULES)
 	# add core modules
 	add_subdirectory(modules)
 endif()
+
+if(BUILD_TESTING)
+  enable_testing()
+  add_subdirectory(tests)
+endif()
