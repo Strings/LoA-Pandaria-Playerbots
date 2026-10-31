@@ -1181,6 +1181,27 @@ Learn how you play from server-side telemetry, then compile it offline into para
 - An addon adds what the server cannot see (UI panels opened).
 - Turn logging on early (Phase 1–2); every session before then is lost data. Distributions are usable after a few hours of play; a movement library wants tens of hours.
 
+**Decision context (decided)**
+
+Splitting data into general, class-specific and situation-specific behavior happens offline, at training time. Logging only has to make every split possible, because context that was not recorded can never be recovered.
+
+- **Decision events** (cast, target change, pull, flee, mount, consumable use, loot choice) carry a context snapshot:
+  - Self: class, spec, level, health, power and secondary resource (%), active buffs and debuffs, cooldowns ready, item level, mounted, swimming, flying, in combat, speed.
+  - Target: creature entry or player class, level gap, classification (normal, elite, rare, boss), creature type, health %, distance, angle, casting (spell), who it is attacking.
+  - Surroundings: hostiles within 5, 15 and 40 yards with their level gaps, attackers on self, enemies near death, friendly players and bots nearby, group size and roles.
+  - Place and time: map, zone, subzone, instance type, indoors, server time, minutes into the session.
+- **Relative values, not raw ones:** level gap rather than level, health % rather than hit points, distance and angle rather than coordinates, so one player's data carries over to other characters and zones. Raw positions stay on movement events only.
+- **Stable IDs:** spell, creature entry, item entry, map and zone IDs, plus a player and session ID, so one person's style can be told apart from human behavior in general.
+- **Outcome events** label the decisions: kill, death, damage taken per fight, fight duration, wipe, flee, resurrection.
+- **Activity episodes:** each stretch is tagged (fight, travel, questing, gathering, vendor or bank, idle, dungeon, PvP) from server state, so data can be cut by situation without guessing afterward.
+- **Schema version** on every row, so old logs stay readable as fields are added. Movement is sampled at a config rate. Chat logging has its own config key. Logs stay local.
+
+**Layers (offline)**
+
+- An **ability role table** maps spell IDs to roles (gap closer, interrupt, defensive cooldown, crowd control, burst, heal, movement), so Charge, Death Grip and Blink all count as one behavior. It lives in data and can be fixed at any time without touching logs.
+- Training produces layered profiles: **general** (movement, travel, idle habits, from every player), **role** (tank, healer, melee, ranged), **class and spec** (rotation, cooldown use) and **situation** (riding, swimming, PvP, dungeon, low health).
+- At runtime a bot samples the most specific layer with enough data and falls back to the more general ones, so a rare class or situation still behaves plausibly.
+
 **What to learn (texture, not decisions):** movement (curvature, strafing, jumps, look-around stops, mount timing), timing (reaction delays, uneven cast gaps, clipped globals, occasional misplays), habits (hub idling, vendor and bank trips, herb and rare detours, eating), targeting (pull order, disengage).
 
 **Compiling into the state machine**
