@@ -1,0 +1,75 @@
+{
+  "name": "custom-reload-rng",
+  "timeout_seconds": 120,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "1"
+  ],
+  "steps": [
+    "soap reload custom heartseed",
+    "soap reload heartseed_trait",
+    "soap rng seed 0",
+    "soap rng seed 4294967295",
+    "soap rng seed 4294967296",
+    "soap rng seed -1",
+    "soap rng status",
+    "soap rng off",
+    "soap reload custom missing_test_table",
+    "soap reload config",
+    "soap rng status"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "event",
+      "kind": "login",
+      "minimum": 1,
+      "maximum": 1
+    },
+    {
+      "type": "contains",
+      "text": "Reloaded heartseed ("
+    },
+    {
+      "type": "contains",
+      "text": "Reloaded heartseed_trait ("
+    },
+    {
+      "type": "contains",
+      "text": "Core test RNG: enabled; seed=0;"
+    },
+    {
+      "type": "contains",
+      "text": "Core test RNG: enabled; seed=4294967295;"
+    },
+    {
+      "type": "contains",
+      "text": "Core test RNG: disabled; seed=4294967295;"
+    },
+    {
+      "type": "contains",
+      "text": "Usage: rng seed"
+    },
+    {
+      "type": "contains",
+      "text": "Unknown custom table;"
+    },
+    {
+      "type": "contains",
+      "text": "Core test RNG: enabled; seed=1;"
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback (most recent call last)"
+    }
+  ]
+}
