@@ -1,0 +1,4 @@
+{
+  "dev": {"world": {"Eluna.Enabled": "1", "Eluna.TraceBack": "true", "Eluna.ScriptPath": "\"{repo}/lua_scripts\""}},
+  "test": {"world": {"Eluna.Enabled": "1", "Eluna.TraceBack": "true", "Eluna.ScriptPath": "\"{repo}/lua_scripts\""}}
+}

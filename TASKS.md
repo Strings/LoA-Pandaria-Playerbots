@@ -32,7 +32,7 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 | T-006 | Startup profiling script that ranks the server's loader timings from the log; report the top costs in a fragment | `tools/bench/` | | open |
 | T-007 | Fixture characters (levels 1, 30, 60, 85, 90 with gear), pre-generated bot snapshot, file-copy database restore | `tools/devenv/`, `sql/fixtures/` | | open |
 | T-008 | Unit test framework in CMake behind an option, with one example test; document how to add tests | `tests/`, `CMakeLists.txt` | | open |
-| T-009 | Enable Eluna in the dev and test profiles; `lua_scripts/` layout and a README for prototypes | `lua_scripts/`, `tools/devenv/` | | open |
+| T-009 | Enable Eluna in the dev and test profiles; `lua_scripts/` layout and a README for prototypes | `lua_scripts/`, `tools/devenv/` | codex | review |
 | T-035 | Headless-client regression suite runner with assertions; one example scenario | `tests/regression/`, `contrib/headless-client/` | | open |
 | T-038 | Hot reload framework for custom tables (`.reload <table>`), settable global RNG seed for tests, faster links (lld-link where it works with MSVC) | `src/server/scripts/Custom/Reload/`, build config | | open |
 | T-039 | GM tools, first set: server clock speed-up and jump, `.scenario load <name>` on top of `.botscenario`, `.bot why` (last decision with candidate scores), `.bot traits/memory/skill`, invisible spectate. Overlays and force-any-system commands grow with each system | `src/server/scripts/Custom/GMTools/`, `modules/mod_playerbots/src/Scenario/` | | open |
