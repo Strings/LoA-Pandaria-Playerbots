@@ -44,8 +44,13 @@ The glow enchant IDs shipped are placeholders that have a visual; pick the final
 
 Permission 90000 (`Command: heartseed`, Gamemaster role). Target is the selected player or yourself.
 
-- `.heartseed info`: rank, Growth, stage, loadout, essences, glow and story flags.
+- `.heartseed info`: rank, Growth, stage, loadout, essences, glow, story flags and the main hand's
+  visible enchant field as the client receives it.
 - `.heartseed grant`: give a Heartseed (rank 1, no Growth).
 - `.heartseed revoke`: remove it with all its rows.
+- `.heartseed rank <1-255>`: set the rank. Ignores the level cap, so states can be tested without leveling.
+- `.heartseed growth <n> | +<n> | -<n>`: set Growth, or add to or take from it (never below 0).
+- `.heartseed flag list | set <name|id> | clear <name|id>`: story flags by name (`first_dungeon`,
+  `reached_pandaria`, `first_world_boss`) or number. Setting keeps the first time a flag was set.
 
-Rank, Growth and story flag commands come with T-024.
+Every change is saved at once, not with the next character save.

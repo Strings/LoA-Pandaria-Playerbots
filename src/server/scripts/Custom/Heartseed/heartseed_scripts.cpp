@@ -9,7 +9,10 @@
 #include "ScriptMgr.h"
 #include "WorldSession.h"
 
+#include <algorithm>
+#include <cstdlib>
 #include <ctime>
+#include <string>
 
 // Heartseed block of docs/ID_RANGES.md; linked to role 197 by sql/updates/master/auth/2026_10_31_claude_02_heartseed_command.sql
 static rbac::RBACPermissions const RBAC_PERM_COMMAND_HEARTSEED = static_cast<rbac::RBACPermissions>(90000);
@@ -78,11 +81,20 @@ public:
 
     std::vector<ChatCommand> GetCommands() const override
     {
+        static std::vector<ChatCommand> flagCommandTable =
+        {
+            { "list",  &HandleFlagListCommand,  RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
+            { "set",   &HandleFlagSetCommand,   RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
+            { "clear", &HandleFlagClearCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
+        };
         static std::vector<ChatCommand> heartseedCommandTable =
         {
             { "info",   &HandleInfoCommand,   RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "grant",  &HandleGrantCommand,  RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "revoke", &HandleRevokeCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
+            { "rank",   &HandleRankCommand,   RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
+            { "growth", &HandleGrowthCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
+            { "flag",   flagCommandTable,     RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
         };
         static std::vector<ChatCommand> commandTable =
         {
@@ -133,11 +145,153 @@ public:
             target->GetName().c_str(), uint32(state.Rank), state.Growth, uint32(stage), sHeartseedMgr->GetStageName(stage).c_str(), uint32(target->GetLevel()));
         handler->PSendSysMessage("Spec %u: %u of %u majors chosen, %u loadouts saved. Essences: %u collected, %u active.",
             uint32(specId), majors, uint32(Heartseed::MaxMajorTiers), uint32(state.Loadouts.size()), uint32(state.Essences.size()), activeEssences);
-        handler->PSendSysMessage("Glow enchant %u, dominant path %u. Story flags: %u set. Granted %u s ago.%s",
-            uint32(sHeartseedMgr->GetGlowEnchant(target)), uint32(sHeartseedMgr->GetDominantPath(target)), uint32(state.StoryFlags.size()),
+        handler->PSendSysMessage("Glow enchant %u, dominant path %u. Story flags: %s. Granted %u s ago.%s",
+            uint32(sHeartseedMgr->GetGlowEnchant(target)), uint32(sHeartseedMgr->GetDominantPath(target)), DescribeFlags(state).c_str(),
             uint32(time(nullptr)) - state.GrantedTime, sHeartseedMgr->IsEnabled() ? "" : " (Heartseed.Enabled = 0)");
         handler->SendSysMessage(visible.c_str());
         return true;
+    }
+
+    static std::string DescribeFlags(Heartseed::State const& state)
+    {
+        if (state.StoryFlags.empty())
+            return "none";
+
+        std::string text;
+        for (auto const& [flag, setTime] : state.StoryFlags)
+        {
+            if (!text.empty())
+                text += ", ";
+            text += std::to_string(flag) + " " + HeartseedMgr::GetStoryFlagName(flag);
+        }
+        return text;
+    }
+
+    // A known flag name or a positive number; 0 if neither.
+    static uint16 ParseFlag(char const* args)
+    {
+        if (!args || !*args)
+            return 0;
+
+        std::string text = args;
+        text = text.substr(0, text.find(' '));
+        if (uint16 flag = HeartseedMgr::GetStoryFlagByName(text))
+            return flag;
+
+        char* end = nullptr;
+        unsigned long value = strtoul(text.c_str(), &end, 10);
+        return (end && !*end && value > 0 && value <= 0xFFFF) ? uint16(value) : 0;
+    }
+
+    static bool HandleRankCommand(ChatHandler* handler, char const* args)
+    {
+        Player* target = GetTarget(handler);
+        if (!target || !args || !*args)
+            return false;
+
+        char* end = nullptr;
+        long rank = strtol(args, &end, 10);
+        if (end == args || rank < 1 || rank > 255)
+        {
+            handler->SendSysMessage("Usage: .heartseed rank <1-255>");
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+
+        // GM commands may go past the level cap (T-022), so states can be tested without leveling.
+        if (!sHeartseedMgr->SetRank(target, uint8(rank)))
+        {
+            handler->PSendSysMessage("%s has no Heartseed.", target->GetName().c_str());
+            return true;
+        }
+        handler->PSendSysMessage("Heartseed of %s is now rank %ld.", target->GetName().c_str(), rank);
+        return true;
+    }
+
+    static bool HandleGrowthCommand(ChatHandler* handler, char const* args)
+    {
+        Player* target = GetTarget(handler);
+        if (!target || !args || !*args)
+            return false;
+
+        Heartseed::State state;
+        if (!sHeartseedMgr->GetState(target, state))
+        {
+            handler->PSendSysMessage("%s has no Heartseed.", target->GetName().c_str());
+            return true;
+        }
+
+        // "+N" and "-N" change the current Growth, a bare number sets it.
+        bool relative = args[0] == '+' || args[0] == '-';
+        char* end = nullptr;
+        long long amount = strtoll(args, &end, 10);
+        if (end == args)
+        {
+            handler->SendSysMessage("Usage: .heartseed growth <amount> | +<amount> | -<amount>");
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+
+        long long growth = relative ? (long long)state.Growth + amount : amount;
+        growth = std::max(0LL, std::min(growth, (long long)UINT32_MAX));
+        sHeartseedMgr->SetGrowth(target, uint32(growth));
+        handler->PSendSysMessage("Heartseed of %s now has %u Growth (was %u).", target->GetName().c_str(), uint32(growth), state.Growth);
+        return true;
+    }
+
+    static bool HandleFlagListCommand(ChatHandler* handler, char const* /*args*/)
+    {
+        Player* target = GetTarget(handler);
+        if (!target)
+            return false;
+
+        Heartseed::State state;
+        if (!sHeartseedMgr->GetState(target, state))
+        {
+            handler->PSendSysMessage("%s has no Heartseed.", target->GetName().c_str());
+            return true;
+        }
+
+        handler->PSendSysMessage("Story flags of %s: %s.", target->GetName().c_str(), DescribeFlags(state).c_str());
+        handler->PSendSysMessage("Known flags: %u %s, %u %s, %u %s.",
+            uint32(Heartseed::STORY_FLAG_FIRST_DUNGEON), HeartseedMgr::GetStoryFlagName(Heartseed::STORY_FLAG_FIRST_DUNGEON),
+            uint32(Heartseed::STORY_FLAG_REACHED_PANDARIA), HeartseedMgr::GetStoryFlagName(Heartseed::STORY_FLAG_REACHED_PANDARIA),
+            uint32(Heartseed::STORY_FLAG_FIRST_WORLD_BOSS), HeartseedMgr::GetStoryFlagName(Heartseed::STORY_FLAG_FIRST_WORLD_BOSS));
+        return true;
+    }
+
+    static bool HandleFlagChange(ChatHandler* handler, char const* args, bool set)
+    {
+        Player* target = GetTarget(handler);
+        if (!target)
+            return false;
+
+        uint16 flag = ParseFlag(args);
+        if (!flag)
+        {
+            handler->PSendSysMessage("Usage: .heartseed flag %s <name|id>; see .heartseed flag list", set ? "set" : "clear");
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+
+        if (!sHeartseedMgr->SetStoryFlag(target, flag, set))
+        {
+            handler->PSendSysMessage("%s has no Heartseed.", target->GetName().c_str());
+            return true;
+        }
+        handler->PSendSysMessage("Story flag %u (%s) %s for %s.", uint32(flag), HeartseedMgr::GetStoryFlagName(flag),
+            set ? "set" : "cleared", target->GetName().c_str());
+        return true;
+    }
+
+    static bool HandleFlagSetCommand(ChatHandler* handler, char const* args)
+    {
+        return HandleFlagChange(handler, args, true);
+    }
+
+    static bool HandleFlagClearCommand(ChatHandler* handler, char const* args)
+    {
+        return HandleFlagChange(handler, args, false);
     }
 
     static bool HandleGrantCommand(ChatHandler* handler, char const* /*args*/)

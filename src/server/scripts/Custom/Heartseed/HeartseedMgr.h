@@ -9,6 +9,7 @@
 #include "Define.h"
 #include "HeartseedRules.h"
 
+#include <functional>
 #include <map>
 #include <mutex>
 #include <string>
@@ -67,6 +68,16 @@ public:
     bool Grant(Player* player);            // false if it already has one
     bool Revoke(Player* player);           // deletes every heartseed_* row of the character
 
+    // State changes for GM commands and later systems (feeding, story hooks). Each saves at once and
+    // returns false when the character has no Heartseed.
+    bool SetRank(Player* player, uint8 rank);
+    bool SetGrowth(Player* player, uint32 growth);
+    bool SetStoryFlag(Player* player, uint16 flag, bool set);
+
+    // Known story beats by name ("first_dungeon"); 0 if unknown. Unknown ids are still valid flags.
+    static uint16 GetStoryFlagByName(std::string const& name);
+    static char const* GetStoryFlagName(uint16 flag);
+
     uint8 GetStage(Player const* player) const;
     std::string GetStageName(uint8 stage) const;
     Heartseed::Path GetDominantPath(Player const* player) const;
@@ -75,6 +86,8 @@ public:
 
 private:
     HeartseedMgr() = default;
+
+    bool ModifyState(Player* player, std::function<void(Heartseed::State&)> const& change);
 
     bool _enabled = true;
     std::vector<Heartseed::StageInfo> _stages;

@@ -237,6 +237,76 @@ bool HeartseedMgr::Revoke(Player* player)
     return true;
 }
 
+bool HeartseedMgr::ModifyState(Player* player, std::function<void(Heartseed::State&)> const& change)
+{
+    {
+        std::lock_guard<std::mutex> guard(_lock);
+        auto itr = _states.find(player->GetGUID().GetCounter());
+        if (itr == _states.end())
+            return false;
+        change(itr->second);
+        itr->second.Dirty = true;
+    }
+
+    // Saved now rather than with the character, so a crash or a GM test never loses the change.
+    SavePlayer(player);
+    RefreshGlow(player);
+    return true;
+}
+
+bool HeartseedMgr::SetRank(Player* player, uint8 rank)
+{
+    return ModifyState(player, [rank](Heartseed::State& state) { state.Rank = rank; });
+}
+
+bool HeartseedMgr::SetGrowth(Player* player, uint32 growth)
+{
+    return ModifyState(player, [growth](Heartseed::State& state) { state.Growth = growth; });
+}
+
+bool HeartseedMgr::SetStoryFlag(Player* player, uint16 flag, bool set)
+{
+    return ModifyState(player, [flag, set](Heartseed::State& state)
+    {
+        if (!set)
+            state.StoryFlags.erase(flag);
+        else if (!state.StoryFlags.count(flag))
+            state.StoryFlags[flag] = uint32(time(nullptr));
+    });
+}
+
+namespace
+{
+    struct StoryFlagName
+    {
+        uint16 Flag;
+        char const* Name;
+    };
+
+    StoryFlagName const StoryFlagNames[] =
+    {
+        { Heartseed::STORY_FLAG_FIRST_DUNGEON,    "first_dungeon" },
+        { Heartseed::STORY_FLAG_REACHED_PANDARIA, "reached_pandaria" },
+        { Heartseed::STORY_FLAG_FIRST_WORLD_BOSS, "first_world_boss" },
+    };
+}
+
+uint16 HeartseedMgr::GetStoryFlagByName(std::string const& name)
+{
+    for (StoryFlagName const& entry : StoryFlagNames)
+        if (name == entry.Name)
+            return entry.Flag;
+    return 0;
+}
+
+char const* HeartseedMgr::GetStoryFlagName(uint16 flag)
+{
+    for (StoryFlagName const& entry : StoryFlagNames)
+        if (flag == entry.Flag)
+            return entry.Name;
+    return "unnamed";
+}
+
 uint8 HeartseedMgr::GetStage(Player const* player) const
 {
     std::lock_guard<std::mutex> guard(_lock);
