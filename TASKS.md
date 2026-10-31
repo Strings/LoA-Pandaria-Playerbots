@@ -39,14 +39,14 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 | T-035 | Headless-client regression suite runner with assertions; one example scenario | `tests/regression/`, `contrib/headless-client/` | codex | done |
 | T-038 | Hot reload framework for custom tables (`.reload <table>`), settable global RNG seed for tests. Built by Codex, finished and merged by Claude; faster links moved to T-060 | `src/server/scripts/Custom/Reload/` | codex, claude | done |
 | T-060 | Faster links: lld-link where it works with MSVC (split out of T-038) | build config, `tools/build/` | | open |
-| T-039 | GM tools, first set: server clock speed-up and jump, `.scenario load <name>` on top of `.botscenario`, `.bot why` (last decision with candidate scores), `.bot traits/memory/skill`, invisible spectate. Overlays and force-any-system commands grow with each system | `src/server/scripts/Custom/GMTools/`, `modules/mod_playerbots/src/Scenario/` | | open |
-| T-040 | `/idea` and `/bug` capture: save a note with position, target, nearby bots and their last decisions, active systems and a screenshot path as a ticket file agents can pick up | `src/server/scripts/Custom/Capture/`, `tickets/` | | open |
+| T-039 | GM tools, first set: server clock speed-up and jump, `.scenario load <name>` on top of `.botscenario`, `.bot why` (last decision with candidate scores), `.bot traits/memory/skill`, invisible spectate. Overlays and force-any-system commands grow with each system | claude | in progress |
+| T-040 | `/idea` and `/bug` capture: save a note with position, target, nearby bots and their last decisions, active systems and a screenshot path as a ticket file agents can pick up | gemini | in progress |
 
 ### Quick wins
 
 | ID | Task | Owns | Owner | Status |
 |---|---|---|---|---|
-| T-010 | Double mounted movement speed via a config multiplier (default 2.0) in the core speed update; check ghost wolf and travel forms are untouched for now | speed update code in `src/server/game/Entities/Unit/` | | open |
+| T-010 | Double mounted movement speed via a config multiplier (default 2.0) in the core speed update; check ghost wolf and travel forms are untouched for now | codex | open |
 | T-011 | Apprentice Riding and a basic faction-appropriate mount at character creation; four 10-slot bags in the bag slots | `sql/updates/world/`, `src/server/scripts/Custom/PlayerStartScript.cpp` | | open |
 | T-012 | Raise rare mount drops to 10%: list every rare-drop mount item and update loot tables | `sql/updates/world/` | codex | review |
 | T-013 | Raid resets every 2 days instead of weekly; keep in-progress instances until finished or abandoned | `src/server/game/Instances/` | | open |
@@ -55,7 +55,7 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 | T-016 | Free talent and glyph changes (no gold, no reagents); spec switching from level 10 | `src/server/scripts/Custom/Respec/` | | open |
 | T-017 | Server-side spec loadouts (spec, talents, glyphs, action bars, Heartseed paths), one per spec by default plus named extras; addon picker | `src/server/scripts/Custom/Loadouts/`, `addons/Loadouts/` | | open |
 | T-018 | Gear pages per loadout: detached storage, page swap through the normal equip path, addon page panel | `src/server/scripts/Custom/Loadouts/`, `addons/Loadouts/` | | open |
-| T-019 | Config quick wins: cross-faction play (`AllowTwoSide.*`), all flight paths, guaranteed skill-ups, no weekly currency caps, lighter death penalties. Confirm each key exists in the fork | `worldserver.conf.dist` defaults, `tools/devenv/` | | open |
+| T-019 | Config quick wins: cross-faction play (`AllowTwoSide.*`), all flight paths, guaranteed skill-ups, no weekly currency caps, lighter death penalties. Confirm each key exists in the fork | codex | in progress |
 | T-041 | Script and data quick wins: guild perks for everyone, unrestricted transmog (mixed types), bigger stacks via item hotfixes, free character services NPC, shorter hearthstone cooldown | `src/server/scripts/Custom/SoloQoL/`, `sql/updates/` | | open |
 | T-042 | 36-slot bags: expensive vendor (gold sink); hooks to plant them in rare loot later | `sql/updates/world/` | | open |
 | T-043 | Reagent bank in detached storage, with crafting drawing from it | `src/server/scripts/Custom/ReagentBank/` | | open |

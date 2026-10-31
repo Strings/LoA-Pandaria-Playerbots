@@ -18,14 +18,12 @@ it before you stop. It holds current state; standing rules are in AGENTS.md.
 - Gemini and Flash PRs merge only after Claude's review. Codex PRs: review when asked; Codex has been slow
   and thorough, so give it small, sharply scoped tasks away from files others are changing.
 
-## Current state (2026-10-31, 18:10 Eastern)
+## Current state (2026-10-31, evening)
 
-- **Claude:** T-038 finished from Codex's branch and merged (reload registry plus seeded test RNG). Design notes
-  added for bot behavior: PvP sparring (T-059, parked), telemetry context and offline methods, social coupling,
-  transition seams (all under DESIGN.md, Human-like bots and PvP coordination).
-- **Codex:** out of usage for this window. T-019 (solo config) is pushed on `codex/T-019-solo-config` (draft
-  PR 10) and needs a rebase; its T-038 worktree still holds the uncommitted SoloConfig files. Run it at medium.
-- **Gemini:** T-030, T-050 and T-033 merged. Next: the Flash queue (T-051 to T-058) once it is on Flash.
+- **Claude:** T-039 (GM tools, first set) in progress on `claude/T-039-gm-tools`.
+- **Codex:** back at Sol medium. Finishing T-019 (solo config): rebase `codex/T-019-solo-config` onto `playerbot`,
+  fold in the SoloConfig files left uncommitted in its T-038 worktree, open the PR. Then T-010 (mount speed).
+- **Gemini:** one last Argon task, T-040 (`/idea` and `/bug` capture). Then the Flash queue (T-051 to T-058).
   Follow-up worth queueing: `tools/twink-tuning` should read DBCs through `tools/dbc`.
 - **Open, unassigned:** T-060 (lld-link), T-031 (balance sim).
 - **Main databases:** all agent SQL applied through `2026_10_31_gemini_00` (backup in
