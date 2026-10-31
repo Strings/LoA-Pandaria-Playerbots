@@ -217,3 +217,14 @@ Permission 90000 (`Command: heartseed`, Gamemaster role). Target is the selected
 `.heartseed info` also shows the loadout, the applied auras with their amounts, and the proc damage.
 
 Every change is saved at once, not with the next character save.
+
+## Shared table reload (T-038)
+
+AddSC_heartseed registers the related world caches with Custom/Reload. Use
+`.reload heartseed` for the bundle, or any registered table name (for example
+`.reload heartseed_trait`); each reloads the coherent bundle. The existing
+`.heartseed reload` delegates to the same registry and refreshes its target.
+Failed queries or invalid rows leave the previous cache intact. Empty optional
+tables are allowed; heartseed_stage requires at least stage 0. Row counts refer
+to the whole bundle, including the twink_item feeding lookup. See
+`../Reload/README.md` for registration, permissions and command precedence.

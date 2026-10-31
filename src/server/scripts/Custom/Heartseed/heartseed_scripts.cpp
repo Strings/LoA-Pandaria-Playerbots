@@ -4,7 +4,9 @@
 
 #include "Bag.h"
 #include "Chat.h"
+#include "Custom/Reload/ReloadRegistry.h"
 #include "HeartseedMgr.h"
+#include "Log.h"
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "RBAC.h"
@@ -46,7 +48,9 @@ public:
 
     void OnStartup() override
     {
-        sHeartseedMgr->LoadData();
+        auto result = CustomReload::Tables().Reload("heartseed");
+        if (!result.Success)
+            TC_LOG_ERROR("server", "Heartseed reload failed: %s", result.Message.c_str());
     }
 };
 
@@ -399,11 +403,17 @@ public:
     static bool HandleReloadCommand(ChatHandler* handler, char const* /*args*/)
     {
         // Stages, glows, traits and essences. New spells in spell_dbc still need a restart.
-        sHeartseedMgr->LoadData();
+        auto result = CustomReload::Tables().Reload("heartseed");
+        if (!result.Success)
+        {
+            handler->SendSysMessage(result.Message.c_str());
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
         Player* target = GetTarget(handler);
         if (target && sHeartseedMgr->HasHeartseed(target))
             sHeartseedMgr->Refresh(target);
-        handler->SendSysMessage("Heartseed stages, glows, traits, essences and twink items reloaded. Other characters pick up trait changes at their next refresh (relog, level, weapon or spec change).");
+        handler->SendSysMessage("Heartseed stages, glows, traits, essences, twink items and shrines reloaded. Other characters pick up trait changes at their next refresh (relog, level, weapon or spec change).");
         return true;
     }
 
@@ -934,6 +944,15 @@ public:
 
 void AddSC_heartseed()
 {
+    if (!CustomReload::Tables().RegisterGroup({ "heartseed", "heartseed_stage", "heartseed_glow", "heartseed_trait",
+        "heartseed_essence_template", "heartseed_essence_source", "twink_item", "heartseed_shrine" }, "Heartseed world data (one coherent snapshot)", []
+    {
+        std::size_t rows = 0;
+        bool success = sHeartseedMgr->LoadData(&rows);
+        return CustomReload::Result{ success, rows, success ? "Heartseed data published; characters refresh at their next trait refresh"
+            : "Heartseed data could not be loaded; previous cache retained (see server log)" };
+    }))
+        TC_LOG_ERROR("server", "Heartseed reload loader registration failed");
     new heartseed_worldscript();
     new heartseed_playerscript();
     new heartseed_unitscript();

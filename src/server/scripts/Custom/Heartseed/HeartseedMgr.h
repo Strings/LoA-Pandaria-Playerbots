@@ -10,6 +10,7 @@
 #include "HeartseedRules.h"
 #include "ObjectGuid.h"
 
+#include <cstddef>
 #include <functional>
 #include <map>
 #include <mutex>
@@ -209,7 +210,8 @@ public:
     static HeartseedMgr* instance();
 
     void LoadConfig();
-    void LoadData();                       // world: heartseed_stage, _glow, _trait, _essence_template, _essence_source, twink_item
+    // Reload the related world tables atomically; failures leave the live cache intact.
+    bool LoadData(std::size_t* loadedRows = nullptr);
     bool IsEnabled() const { return _enabled; }
 
     void LoadPlayer(Player* player);       // characters: all heartseed_* rows of one character
