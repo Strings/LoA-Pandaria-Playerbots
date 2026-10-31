@@ -1267,6 +1267,26 @@ Splitting data into general, class-specific and situation-specific behavior happ
 | Combat lookup tables | Action biases per state bucket (health, enemy count, cooldowns) | Trigger and action priority multipliers | Later |
 | Policy distillation | Shallow decision tree or rule list from an offline model | Readable, editable strategy triggers | Later |
 
+**Transition seams (decided)**
+
+Bots give themselves away most at the moments between activities. Three get their own timers, fitted from
+telemetry like every other delay:
+
+- **Gaze before action (`gaze_lead_ms`):** humans turn toward something 200 to 500 ms before they cast at it,
+  switch to it or bend their path toward it. Bots send a facing update toward the salient target, node or
+  NPC first, then act, instead of snapping 110 degrees and casting on the same tick.
+- **After combat (`post_combat_linger_ms`):** a 1 to 4 second decompression beat after a hard fight: one bot
+  loots, the healer sits to drink at 60% mana, a melee jumps once or re-buffs, then the tank moves off and the
+  pack follows through social coupling. Never everyone turning and leaving on the same tick.
+- **After death (`release_spirit_delay_ms`):** linger on the corpse 1.5 to 5 seconds before releasing, longer
+  when a resurrection is likely (a healer, Soulstone or Rebirth nearby) or while watching the killer.
+- **Imperfect coordination is kept:** each bot samples its own reaction delay, so two bots sometimes stun or
+  interrupt the same cast within about 150 ms, and the slower one adjusts next time. That looks like two
+  players overlapping a kick; nothing deduplicates it on the server tick.
+
+Telemetry logs the matching facts: time from facing change to the next cast or path change, time since combat
+ended on every decision event, and time from death to release.
+
 **Offline methods (decided)**
 
 All run offline and compile into the same tables and libraries; no model runs live.
