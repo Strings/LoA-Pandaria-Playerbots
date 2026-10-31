@@ -30,6 +30,7 @@
 #include "DB2Stores.h"
 #include "GuildMgr.h"
 #include "ServiceMgr.h"
+#include "ScriptMgr.h"
 #include <vector>
 
 void WorldSession::HandleSplitItemOpcode(WorldPacket& recvData)
@@ -368,6 +369,7 @@ void WorldSession::HandleDestroyItemOpcode(WorldPacket& recvData)
     }
 
     sServiceMgr->DeletedItemNotify(_player->GetGUID().GetCounter(), pItem, DELETING_TYPE_BY_PLAYER);
+    sScriptMgr->OnPlayerItemDestroyedByPlayer(_player, pItem);
 
     if (count)
     {

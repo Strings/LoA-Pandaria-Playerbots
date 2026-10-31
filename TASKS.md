@@ -66,7 +66,7 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 |---|---|---|---|---|
 | T-020 | Heartseed state table (rank, Growth, path loadouts per spec, essences, story flags); equip script with hidden enchant in a free slot and stage glow. IDs from `docs/ID_RANGES.md` | `src/server/scripts/Custom/Heartseed/`, `sql/updates/characters/` | claude | review |
 | T-021 | Trait table as data rows; core passive scaling with weapon item level or DPS; first major choice at 10 | `src/server/scripts/Custom/Heartseed/`, `sql/updates/world/` | claude | review |
-| T-022 | Growth from feeding replaced weapons, two essence types, rank cap by character level. Pacing numbers are placeholders until v0.5 | `src/server/scripts/Custom/Heartseed/` | | open |
+| T-022 | Growth from feeding replaced weapons, two essence types, rank cap by character level. Pacing numbers are placeholders until v0.5 | `src/server/scripts/Custom/Heartseed/` | claude | review |
 | T-023 | Gossip menu for path choices (prototype in Lua once T-009 lands) | `src/server/scripts/Custom/Heartseed/`, `lua_scripts/heartseed/` | | open |
 | T-024 | GM commands: rank, Growth, story flags | `src/server/scripts/Custom/Heartseed/` | claude | review |
 | T-025 | Granting quest at level 1 as the canonical "has a Heartseed" marker. The full Theramore intro scenario comes later and completes the same quest; it waits on T-036 (timeline) and the Horde figure decision | `src/server/scripts/Custom/Heartseed/`, `sql/updates/world/` | | open |

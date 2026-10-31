@@ -98,7 +98,7 @@ verb in `headless.py`.
 | Death | `die`, `release`, `reclaim`, `res-accept`, `summon-accept` |
 | Dungeon finder | `lfg-join`, `lfg-roles`, `lfg-accept`, `lfg-teleport`, `lfg-leave` |
 | Battlegrounds and arenas | `bg-join`, `bg-accept`, `bg-leave`, `bg-queue-leave`, `arena-join SLOT [rated]` |
-| Character | `create NAME RACE CLASS [gender]`, `set-spec TAB` (choose a specialization, 0-3, when none is set) |
+| Character | `create NAME RACE CLASS [gender]`, `set-spec TAB` (choose a specialization, 0-3, when none is set), `autoequip BAG SLOT` (equip like a right-click; bag 255 = backpack, slots 23-38), `destroy-item BAG SLOT [count]` (delete from the bags) |
 | GM verbs (over SOAP) | `npcguid`, `goguid`, `nearcorpse`, `kill`, `board`, `equip`, `learn`, `masterprobe`, `castself`, `cansee`, `tele-near MAP ENTRY [off=]` |
 
 The GM verbs are sent to the worldserver as `.botscenario <this character> <verb> ...` through

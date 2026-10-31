@@ -744,6 +744,9 @@ public:
     // Called after the active specialization changes: dual-spec swap, choosing a specialization or resetting it
     virtual void OnSpecializationChanged(Player* /*player*/) { }
 
+    // Called when the player deletes an item from the inventory (CMSG_DESTROY_ITEM), right before it is destroyed
+    virtual void OnItemDestroyedByPlayer(Player* /*player*/, Item* /*item*/) { }
+
     // Called when a player's free talent points change (right before the change is applied)
     virtual void OnFreeTalentPointsChanged(Player* /*player*/, uint32 /*points*/) { }
 
@@ -1212,6 +1215,7 @@ public: /* PlayerScript */
     void OnPlayerVisibleItemEnchant(Player* player, uint8 slot, Item* item, uint16& tempEnchantVisual);
     void OnPlayerVisibleItemChanged(Player* player, uint8 slot, Item* item);
     void OnPlayerSpecializationChanged(Player* player);
+    void OnPlayerItemDestroyedByPlayer(Player* player, Item* item);
     void OnPlayerFreeTalentPointsChanged(Player* player, uint32 newPoints);
     void OnPlayerTalentsReset(Player* player, bool noCost);
     void OnPlayerMoneyChanged(Player* player, int64& amount);
