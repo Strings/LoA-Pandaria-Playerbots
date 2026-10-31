@@ -341,6 +341,15 @@ Later threads: Jaina's reconciliation when she sees the seed bloom in Pandaria; 
 
 **Specs (decided, answers the open question):** one Heartseed with a saved path loadout per spec; swapping specs swaps choices. Loadouts change at any Celestial shrine. The morph at 90 follows the dominant path plus absorbed essences.
 
+**One seed per account (decided).** The seed chose a soul, not a body, and reincarnation already says the soul persists. Do this before Phase 0b hardens and real play builds up state: cheap now, painful later.
+
+- **Shared on the account:** the "has a Heartseed" marker, rank and Growth (one pool), the essence collection and the morph gallery. Leveling a new class unlocks that class's Celestial Weapon variant as a collectible form, so alts become Heartseed content, not a regrind.
+- **Per character:** path loadouts (per spec, so they travel with the character's own spec switching), essence slotting, and the story flags for this body's own events (first dungeon, reached Pandaria, first world boss).
+- **The rank cap stays per character:** character level plus the awakenings this character has done itself. A character uses min(account rank, its own cap), so a fresh alt or a twink at 19 has exactly the balance it would have alone. Soul-level events (Theramore, later Celestial beats) live on the account and unlock lore, whispers and cosmetics, never cap. Low-level and twink balance is unchanged.
+- **Who earns:** the character you are playing earns Growth (feeding, quests, rares). Your own alts logged in as playerbots earn none; they show the shared seed and use it at their own cap. Feeding a twink alt's old weapons grows the shared seed, and that is intended.
+- **Fresh-seed run:** a character-creation toggle in the character challenges (Side fun), not a Heartseed feature. The character starts with no Heartseed, or a fresh one at rank 1 kept apart from the account's, for a seedless or fresh-start run; title and cosmetic reward on completion like the other challenges.
+- **Bots recognize the seed:** a bot with a relationship to another character on your account (a nemesis, a rival, a friend) recognizes the shared Heartseed on sight: a flag check plus the glow. A nemesis says "I know that light. You." The world tracks the soul, not the save slot. It is a high-priority context trigger in the reaction loop with its own line-library entries; at LLM levels, consciousness-file memories can name the other character.
+
 **MVP that leaves room for the full story (decided)**
 
 1. **One canonical marker:** a single quest grants the Heartseed; its completion is the "has a Heartseed" flag everything else checks. The full Theramore scenario later becomes a better way to complete the same quest.
@@ -368,7 +377,7 @@ MVP scope: a short granting quest at level 1 (gossip prototyped in Lua), ranks w
 **Implementation**
 
 - Precedent: MoP's Sha-Touched weapon socket and Eye of the Black Prince.
-- Jewel state lives in a character table. On equip, a script applies a hidden enchantment to a free enchant slot for the glow and trait links.
+- Jewel state lives in account tables (rank, Growth, essences, morph forms) and character tables (loadouts, slotting, this body's story flags); see One seed per account. On equip, a script applies a hidden enchantment to a free enchant slot for the glow and trait links.
 - Traits are passive auras learned and unlearned by rank and choice; procs are spell scripts reading weapon damage.
 - UI: gossip menu first, then an addon panel over the addon channel.
 - Item stats and new entries can be pushed by server hotfix (5.4.8 supports item data hotfixes). New models need a client patch; reuse existing models with new glows and names first.
@@ -1053,7 +1062,7 @@ Fun that isn't the main progression: games, minigames, old favorites and remix i
 
 **Community favorites**
 
-- **Character challenges at creation,** Turtle WoW style: hardcore, no grouping, slow XP, no auction house, each with a title and cosmetic reward. Pairs with mortal life.
+- **Character challenges at creation,** Turtle WoW style: hardcore, no grouping, slow XP, no auction house, fresh seed (no shared Heartseed, see One seed per account), each with a title and cosmetic reward. Pairs with mortal life.
 - **Bot city raids:** the opposite faction raids your capital, leaders and all; defend or counter-raid. Driven by war front momentum.
 - **Gurubashi Arena chest:** the free-for-all chest fight revived with bots.
 - **Prop hunt:** bots disguised as objects in a town via transformation spells; find them before time runs out.
