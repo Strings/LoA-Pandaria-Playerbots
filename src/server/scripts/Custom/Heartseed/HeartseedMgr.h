@@ -20,6 +20,7 @@
 
 class Creature;
 class Item;
+class Quest;
 class Player;
 class Unit;
 struct ItemTemplate;
@@ -215,6 +216,14 @@ public:
     float GetCapPerLevel() const { return _capPerLevel; }
     uint32 GetCapPerAwakening() const { return _capPerAwakening; }
 
+    // Granting quest (T-025). Its completion grants the Heartseed, whichever way it is completed.
+    void ScheduleGrantOffer(Player* player);        // on login, after Heartseed.Grant.OfferDelay
+    bool CanOfferGrantQuest(Player* player) const;
+    bool OfferGrantQuest(Player* player);           // shows the quest (or its reward window) now
+    void OnQuestAdded(Player* player, Quest const* quest);
+    void OnQuestRewarded(Player* player, Quest const* quest);
+    uint32 GetGrantQuestId() const { return _grantQuestId; }
+
     // Story beats (T-026): simple hooks set the flags until later quests take over. Each sets its flag once,
     // tells the player and, for an awakening flag, ranks the Heartseed up to the new cap.
     void OnDungeonCompleted(Player* player);
@@ -306,6 +315,9 @@ private:
     std::vector<uint32> _pandariaMaps;
     std::set<uint32> _worldBossEntries;
     uint32 _awakeningSound = 0;
+    uint32 _grantQuestId = 0;
+    bool _grantOfferOnLogin = true;
+    uint32 _grantOfferDelay = 0;
     uint32 _rankGrowthBase = 0;
     uint32 _rankGrowthPerRank = 0;
     bool _feedOnReplace = true;

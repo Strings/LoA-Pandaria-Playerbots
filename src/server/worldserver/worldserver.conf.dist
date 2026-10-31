@@ -5503,4 +5503,27 @@ Heartseed.Story.WorldBosses = "60491 62346 69099 69161 71952 71953 71954 71955 7
 Heartseed.Story.AwakeningSound = 0
 
 #
+#    Heartseed.Grant.QuestId
+#        Description: The granting quest. Rewarding it grants the Heartseed, however it is completed
+#                     (the server-sent offer now, the Theramore intro scenario later).
+#        Default:     90000
+
+Heartseed.Grant.QuestId = 90000
+
+#
+#    Heartseed.Grant.OfferOnLogin
+#        Description: Offer the granting quest at login to characters that have no Heartseed and have
+#                     not done the quest (declining it offers it again next login).
+#        Default:     1
+
+Heartseed.Grant.OfferOnLogin = 1
+
+#
+#    Heartseed.Grant.OfferDelay
+#        Description: Milliseconds after login before the quest window opens.
+#        Default:     5000
+
+Heartseed.Grant.OfferDelay = 5000
+
+#
 ###################################################################################################
