@@ -109,7 +109,7 @@ environment variables for the headless client (`contrib/headless-client/README.m
 | Codex | 3744 | 8105 | 7898 | `auth_codex`, `characters_codex`, `world_codex`, `playerbots_codex` |
 | Gemini | 3754 | 8115 | 7908 | `auth_gemini`, `characters_gemini`, `world_gemini`, `playerbots_gemini` |
 
-- Build into `build/` inside your worktree with `toolsuilduild.ps1` and its default configuration
+- Build into `build/` inside your worktree with `tools\build\build.ps1` and its default configuration
   (RelWithDebInfo), so the shared compiler cache (`sccache`) gets hits across worktrees.
 - Builds queue: `build.ps1` waits while another agent's build runs, because two overlapping builds run out
   of memory and each take several times longer. Run unit tests or work on docs while you wait.
