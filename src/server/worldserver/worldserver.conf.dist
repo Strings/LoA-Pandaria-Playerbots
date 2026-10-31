@@ -5470,4 +5470,37 @@ Heartseed.Essence.ProcCooldown = 3000
 Heartseed.Essence.AutoSlot = 1
 
 #
+#    Heartseed.Story.Hooks
+#        Description: Set the story flags from simple hooks: completing a dungeon's final encounter
+#                     (first_dungeon), entering Pandaria (reached_pandaria) and kill credit on a world
+#                     boss (first_world_boss). Later quests can set the same flags instead.
+#        Default:     1
+
+Heartseed.Story.Hooks = 1
+
+#
+#    Heartseed.Story.PandariaMaps
+#        Description: Map IDs that count as reaching Pandaria (space separated).
+#        Default:     "870"
+
+Heartseed.Story.PandariaMaps = "870"
+
+#
+#    Heartseed.Story.WorldBosses
+#        Description: Creature entries that count as world bosses (space separated). Defaults: the MoP
+#                     world bosses (Sha of Anger, Galleon, Nalak, Oondasta, the four Celestials, Ordos)
+#                     and the old ones (Azuregos, Lord Kazzak, the four dragons of Nightmare, Doomwalker,
+#                     Doom Lord Kazzak).
+#        Default:     "60491 62346 69099 69161 71952 71953 71954 71955 72057 6109 12397 14887 14888 14889 14890 17711 18728"
+
+Heartseed.Story.WorldBosses = "60491 62346 69099 69161 71952 71953 71954 71955 72057 6109 12397 14887 14888 14889 14890 17711 18728"
+
+#
+#    Heartseed.Story.AwakeningSound
+#        Description: Sound kit played to the player when a story beat raises the rank cap (0 = none).
+#        Default:     0
+
+Heartseed.Story.AwakeningSound = 0
+
+#
 ###################################################################################################

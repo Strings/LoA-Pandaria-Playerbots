@@ -5,6 +5,7 @@
 #include "HeartseedMgr.h"
 #include "Chat.h"
 #include "Config.h"
+#include "Creature.h"
 #include "DatabaseEnv.h"
 #include "DBCStores.h"
 #include "GossipDef.h"
@@ -112,6 +113,12 @@ void HeartseedMgr::LoadConfig()
     _feedQualityPct = ParseList<float>(sConfigMgr->GetStringDefault("Heartseed.Feed.QualityPct", "50 100 150 250 400 0 0 0"));
     _essenceProcCooldown = sConfigMgr->GetIntDefault("Heartseed.Essence.ProcCooldown", 3000);
     _essenceAutoSlot = sConfigMgr->GetBoolDefault("Heartseed.Essence.AutoSlot", true);
+    _storyHooks = sConfigMgr->GetBoolDefault("Heartseed.Story.Hooks", true);
+    _pandariaMaps = ParseList<uint32>(sConfigMgr->GetStringDefault("Heartseed.Story.PandariaMaps", "870"));
+    std::vector<uint32> bosses = ParseList<uint32>(sConfigMgr->GetStringDefault("Heartseed.Story.WorldBosses",
+        "60491 62346 69099 69161 71952 71953 71954 71955 72057 6109 12397 14887 14888 14889 14890 17711 18728"));
+    _worldBossEntries = std::set<uint32>(bosses.begin(), bosses.end());
+    _awakeningSound = sConfigMgr->GetIntDefault("Heartseed.Story.AwakeningSound", 0);
 }
 
 void HeartseedMgr::LoadData()
@@ -502,6 +509,50 @@ bool HeartseedMgr::SetStoryFlag(Player* player, uint16 flag, bool set)
     if (set)
         ApplyRankUps(player);
     return true;
+}
+
+bool HeartseedMgr::ReachStoryBeat(Player* player, uint16 flag)
+{
+    Heartseed::State state;
+    if (!GetState(player, state) || state.StoryFlags.count(flag))
+        return false;
+
+    // Told before the flag is set, so the awakening reads before the rank-ups it causes.
+    std::vector<uint16> awakeningFlags = GetAwakeningFlags();
+    bool awakening = std::find(awakeningFlags.begin(), awakeningFlags.end(), flag) != awakeningFlags.end();
+    ChatHandler handler(player->GetSession());
+    if (awakening)
+    {
+        state.StoryFlags[flag] = 0;
+        uint8 newCap = Heartseed::RankCap(player->GetLevel(), _capPerLevel, GetAwakenings(state), _capPerAwakening);
+        handler.PSendSysMessage("Your Heartseed awakens (%s). It can grow to rank %u now.", GetStoryFlagName(flag), uint32(newCap));
+        if (_awakeningSound)
+            player->PlayDirectSound(_awakeningSound, player);
+    }
+    else
+        handler.PSendSysMessage("Your Heartseed remembers this (%s).", GetStoryFlagName(flag));
+
+    return SetStoryFlag(player, flag, true);
+}
+
+void HeartseedMgr::OnDungeonCompleted(Player* player)
+{
+    if (_storyHooks)
+        ReachStoryBeat(player, Heartseed::STORY_FLAG_FIRST_DUNGEON);
+}
+
+void HeartseedMgr::OnMapChanged(Player* player)
+{
+    if (!_storyHooks)
+        return;
+    if (std::find(_pandariaMaps.begin(), _pandariaMaps.end(), player->GetMapId()) != _pandariaMaps.end())
+        ReachStoryBeat(player, Heartseed::STORY_FLAG_REACHED_PANDARIA);
+}
+
+void HeartseedMgr::OnKillCredit(Player* player, Creature* killed)
+{
+    if (_storyHooks && _worldBossEntries.count(killed->GetEntry()))
+        ReachStoryBeat(player, Heartseed::STORY_FLAG_FIRST_WORLD_BOSS);
 }
 
 std::vector<uint16> HeartseedMgr::GetAwakeningFlags() const
