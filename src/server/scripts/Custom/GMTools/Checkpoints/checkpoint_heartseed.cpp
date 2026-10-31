@@ -44,10 +44,20 @@ void AddCheckpointHeartseedSteps()
         {
             if (!NeedsHeartseed(target, message))
                 return false;
-            message = "rank " + std::to_string(step.Arg1);
-            return sHeartseedMgr->SetRank(target, uint8(step.Arg1));
+            // The rank is the account's: a checkpoint never lowers it, so a twink checkpoint leaves the main alone.
+            // The character uses it up to its own cap.
+            Heartseed::State state;
+            sHeartseedMgr->GetState(target, state);
+            uint8 rank = uint8(std::clamp(step.Arg1, 1, int32(Heartseed::MaxRank)));
+            if (state.Rank >= rank)
+            {
+                message = "account rank already " + std::to_string(state.Rank);
+                return true;
+            }
+            message = "account rank " + std::to_string(rank);
+            return sHeartseedMgr->SetRank(target, rank);
         },
-        [](Step const& step) { return "Set Heartseed rank " + std::to_string(step.Arg1) + " (ignores the cap)."; });
+        [](Step const& step) { return "Raise the account's Heartseed rank to at least " + std::to_string(step.Arg1) + " (the character uses it up to its cap)."; });
 
     sCheckpointMgr->RegisterStep("heartseed_growth",
         [](ChatHandler* /*handler*/, Player* target, Step const& step, std::string& message)
@@ -57,7 +67,7 @@ void AddCheckpointHeartseedSteps()
             message = "Growth " + std::to_string(step.Arg1);
             return sHeartseedMgr->SetGrowth(target, uint32(std::max(0, step.Arg1)));
         },
-        [](Step const& step) { return "Set banked Growth to " + std::to_string(step.Arg1) + "."; });
+        [](Step const& step) { return "Set the account's banked Growth to " + std::to_string(step.Arg1) + "."; });
 
     sCheckpointMgr->RegisterStep("heartseed_major",
         [](ChatHandler* /*handler*/, Player* target, Step const& step, std::string& message)

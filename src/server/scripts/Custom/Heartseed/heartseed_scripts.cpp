@@ -47,6 +47,7 @@ public:
     void OnStartup() override
     {
         sHeartseedMgr->LoadData();
+        sHeartseedMgr->LoadAccounts();
     }
 };
 
@@ -57,13 +58,16 @@ public:
 
     void OnLogin(Player* player) override
     {
-        // Bots never get a Heartseed; skipping them saves four queries per bot login.
-        if (player->GetSession()->IsBot())
+        // Random bots never have a Heartseed and skip the queries; the player's own alts logged in as bots show
+        // the account's seed and use it at their own cap, but earn nothing and get no story beats or prompts.
+        if (!sHeartseedMgr->ShouldLoad(player))
             return;
 
         sHeartseedMgr->LoadPlayer(player);
         // The inventory was equipped before the state loaded, so apply traits and send the glow now.
         sHeartseedMgr->Refresh(player);
+        if (player->GetSession()->IsBot())
+            return;
         // The cap settings may have changed since the last session.
         sHeartseedMgr->ApplyRankUps(player);
         // Characters that were already in Pandaria when the hook arrived.
@@ -103,6 +107,8 @@ public:
             return;
 
         sHeartseedMgr->Refresh(player);
+        if (player->GetSession()->IsBot())
+            return;
         // A level raises the rank cap; Growth banked at the old cap is spent now.
         sHeartseedMgr->ApplyRankUps(player);
 
@@ -111,13 +117,12 @@ public:
         auto loadout = state.Loadouts.find(specId);
         for (uint8 tier = 0; tier < Heartseed::MaxMajorTiers; ++tier)
         {
-            uint8 tierLevel = Heartseed::MajorTierLevels[tier];
+            uint8 tierLevel = Heartseed::MajorTierLevel(tier);
             bool chosen = loadout != state.Loadouts.end() && loadout->second[tier];
             if (oldLevel < tierLevel && player->GetLevel() >= tierLevel && !chosen && sHeartseedMgr->TierHasMajors(tier))
             {
                 ChatHandler(player->GetSession()).SendSysMessage("Your Heartseed stirs. A Celestial path waits for your choice.");
-                if (!player->GetSession()->IsBot())
-                    sHeartseedMgr->SendChoiceMenu(player);
+                sHeartseedMgr->SendChoiceMenu(player);
                 break;
             }
         }
@@ -134,11 +139,12 @@ public:
     {
         // Traits scale with the main-hand weapon. During login the inventory loads before the state; OnLogin
         // applies the traits then.
-        if (slot == EQUIPMENT_SLOT_MAINHAND && player->IsInWorld() && !player->GetSession()->IsBot())
+        if (slot == EQUIPMENT_SLOT_MAINHAND && player->IsInWorld())
         {
             sHeartseedMgr->RefreshTraits(player);
             // The weapon it replaced may be fed.
-            sHeartseedMgr->OnMainHandChanged(player, item);
+            if (!player->GetSession()->IsBot())
+                sHeartseedMgr->OnMainHandChanged(player, item);
         }
     }
 
@@ -177,8 +183,7 @@ public:
     void OnSpecializationChanged(Player* player) override
     {
         // Each specialization has its own loadout, and the glow follows its dominant path.
-        if (!player->GetSession()->IsBot())
-            sHeartseedMgr->Refresh(player);
+        sHeartseedMgr->Refresh(player);
     }
 };
 
@@ -191,9 +196,8 @@ public:
     {
         if (!damage || !attacker || !victim || attacker->GetTypeId() != TYPEID_PLAYER)
             return;
-        Player* player = attacker->ToPlayer();
-        if (!player->GetSession()->IsBot())
-            sHeartseedMgr->OnDamageDealt(player, victim);
+        // Alts logged in as bots proc too; a character without a Heartseed returns at the first lookup.
+        sHeartseedMgr->OnDamageDealt(attacker->ToPlayer(), victim);
     }
 };
 
@@ -286,10 +290,10 @@ public:
         for (auto const& essence : state.Essences)
             activeEssences += essence.second.second && essence.second.second <= openSlots ? 1 : 0;
 
-        handler->PSendSysMessage("Heartseed of %s: rank %u (cap %u), Growth %u of %u for the next rank, stage %u (%s) at level %u. %u weapons fed.",
-            target->GetName().c_str(), uint32(state.Rank), uint32(sHeartseedMgr->GetRankCap(target)), state.Growth,
-            sHeartseedMgr->GetGrowthForNextRank(state.Rank), uint32(stage), sHeartseedMgr->GetStageName(stage).c_str(), uint32(target->GetLevel()),
-            state.FedWeapons);
+        handler->PSendSysMessage("Heartseed of %s (account %u): rank %u, account rank %u, cap %u. Growth %u of %u for the next rank, stage %u (%s) at level %u. %u weapons fed.",
+            target->GetName().c_str(), state.AccountId, uint32(sHeartseedMgr->GetEffectiveRank(target)), uint32(state.Rank),
+            uint32(sHeartseedMgr->GetRankCap(target)), state.Growth, sHeartseedMgr->GetGrowthForNextRank(state.Rank), uint32(stage),
+            sHeartseedMgr->GetStageName(stage).c_str(), uint32(target->GetLevel()), state.FedWeapons);
         handler->PSendSysMessage("Spec %u: %u of %u majors chosen, %u loadouts saved. Essences: %u collected, %u active.",
             uint32(specId), majors, uint32(Heartseed::MaxMajorTiers), uint32(state.Loadouts.size()), uint32(state.Essences.size()), activeEssences);
         Heartseed::Path dominant = sHeartseedMgr->GetDominantPath(target);
@@ -325,7 +329,7 @@ public:
             Heartseed::TraitInfo trait;
             if (!text.empty())
                 text += ", ";
-            text += "level " + std::to_string(Heartseed::MajorTierLevels[tier]) + " " + std::to_string(traitId) + " " +
+            text += "level " + std::to_string(Heartseed::MajorTierLevel(tier)) + " " + std::to_string(traitId) + " " +
                 (sHeartseedMgr->GetTrait(traitId, trait) ? trait.Name : std::string("(unknown trait)"));
         }
         return text.empty() ? "no majors chosen" : text;
@@ -343,7 +347,7 @@ public:
         {
             bool active = hasState && state.AppliedAuras.count(trait.SpellId);
             std::string when = trait.Kind == Heartseed::TraitKind::Major
-                ? "major, level " + std::to_string(Heartseed::MajorTierLevels[trait.Tier])
+                ? "major, level " + std::to_string(Heartseed::MajorTierLevel(trait.Tier))
                 : "minor, rank " + std::to_string(trait.MinRank);
             handler->PSendSysMessage("%s%u %s [%s, %s] spell %u, %d + %.3f per item level: %s", active ? "*" : " ", trait.Id, trait.Name.c_str(),
                 GetPathName(trait.TraitPath), when.c_str(), trait.SpellId, trait.BaseAmount, trait.AmountPerItemLevel, trait.Description.c_str());
@@ -666,7 +670,8 @@ public:
         handler->PSendSysMessage("Rank cap of %s: %u = level %u x %.2f + %u awakenings x %u. Awakening flags: %s.", target->GetName().c_str(), uint32(cap),
             uint32(target->GetLevel()), sHeartseedMgr->GetCapPerLevel(), sHeartseedMgr->GetAwakenings(state), sHeartseedMgr->GetCapPerAwakening(),
             flags.empty() ? "none" : flags.c_str());
-        handler->PSendSysMessage("Rank %u, Growth %u, next rank costs %u.%s", uint32(state.Rank), state.Growth, next,
+        handler->PSendSysMessage("Account rank %u (this character uses %u), Growth %u, next rank costs %u.%s", uint32(state.Rank),
+            uint32(Heartseed::EffectiveRank(state.Rank, cap)), state.Growth, next,
             state.Rank >= cap ? (state.Growth >= next ? " At the cap: Growth is banked until the cap rises." : " At the cap.") : "");
         return true;
     }

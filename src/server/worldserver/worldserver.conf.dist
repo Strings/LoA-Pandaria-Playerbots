@@ -5464,10 +5464,25 @@ Heartseed.Essence.ProcCooldown = 3000
 #
 #    Heartseed.Essence.AutoSlot
 #        Description: Put a newly collected essence into the first free essence slot the character's
-#                     level opens (1 at 10, 2 at 40, 3 at 70).
+#                     level opens (Heartseed.Essence.SlotLevels).
 #        Default:     1
 
 Heartseed.Essence.AutoSlot = 1
+
+#
+#    Heartseed.Essence.SlotLevels
+#        Description: Character level that opens each of the three essence slots, ascending.
+#        Default:     "10 40 70"
+
+Heartseed.Essence.SlotLevels = "10 40 70"
+
+#
+#    Heartseed.Majors.TierLevels
+#        Description: Character level that opens each of the six major tiers, ascending. Saved
+#                     loadouts keep their tier index, so changing a level moves the tier, not the choice.
+#        Default:     "10 25 40 55 70 85"
+
+Heartseed.Majors.TierLevels = "10 25 40 55 70 85"
 
 #
 #    Heartseed.Story.Hooks
