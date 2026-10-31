@@ -1601,6 +1601,11 @@ void ScriptMgr::OnPlayerLogin(Player* player)
     FOREACH_SCRIPT(PlayerScript)->OnLogin(player);
 }
 
+void ScriptMgr::OnPlayerFirstLogin(Player* player)
+{
+    FOREACH_SCRIPT(PlayerScript)->OnFirstLogin(player);
+}
+
 void ScriptMgr::OnPlayerLogout(Player* player)
 {
 #ifdef ELUNA
