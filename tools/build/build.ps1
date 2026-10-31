@@ -24,7 +24,8 @@ param(
     [string]$Target = 'all',
     [switch]$Tools,
     [switch]$NoPch,
-    [switch]$Reconfigure
+    [switch]$Reconfigure,
+    [switch]$NoWait
 )
 
 # Not 'Stop': Windows PowerShell 5.1 turns any stderr line of a native tool (CMake warnings) into a
@@ -69,7 +70,10 @@ if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue))
 $env:BOOST_ROOT = $boostRoot
 
 # sccache reads these when its server starts, so restart it if it runs with other settings.
-$basedirs = (@($repoRoot, (Join-Path $repoRoot '.worktrees\claude'), (Join-Path $repoRoot '.worktrees\codex')) -join ';')
+# Every agent worktree, so the same source compiled in any of them is a cache hit in the others.
+$worktreeRoot = Join-Path $repoRoot '.worktrees'
+$worktrees = @(if (Test-Path $worktreeRoot) { Get-ChildItem $worktreeRoot -Directory | ForEach-Object { $_.FullName } })
+$basedirs = (@($repoRoot) + $worktrees) -join ';'
 $cacheSize = Get-EnvOrDefault 'SCCACHE_CACHE_SIZE' '30G'
 if ($env:SCCACHE_BASEDIRS -ne $basedirs -or $env:SCCACHE_CACHE_SIZE -ne $cacheSize)
 {
@@ -110,9 +114,34 @@ if ($Reconfigure -or -not (Test-Path $cache) -or -not (Select-String -Path $cach
     if ($LASTEXITCODE) { throw "CMake configure failed ($LASTEXITCODE)" }
 }
 
+# One build at a time on this machine. Two overlapping builds with precompiled headers run out of memory and
+# swap (6 cores, 32 GB: about 11 s per file alone, 67 s each when two overlap), so queued builds finish sooner.
+# -NoWait skips the queue.
+$lock = New-Object System.Threading.Mutex($false, 'Local\UltimateMoP-build')
+$owned = $false
+if (-not $NoWait)
+{
+    try { $owned = $lock.WaitOne(0) } catch [System.Threading.AbandonedMutexException] { $owned = $true }
+    if (-not $owned)
+    {
+        Write-Host 'Another build is running on this machine; waiting for it to finish (-NoWait skips this).'
+        $waitStart = Get-Date
+        try { $owned = $lock.WaitOne() } catch [System.Threading.AbandonedMutexException] { $owned = $true }
+        Write-Host "Waited $([math]::Round(((Get-Date) - $waitStart).TotalMinutes, 1)) min."
+    }
+}
+
 $start = Get-Date
-& cmake --build $buildDir --target $Target
-$exit = $LASTEXITCODE
+try
+{
+    & cmake --build $buildDir --target $Target
+    $exit = $LASTEXITCODE
+}
+finally
+{
+    if ($owned) { $lock.ReleaseMutex() }
+    $lock.Dispose()
+}
 $minutes = [math]::Round(((Get-Date) - $start).TotalMinutes, 1)
 
 # The servers load these at run time; copy them next to the binaries.
