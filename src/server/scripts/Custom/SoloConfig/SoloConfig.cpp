@@ -63,10 +63,10 @@ namespace
         if (!player || !(input >> currency >> amount) || (input >> extra) || amount <= 0 ||
             amount > std::numeric_limits<int32>::max() || !sCurrencyTypesStore.LookupEntry(currency))
             return Fail(handler, "Usage: solo award <currency id> <positive raw amount> (uses normal limits/multipliers)");
-        uint32 before = player->GetCurrency(currency, true);
+        uint32 before = player->GetCurrency(currency, false);
         player->ModifyCurrency(currency, int32(amount));
         handler->PSendSysMessage("Currency %u: raw total %u -> %u; week=%u; week cap=%u", currency, before,
-            player->GetCurrency(currency, true), player->GetCurrencyOnWeek(currency, true), player->GetCurrencyWeekCap(currency, true));
+            player->GetCurrency(currency, false), player->GetCurrencyOnWeek(currency, false), player->GetCurrencyWeekCap(currency, false));
         return true;
     }
 
