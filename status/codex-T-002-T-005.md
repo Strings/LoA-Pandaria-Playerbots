@@ -2,7 +2,7 @@
 
 **Agent:** codex
 **Branch:** codex/T-002-T-005-devenv
-**Task status:** review
+**Task status:** done
 
 ## What changed
 - tools/devenv/setup.py creates agent-specific auth/world/playerbots configs, correct DB suffixes and ports, optional missing-database import, realmlist update and GM creation, and explicit-config hidden Windows launchers.
@@ -21,3 +21,7 @@
 - Legacy provider must be copied beside the exe; main checkout already contains it per the human.
 - Overlay interface: profile.d/*.json contains dev/test maps with world/bots maps; {repo} expands to the worktree. T-009 can add Eluna independently.
 - No full build. No main/Claude DB changes or global settings.
+
+## Merge validation (2026-10-31)
+- Rebased onto the merged playerbot. Four developer-environment tests pass; Python compilation passes.
+- Regenerated a private test/none runtime against the imported server build and confirmed agent ports, configurations and legacy.dll. No shared databases or services changed.
