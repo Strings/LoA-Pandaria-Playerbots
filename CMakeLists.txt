@@ -72,8 +72,9 @@ include(CheckPlatform)
 find_package(Threads REQUIRED)
 
 #Debug compile time
-set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CMAKE_COMMAND} -E time")
-set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK "${CMAKE_COMMAND} -E time")
+# Quoted: CMAKE_COMMAND has spaces on Windows ("C:/Program Files/CMake"), which breaks Ninja link rules.
+set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "\"${CMAKE_COMMAND}\" -E time")
+set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK "\"${CMAKE_COMMAND}\" -E time")
 
 # find mysql client binary (needed by genrev)
 find_package(MySQL OPTIONAL_COMPONENTS binary)

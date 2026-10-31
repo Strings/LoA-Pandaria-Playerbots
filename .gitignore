@@ -25,3 +25,4 @@ headless.local.json
 .worktrees/
 mop-clean/
 gamedata/
+!/tools/build/
