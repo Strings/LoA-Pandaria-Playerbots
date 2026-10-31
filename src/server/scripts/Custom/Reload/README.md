@@ -2,7 +2,7 @@
 
 The pure Registry in ReloadRegistry.h owns registered names/callbacks, not game
 data or SQL. CustomReload.cpp adapts it to existing CommandScript/WorldScript
-APIs. No ScriptMgr.h hooks or Heartseed files are changed. Reconfigure before
+APIs. No ScriptMgr.h hooks are added. Reconfigure before
 the eventual server build so the existing Custom source glob sees this module.
 
 ## Register a table in its owning module
@@ -34,16 +34,18 @@ success, with a no-throw swap/atomic shared-pointer replacement; readers hold a
 snapshot so old generations remain alive. Failure/exception must retain the old
 snapshot. The registry catches exceptions but cannot undo a loader that mutates
 live data prematurely. Related tables can share one validated snapshot loader.
+Use `RegisterGroup({ "table_a", "table_b" }, description, loader)` when related
+tables must reload together. Names in one group share a callback and busy guard;
+invalid or duplicate names reject the entire registration. Reloading any member
+publishes the whole validated group, with the group's total accepted row count.
 Callbacks run synchronously on the command caller (normally the world thread);
 do not wait for work that requires that thread. Same-table overlapping or
 recursive reloads fail as busy; unrelated registration/listing does not hold an
 I/O lock. Registry metadata is thread-safe, but each owning cache still needs
 its own reader/publication policy.
 
-No actual gameplay-table adapter is registered by this framework: those belong
-to their owning systems. Heartseed adapters are deliberately left for Claude.
-The unit fixture provides a real staged/published callback to test the interface
-without introducing a dummy world database table.
+Gameplay adapters belong to their owning systems. The unit fixture provides a
+real staged/published callback without introducing a dummy world database table.
 
 ## GM / SOAP commands
 
@@ -75,7 +77,9 @@ independent std generators and Lua's RNG are outside this API's scope.
 worldserver.conf.dist has Random.TestSeed.Enabled=0 and Value=1. The independent
 T-002 profile overlay enables Value=1 for test only. On config load, invalid seed
 text logs an error and retains the prior state. Reload reconciles configured
-mode/seed without resetting an already matching enabled stream. Manual GM
+mode/seed without resetting an already matching enabled stream. Initial seeding
+happens during script registration, before other WorldScripts generate bots in
+their initial config callbacks. Manual GM
 overrides last until config is reconciled or the process exits. Re-seeding the
 same value through the GM/API explicitly resets raw draw count/sequence.
 
@@ -113,3 +117,7 @@ Pending on the rebuilt private test/none server:
 
 No server link/startup/GM integration result is claimed yet. Full builds remain
 deferred while Claude's PR #8 is open; build-speed changes are outside this task.
+
+The feature regression plan is `tests/regression/scenarios/custom-reload-rng.json`.
+It needs merged Heartseed data/registration and a regenerated test/none runtime
+with seed 1, plus dedicated GM/SOAP credentials. It ends by reconciling config.

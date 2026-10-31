@@ -105,7 +105,11 @@ namespace
     class reload_framework_worldscript : public WorldScript
     {
     public:
-        reload_framework_worldscript() : WorldScript("reload_framework_worldscript") { }
+        reload_framework_worldscript() : WorldScript("reload_framework_worldscript")
+        {
+            // Seed before other WorldScripts generate fixtures/bots in OnConfigLoad.
+            OnConfigLoad(false);
+        }
 
         void OnConfigLoad(bool /*reload*/) override
         {

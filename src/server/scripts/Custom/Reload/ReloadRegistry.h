@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -27,10 +28,26 @@ namespace CustomReload
 
         bool Register(std::string name, std::string description, Loader loader)
         {
-            if (!ValidName(name) || !loader)
+            return RegisterGroup({ std::move(name) }, std::move(description), std::move(loader));
+        }
+
+        // Related tables publish one cache generation and must share a reload guard.
+        bool RegisterGroup(std::vector<std::string> names, std::string description, Loader loader)
+        {
+            if (names.empty() || !loader)
                 return false;
+            std::set<std::string> unique;
+            for (auto const& name : names)
+                if (!ValidName(name) || !unique.insert(name).second)
+                    return false;
             std::lock_guard<std::mutex> lock(_mutex);
-            return _tables.emplace(std::move(name), std::make_shared<Entry>(std::move(description), std::move(loader))).second;
+            for (auto const& name : names)
+                if (_tables.count(name))
+                    return false;
+            auto entry = std::make_shared<Entry>(std::move(description), std::move(loader));
+            for (auto const& name : names)
+                _tables.emplace(name, entry);
+            return true;
         }
 
         Result Reload(std::string const& name)

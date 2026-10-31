@@ -46,7 +46,7 @@ void RunTests()
     std::promise<void> entered, release;
     auto ready = entered.get_future();
     auto proceed = release.get_future();
-    UMP_CHECK(registry.Register("test_concurrent", "Single loader", [&]() -> CustomReload::Result
+    UMP_CHECK(registry.RegisterGroup({ "test_concurrent", "test_concurrent_alias" }, "Single loader", [&]() -> CustomReload::Result
     {
         entered.set_value();
         proceed.wait();
@@ -55,9 +55,25 @@ void RunTests()
     CustomReload::Result first{ false, 0, "" };
     std::thread worker([&] { first = registry.Reload("test_concurrent"); });
     ready.wait();
-    bool rejected = !registry.Reload("test_concurrent").Success;
+    bool rejected = !registry.Reload("test_concurrent_alias").Success;
     auto listing = registry.List();
     release.set_value();
     worker.join();
-    UMP_CHECK(rejected && first.Success && listing.size() == 4);
+    UMP_CHECK(rejected && first.Success && listing.size() == 5);
+
+    UMP_CHECK(registry.RegisterGroup({ "test_stage", "test_glow" }, "Coherent cache", [&]() -> CustomReload::Result
+    {
+        UMP_CHECK(!registry.Reload("test_glow").Success);
+        return { true, 2, "One snapshot" };
+    }));
+    UMP_CHECK(registry.Reload("test_stage").Success);
+    UMP_CHECK(!registry.RegisterGroup({ "test_stage", "test_unpublished" }, "Conflict", []
+    {
+        return CustomReload::Result{ true, 0, "" };
+    }));
+    UMP_CHECK(!registry.Reload("test_unpublished").Success);
+    UMP_CHECK(!registry.RegisterGroup({ "test_duplicate", "test_duplicate" }, "Duplicate aliases", []
+    {
+        return CustomReload::Result{ true, 0, "" };
+    }));
 }
