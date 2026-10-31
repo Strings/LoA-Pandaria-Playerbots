@@ -1232,6 +1232,30 @@ Splitting data into general, class-specific and situation-specific behavior happ
 - Turing test with the rating loop: shuffled clips of bots and the player, rated for which look human.
 - The Brawler's Guild mirror match uses the player's own compiled profile.
 
+**PvP sparring and negative examples (decided)**
+
+PvP needs its own labeled data: open-world fights are too rare and too mixed to learn from. One-on-one sparring
+gives clean episodes, and scripted bots in the same fights show what not to do.
+
+- **Sparring battlegrounds:** a test version of each battleground (and an open arena for general PvP) that
+  queues the player against a single bot: one per side, normal objectives and map, no score target pressure
+  beyond the map's own. GM and addon commands start one directly (`.spar <battleground> [class] [spec]`), so a
+  session can cycle through maps and opponents quickly. Timers (match length, respawn, objective caps) are
+  config keys, shortened in the test profile.
+- **Two labels, not one:** the player's sparring telemetry is the **target** (what good play looks like, per
+  battleground and for PvP in general); the scripted bot's telemetry from the same matches is a **negative
+  example** (what to move away from). Both are logged with the same decision-context schema and tagged with
+  their source, so the offline layer learns contrastively: shift bot behavior toward the player's distributions
+  and away from the scripted ones where they differ (target choice, objective timing, cooldown and crowd-control
+  use, kiting and line-of-sight play, positioning around objectives).
+- **Situation layers:** battleground-specific profiles (Warsong flag carrying, Arathi node defense, Eye of the
+  Storm flag runs, ...) sit above a general PvP profile, with the usual fallback to the general one when a map
+  has too little data.
+- **Measuring progress:** the same sparring setup scores a bot build against the player and against the previous
+  bot build, so each retrain shows whether bots moved toward the player and away from the scripted baseline.
+- Sparring is excluded from the "keeping test play out" pauses: it is deliberate training play. It is still
+  tagged as sparring so it never mixes with organic PvP episodes.
+
 ## Provisional ideas
 
 Suggested but not yet adopted.
@@ -1739,6 +1763,7 @@ Order follows dependencies, with one exception: the living jewel comes right aft
 - [ ] Offline retrain and hot-reload pipeline
 - [ ] Clip-based Turing test in the rating loop
 - [ ] Combat lookup tables and policy distillation
+- [ ] PvP sparring battlegrounds (player vs one bot per map) with player telemetry as the target and scripted-bot telemetry as negative examples
 
 ### Phase 14: Hard ports
 

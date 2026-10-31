@@ -88,6 +88,12 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 | T-030 | Shared DBC reader library, then content search on top of it (spells, visuals, items, creatures, display IDs) as an MCP tool | `tools/dbc/`, `tools/content-search/` | gemini | done |
 | T-048 | GM test suite for human playtests. **Checkpoint templates** as data rows, applied in one command (`.checkpoint apply <name>`, `.checkpoint list`, `.checkpoint explain <name>`): level, gear set, spells and talents, Heartseed rank, Growth, majors, essences and story flags, legacy projects done, quests, reputations, location. First checkpoints at each Heartseed major tier (10, 25, 40, 55, 70, 85) and at the first and second legendary unlocks (placeholder levels until the pacing pass). **Twink kits** per bracket from T-045's gear. **Ability tester:** learn a spell, reset cooldowns, refill power, set level. **Addon panel** (no client patch) listing checkpoints and kits with one-click apply; the server does the work, the addon only sends commands. Each later system adds its fields to the template. Builds on T-007 fixtures and T-039 GM tools | `src/server/scripts/Custom/GMTools/Checkpoints/`, `sql/updates/world/`, `addons/GMSuite/` | claude | review |
 
+## Later (parked, not v0.1)
+
+| ID | Task | Owns | Owner | Status |
+|---|---|---|---|---|
+| T-059 | PvP sparring battlegrounds (DESIGN.md, Human-like bots, PvP sparring and negative examples): a test version of each battleground plus an open arena, player vs a single bot, started with `.spar`; telemetry from the player as the target and from the scripted bot as negative examples, tagged by source. Waits on the telemetry hook (Phase 13), start when bot behavior work begins | `src/server/scripts/Custom/Sparring/`, `sql/updates/world/` | | parked |
+
 ## Flash queue
 
 Small, checkable tasks for the Flash model (Antigravity, `gemini` worktree, branch prefix and databases). Work
