@@ -6,6 +6,16 @@ import save_safety as s
 
 
 class Tests(unittest.TestCase):
+    def test_source_column_and_client_directive_are_distinct(self):
+        migration = s.REPO / 'sql/updates/characters/2026_10_31_claude_08_weapon_appearance.sql'
+        sql = migration.read_text()
+        self.assertEqual(s.validate_migration(sql, ['character_weapon_appearance']), sql)
+        for directive in ['SOURCE backup.sql;', 'source backup;',
+                          'CREATE TABLE IF NOT EXISTS heartseed_state (id INT; SOURCE backup);',
+                          'CREATE TABLE IF NOT EXISTS heartseed_state (id INT,\nSOURCE backup\n);']:
+            with self.subTest(sql=directive), self.assertRaises(ValueError):
+                s.validate_migration(directive, ['heartseed_state'])
+
     def test_custom_table_boundary(self):
         good = "-- comment\nCREATE TABLE IF NOT EXISTS `heartseed_state` (`guid` INT, note TEXT DEFAULT 'USE world;');"
         self.assertEqual(s.validate_migration(good, ['heartseed_state']), good)

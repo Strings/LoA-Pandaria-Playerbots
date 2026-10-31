@@ -229,9 +229,14 @@ def validate_migration(sql, allowed):
     pattern = r"'(?:\\.|''|[^'\\])*'|\"(?:\\.|\"\"|[^\"\\])*\"|--[^\n]*|\#[^\n]*|/\*[\s\S]*?\*/"
     if '/*!' in sql or '\\' in re.sub(pattern, '', sql):
         raise ValueError('executable comments/client commands are forbidden')
-    masked = re.sub(pattern, "''", sql).replace('`', '')
+    masked = re.sub(pattern, "''", sql)
+    # SOURCE is also a valid quoted column name; client directives are unquoted.
+    client_code = re.sub(r'`(?:``|[^`])*`', 'identifier', masked)
+    if re.search(r'(?:^|;)\s*SOURCE\b', client_code, re.I | re.M):
+        raise ValueError('SQL client SOURCE commands are forbidden')
+    masked = masked.replace('`', '')
     masked = masked.replace("''", ' ')
-    if re.search(r'\b(USE|DATABASE|TRIGGER|PROCEDURE|FUNCTION|OUTFILE|INFILE|SOURCE|GRANT|REVOKE|RENAME)\b', masked, re.I):
+    if re.search(r'\b(USE|DATABASE|TRIGGER|PROCEDURE|FUNCTION|OUTFILE|INFILE|GRANT|REVOKE|RENAME)\b', masked, re.I):
         raise ValueError('migration must stay within explicitly allowed custom tables')
     if re.search(r'[a-z_]\w*\s*\.', masked, re.I):
         raise ValueError('qualified database names are forbidden')
