@@ -9,7 +9,7 @@ import shutil
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
-PORTS = {'codex': (3744, 8105, 7898), 'claude': (3734, 8095, 7888)}
+PORTS = {'codex': (3744, 8105, 7898), 'claude': (3734, 8095, 7888), 'gemini': (3754, 8115, 7908)}
 DATABASES = ('auth', 'characters', 'world', 'playerbots')
 
 

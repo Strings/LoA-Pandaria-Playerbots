@@ -2,9 +2,10 @@
 
 This repo is a fork of LoA-Pandaria-Playerbots (MoP 5.4.8, build 18414) with the mod-playerbots
 port. We are turning it into a solo-first MoP server (up to 8 friends) with living bots, an
-artifact (the Heartseed), war fronts and more. Claude Code and Codex both work here, usually at
-the same time, on separate tasks. These rules let you work autonomously without getting in each
-other's way.
+artifact (the Heartseed), war fronts and more. Claude Code, Codex and Gemini (Antigravity) work here,
+usually at the same time, on separate tasks. Claude Code also orchestrates: it assigns tasks in
+`TASKS.md` and reviews the other agents' PRs. These rules let you work autonomously without getting in
+each other's way.
 
 ## Start of every session
 
@@ -44,7 +45,7 @@ You are expected to finish tasks mostly on your own. Inside your task's scope, a
 - **Destructive or shared actions:** deleting files or directories you didn't create, dropping or
   rewriting tables in existing databases, schema changes to existing core tables, force-pushing,
   rewriting history, pushing to `playerbot` other than by merging a PR, major merges (a batch of many
-  PRs, one that is risky to undo, or one that conflicts with the other agent's work), touching another
+  PRs, one that is risky to undo, or one that conflicts with another agent's work), touching another
   agent's worktree, databases or ports.
 - **Dependencies:** adding a third-party library to the build or changing toolchain versions.
 - **Computer use:** anything that drives the GUI: launching or controlling the game client,
@@ -59,14 +60,16 @@ of the task that doesn't depend on the answer.
 ## Worktrees, branches, commits
 
 - Worktrees live in `.worktrees/<agent>/` (gitignored). Claude Code uses `.worktrees/claude`,
-  Codex uses `.worktrees/codex`. Never edit files in the main checkout or the other worktree.
+  Codex uses `.worktrees/codex`, Gemini uses `.worktrees/gemini`. Never edit files in the main checkout
+  or another agent's worktree.
 - Branch names: `<agent>/<task-id>-<slug>`, e.g. `claude/T-020-jewel-table`.
 - Small, focused commits with imperative messages: `Jewel: add character_jewel table`. Prefix with
   the area (`Jewel:`, `Bots:`, `Travel:`, `Tools:`, `Docs:`).
 - Before opening a PR: rebase on `playerbot`, build cleanly, run the relevant tests, add your
   status fragment, and update your task's line in `TASKS.md`.
-- The other agent reviews your PR when asked. You merge routine PRs yourself; ask the human before a
-  major merge (see Stop and ask first). Never edit the other agent's branch to make a merge go through.
+- Another agent reviews your PR when asked; Claude Code reviews Gemini's PRs before they merge while
+  Gemini is new here. You merge routine PRs yourself; ask the human before a major merge (see Stop and
+  ask first). Never edit another agent's branch to make a merge go through.
 
 ## Shared hotspots
 
@@ -98,6 +101,7 @@ environment variables for the headless client (`contrib/headless-client/README.m
 | Human (main checkout) | 3724 | 8085 | 7878 | `auth`, `characters`, `world`, `playerbots` |
 | Claude Code | 3734 | 8095 | 7888 | `auth_claude`, `characters_claude`, `world_claude`, `playerbots_claude` |
 | Codex | 3744 | 8105 | 7898 | `auth_codex`, `characters_codex`, `world_codex`, `playerbots_codex` |
+| Gemini | 3754 | 8115 | 7908 | `auth_gemini`, `characters_gemini`, `world_gemini`, `playerbots_gemini` |
 
 - Build into `build/` inside your worktree. Use the shared compiler cache if it is set up
   (`sccache` on Windows, `ccache` on Linux).
@@ -167,7 +171,7 @@ These come from decided rules in `docs/DESIGN.md` and apply everywhere.
 ## Status fragments
 
 Every PR adds `status/<agent>-<task-id>.md` from `status/_TEMPLATE.md`: what changed, what's next,
-anything the other agent must know, and any decision you made. The human folds fragments into
+anything the other agents must know, and any decision you made. The human folds fragments into
 `STATUS.md` after merging and deletes them. Never edit `STATUS.md` yourself.
 
 ## Build it modular

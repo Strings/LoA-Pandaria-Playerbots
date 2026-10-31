@@ -8,7 +8,7 @@ worktree's ignored build directory. Set MOP_DB_PASSWORD before generating config
 python tools/devenv/setup.py --agent codex --gamedata I:/UltimateMoP/gamedata --binaries I:/UltimateMoP/build/bin/RelWithDebInfo --output build/devenv --profile test --load none
 ```
 
-Agent ports: Codex 3744/8105/7898; Claude 3734/8095/7888 (auth/world/SOAP).
+Agent ports: Codex 3744/8105/7898; Claude 3734/8095/7888; Gemini 3754/8115/7908 (auth/world/SOAP).
 Database suffix matches the agent. The generator copies the two existing server
 executables and libmysql, libcrypto, libssl and **legacy.dll**. OpenSSL's provider
 search path is the executable directory; without legacy.dll the first world
