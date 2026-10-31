@@ -1195,6 +1195,7 @@ Splitting data into general, class-specific and situation-specific behavior happ
 - **Outcome events** label the decisions: kill, death, damage taken per fight, fight duration, wipe, flee, resurrection.
 - **Activity episodes:** each stretch is tagged (fight, travel, questing, gathering, vendor or bank, idle, dungeon, PvP) from server state, so data can be cut by situation without guessing afterward.
 - **Schema version** on every row, so old logs stay readable as fields are added. Movement is sampled at a config rate. Chat logging has its own config key. Logs stay local.
+- **Keeping test play out:** `.telemetry pause | resume | status` (macro-friendly; an addon button later), and `.telemetry discard <minutes>` drops the last stretch after the fact. Logging also pauses on its own while GM mode is on, after any GM command until the character next moves or casts, while AFK, after an idle timeout (config key), and around checkpoint loads and GM teleports. Paused stretches are logged as gaps so episodes are not stitched across them.
 
 **Layers (offline)**
 
