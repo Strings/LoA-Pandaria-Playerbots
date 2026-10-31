@@ -6121,6 +6121,8 @@ bool Player::UpdateFishingSkill()
     uint32 SkillValue = GetPureSkillValue(SKILL_FISHING);
 
     int32 chance = SkillValue < 75 ? 100 : 10000 / (SkillValue + 25);
+    if (sWorld->getBoolConfig(CONFIG_SKILL_FISHING_ALWAYS))
+        chance = 100;
 
     uint32 gathering_skill_gain = sWorld->getIntConfig(CONFIG_SKILL_GAIN_GATHERING);
 
@@ -7775,7 +7777,7 @@ void Player::ResetCurrencyWeekCap()
 
 uint32 Player::GetCurrencyWeekCap(CurrencyTypesEntry const* currency) const
 {
-    if (!currency)
+    if (!currency || !sWorld->getBoolConfig(CONFIG_CURRENCY_WEEKLY_CAPS_ENABLED))
         return 0;
 
     uint32 cap = currency->WeekCap;
@@ -31321,7 +31323,7 @@ void Player::ModifyCurrencyMetaConquest(CurrencyTypesEntry const* currency, int3
     int32 actualWeekCap = GetCurrencyWeekCap(currency->ID, false);
 
     // Actual cap
-    if (actualWeekCount + count > actualWeekCap)
+    if (actualWeekCap && actualWeekCount + count > actualWeekCap)
         count = actualWeekCap - actualWeekCount;
 
     if (!count)
@@ -31333,7 +31335,7 @@ void Player::ModifyCurrencyMetaConquest(CurrencyTypesEntry const* currency, int3
     int32 maxCap = std::max(weekCapArena, weekCapRatedBg);
     int32 actualConquestCount = GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_POINTS, false);
 
-    if (actualConquestCount + count > maxCap)
+    if (maxCap && actualConquestCount + count > maxCap)
         count = maxCap - actualConquestCount;
 
     if (!count)
@@ -31796,7 +31798,9 @@ void Player::UpdateValorOfTheAncients()
     if (itr == _currencyStorage.end())
         return; // noting to do here
 
-    uint32 weekCap = GetCurrencyWeekCap(sCurrencyTypesStore.LookupEntry(CURRENCY_TYPE_VALOR_POINTS));
+    // The bonus remains a milestone even when earning past it is allowed.
+    CurrencyTypesEntry const* currency = sCurrencyTypesStore.LookupEntry(CURRENCY_TYPE_VALOR_POINTS);
+    uint32 weekCap = currency ? currency->WeekCap : 0;
     bool hasWeekCap = weekCap && itr->second.weekCount >= weekCap;
     if (!GetSession()->HasFlag(ACC_FLAG_VALOR_CAP_REACHED) && hasWeekCap)
         GetSession()->AddFlag(ACC_FLAG_VALOR_CAP_REACHED);

@@ -1,22 +1,23 @@
-BLOCKED: weekly currency caps and guaranteed fishing have no working config switches; authorize core hooks after build tooling, or defer those portions?
-
-# T-019: Verified solo config defaults
+# T-019: Solo config defaults and authorized core hooks
 
 **Agent:** codex
 **Branch:** codex/T-019-solo-config
-**Task status:** blocked
+**Task status:** review (draft; compiled validation deferred by the human)
 
 ## What changed
-- 26 supported config values in worldserver.conf.dist and an independent dev/test profile overlay: cross-faction hooks, all taxi paths, 100% crafting/configured gathering rolls, prospecting/milling, ordinary death durability off, sickness disabled at MoP cap, reclaim escalation off.
-- Standalone private-runtime apply helper and source-backed SOLO_CONFIG.md audit. No C++ changes.
-- Weekly caps unchanged: the legacy Conquest key rejects 0 and its loaded enum has no consumers; GetCurrencyWeekCap uses DBC/rating caps. Fishing chance above 75 is hardcoded separately. Those require core hooks and compiled validation; T-019 is not complete.
+- 28 config values in worldserver.conf.dist and independent dev/test overlay: cross-faction hooks, all taxi paths, guaranteed crafting/gathering/fishing, ordinary death durability off, sickness disabled at MoP cap, reclaim escalation off, no weekly currency caps.
+- Human authorized core hooks on 2026-10-31 and explicitly deferred compiled validation until Claude's build tooling lands.
+- New cached bools Currency.WeeklyCaps.Enable (shipped 0; omitted fallback 1) and SkillChance.Fishing.Always (shipped 1; omitted fallback 0). Config reload supported.
+- Weekly-cap getter returns zero/unlimited; both Conquest meta award clamps respect that sentinel. Total holding limits and weekly/season counters/reset remain. Valor of the Ancients uses the original DBC bonus milestone independently of earning limits.
+- Fishing selects 100% through the existing skill-up path, preserving learned caps/gain amounts; disabling restores the original formula.
 
 ## How it was tested
-- Two unit tests verify every key is actually loaded, shipped/profile defaults agree, and applying twice preserves bytes.
-- Live Codex SOAP reload config succeeded. Headless GM fixture learned alchemy, set skill 70/75 and crafted spell 2330; core log showed Chance 100.0% taken, and saved character_skills value became 71/75.
-- Character is the disposable Codextwink fixture. No main/Claude DB/config changes, GUI or full build.
+- Two Python checks pass: all keys loaded, shipped/profile defaults agree, runtime application byte-idempotent. git diff --check passes.
+- Prior live test of unchanged alchemy config path: fixture skill 70/75, craft 2330, logged Chance 100.0% taken, saved 71/75.
+- New C++ hooks are NOT compiled or runtime-tested. No full build or GUI started. Detailed post-build currency/PvP/fishing/toggle test plan in tools/devenv/SOLO_CONFIG.md.
 
 ## For the other agent
-- Draft PR contains reviewable config-only work; cap/fishing extension awaits the human's scope decision and build tooling.
-- PvP base reclaim delay and spirit healer's hardcoded 25% durability charge remain; disabled escalation and ordinary-death loss are accurately documented.
-- T-002 PR #4 consumes the optional overlay once merged. Standalone apply helper works without stacking its code.
+- Keep PR #10 draft pending compiled validation. Task scope approval is resolved; there is no remaining permission question.
+- PvP base reclaim delay and spirit healer's separate 25% durability charge remain documented.
+- T-002 PR #4 consumes the overlay once merged. Existing binaries ignore the two new keys; deploying config alone does not activate these hooks.
+- No main/Claude environment changes; STATUS.md unchanged.

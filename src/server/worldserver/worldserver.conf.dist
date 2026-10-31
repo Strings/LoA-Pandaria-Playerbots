@@ -1224,6 +1224,14 @@ SkillChance.Prospecting = 1
 SkillChance.Milling = 1
 
 #
+#    SkillChance.Fishing.Always
+#        Description: Guarantee a fishing skill-up after a successful catch, below the learned skill cap.
+#                     0 restores the stock skill-dependent chance. Takes effect on config reload.
+#        Default:     1 - (Enabled, solo-first)
+
+SkillChance.Fishing.Always = 1
+
+#
 #    OffhandCheckAtSpellUnlearn
 #        Description: Unlearning certain spells can change offhand weapon restrictions
 #                     for equip slots.
@@ -3833,9 +3841,19 @@ Currency.StartConquestPoints = 0
 #        Default: 1650
 #
 
-# This legacy key cannot disable weekly limits (0 is rejected). Valor/Conquest
-# enforcement uses DBC/rating caps; see tools/devenv/SOLO_CONFIG.md.
+# This legacy key cannot disable weekly limits (0 is rejected). Use
+# Currency.WeeklyCaps.Enable instead; see tools/devenv/SOLO_CONFIG.md.
 Currency.ConquestPointsWeekCap = 1650
+
+#
+#    Currency.WeeklyCaps.Enable
+#        Description: Enforce DBC/rating-based weekly earning limits, including Conquest meta currencies.
+#                     0 removes weekly limits; holding caps and weekly accounting/reset remain.
+#                     Valor of the Ancients keeps its original DBC milestone. Takes effect on config reload;
+#                     relog to refresh all client currency/PvP limit displays.
+#        Default:     0 - (Disabled, solo-first)
+
+Currency.WeeklyCaps.Enable = 0
 
 #
 #    Currency.ConquestPointsArenaReward

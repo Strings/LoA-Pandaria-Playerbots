@@ -25,9 +25,14 @@ class Tests(unittest.TestCase):
         root.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=root) as name:
             target = Path(name) / 'worldserver.conf'
-            target.write_bytes((m.ROOT / 'src/server/worldserver/worldserver.conf.dist').read_bytes())
+            original = (m.ROOT / 'src/server/worldserver/worldserver.conf.dist').read_text(encoding='utf-8-sig')
+            # An existing generated runtime predates the two new core settings.
+            original = '\n'.join(line for line in original.splitlines() if not line.startswith(('Currency.WeeklyCaps.Enable =', 'SkillChance.Fishing.Always =')))
+            target.write_text(original, encoding='utf-8')
             m.apply(name)
             first = target.read_bytes()
+            self.assertIn(b'Currency.WeeklyCaps.Enable = 0', first)
+            self.assertIn(b'SkillChance.Fishing.Always = 1', first)
             m.apply(name)
             self.assertEqual(first, target.read_bytes())
 
