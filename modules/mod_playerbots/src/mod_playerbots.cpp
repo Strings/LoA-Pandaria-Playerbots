@@ -359,6 +359,8 @@ public:
         }
     }
 };
+void AddSC_playerbots_inspect_commandscript();  // Inspect/cs_bot_inspect.cpp (T-039)
+
 void AddSC_mod_playerbots()
 {
     new mod_playerbots();
@@ -369,4 +371,5 @@ void AddSC_mod_playerbots()
     new PlayerbotsPlayerScript();
 
     AddSC_playerbots_commandscript();
+    AddSC_playerbots_inspect_commandscript();
 }

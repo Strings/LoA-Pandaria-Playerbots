@@ -61,6 +61,14 @@ public:
      */
     void RemoveExpired();
 
+    // Read-only walk for the decision trace (T-039).
+    template <class F>
+    void ForEach(F&& visit) const
+    {
+        for (ActionBasket* basket : actions)
+            visit(basket);
+    }
+
 private:
     /**
      * @brief Updates existing basket with new relevance and cleans up new basket

@@ -5611,3 +5611,32 @@ Heartseed.Choice.ChangeAtShrineOnly = 1
 #        Default:     2.0
 
 Rate.MountedSpeed = 2.0
+
+
+###################################################################################################
+# GM TOOLS (T-039)
+#
+#    GMTools.Clock.MaxSpeed
+#        Description: Highest multiplier .clock speed accepts. The custom clock is what custom
+#                     systems (war fronts, director, custom respawns) read; core timers ignore it.
+#        Default:     3600
+
+GMTools.Clock.MaxSpeed = 3600
+
+#
+#    GMTools.Clock.MaxJumpSeconds
+#        Description: Longest single .clock jump, in seconds.
+#        Default:     2592000 (30 days)
+
+GMTools.Clock.MaxJumpSeconds = 2592000
+
+#
+#    GMTools.Spectate.AttachTimeoutMs
+#        Description: How long .spectate waits for the GM to arrive on the target's map before
+#                     giving up, in milliseconds.
+#        Default:     10000
+
+GMTools.Spectate.AttachTimeoutMs = 10000
+
+#
+###################################################################################################
