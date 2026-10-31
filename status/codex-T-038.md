@@ -27,3 +27,7 @@
 - src/server/scripts/Custom/Reload/: registry, command/config adapter, registration docs.
 - src/common/Utilities/DeterministicRandom.h and RandomSeedState.h: portable test stream/status.
 - tests/reload/: pure unit suites.
+
+## Latest merge integration
+- Rebased onto the merged T-023/T-025/T-026 hooks, preserving their shrine, grant and Growth behavior. Shrine definitions join the atomic reload group.
+- An earlier full RelWithDebInfo build and private startup passed; the newer merged ScriptMgr hooks require a fresh validation build. No lld/build-script changes are part of this PR.

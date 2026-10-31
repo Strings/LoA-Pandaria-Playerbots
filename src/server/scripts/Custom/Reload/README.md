@@ -46,7 +46,7 @@ its own reader/publication policy.
 
 Heartseed registers one coherent group: `heartseed` (bundle alias),
 `heartseed_stage`, `heartseed_glow`, `heartseed_trait`,
-`heartseed_essence_template`, `heartseed_essence_source`, and `twink_item` (its
+`heartseed_essence_template`, `heartseed_essence_source`, `heartseed_shrine`, and `twink_item` (its
 feeding lookup). Startup and the existing `.heartseed reload` command use this
 same registration. Every table name reloads the complete related cache under
 one shared guard. Query errors, missing stages and invalid rows retain the prior
