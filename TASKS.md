@@ -17,7 +17,7 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 
 | ID | Task | Owns | Owner | Status |
 |---|---|---|---|---|
-| T-001 | Fork LoA, turn this folder into the repo, build with `TOOLS=ON`, extract game data from `mop-clean/` into `gamedata/`, import the four databases and the per-agent sets, start the servers, create worktrees. See `HANDOFF.md` | repo setup, `gamedata/`, `.gitignore` | claude | open |
+| T-001 | Fork LoA, turn this folder into the repo, build with `TOOLS=ON`, extract game data from `mop-clean/` into `gamedata/`, import the four databases and the per-agent sets, start the servers, create worktrees. See `HANDOFF.md` | repo setup, `gamedata/`, `.gitignore` | claude | review |
 | T-002 | Dev environment script: create per-agent databases from the dumps, set ports and realmlist, write per-agent conf files | `tools/devenv/` | | open |
 | T-003 | Baseline `.server info` (median, p95, p99) at 500, 1000 and 2000 bots on the human's play machine; record results in a status fragment | `tools/bench/` | | open |
 | T-004 | Player telemetry logging hook (movement, casts, targets, emotes, loot, chat) behind a config key, off by default | `src/server/game/Telemetry/` | | open |
