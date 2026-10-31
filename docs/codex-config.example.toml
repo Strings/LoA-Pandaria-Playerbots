@@ -1,0 +1,16 @@
+# Codex settings for UltimateMoP.
+# Copy these into your user config (%USERPROFILE%\.codex\config.toml) and start Codex from
+# .worktrees\codex with:  codex --profile ultimatemop
+# Key names follow the Codex config docs as of late 2026; check them against your Codex version.
+#
+# on-request: Codex works on its own and asks when it decides an action needs approval.
+# AGENTS.md lists what it must ask about (scope breaches, judgment calls, destructive actions,
+# computer use). workspace-write keeps writes inside the worktree.
+
+[profiles.ultimatemop]
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
+# Top-level: lets workspace-write sessions reach the network (package installs, gh, git push).
+[sandbox_workspace_write]
+network_access = true

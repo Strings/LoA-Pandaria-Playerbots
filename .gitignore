@@ -21,3 +21,7 @@ testserver/confs/*.bak-*
 
 # private local defaults for the headless client (credentials; never commit)
 headless.local.json
+
+.worktrees/
+mop-clean/
+gamedata/
