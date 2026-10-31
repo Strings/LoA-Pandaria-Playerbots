@@ -223,6 +223,7 @@ CMSG_GAMEOBJ_REPORT_USE = 0x06D9
 CMSG_ATTACKSWING = 0x02E7
 CMSG_ATTACKSTOP = 0x0345
 CMSG_SET_PRIMARY_TALENT_TREE = 0x06C6
+CMSG_AUTOEQUIP_ITEM = 0x025F
 CMSG_SPELLCLICK = 0x067A
 SMSG_GOSSIP_MESSAGE = 0x0244
 HIGHGUID_GAMEOBJECT = 0xF11
@@ -2093,6 +2094,13 @@ class WorldClient:
         self.send_packet(CMSG_SET_PRIMARY_TALENT_TREE, struct.pack("<I", tab))
         log("sent CMSG_SET_PRIMARY_TALENT_TREE tab=%d" % tab)
         self.emit("set_spec", tab=tab)
+
+    def autoequip(self, bag, slot):
+        """CMSG_AUTOEQUIP_ITEM (ItemHandler.cpp HandleAutoEquipItemOpcode): uint8 slot, uint8 bag, the same as
+        right-clicking an item. Bag 255 is the backpack, whose slots are 23-38."""
+        self.send_packet(CMSG_AUTOEQUIP_ITEM, struct.pack("<BB", slot, bag))
+        log("sent CMSG_AUTOEQUIP_ITEM bag=%d slot=%d" % (bag, slot))
+        self.emit("autoequip", bag=bag, slot=slot)
 
     def attack_stop(self):
         """CMSG_ATTACKSTOP (CombatHandler.cpp:90): empty body."""
@@ -4560,6 +4568,12 @@ def run_verb(w, args_cli, line):
             log("set-spec: need <talent tab 0-3>")
             return
         w.set_spec(int(rest[0]))
+    elif verb == "autoequip":
+        # autoequip BAG SLOT: equip an item the way a right-click does (bag 255 = backpack, slots 23-38)
+        if len(rest) < 2 or not rest[0].isdigit() or not rest[1].isdigit():
+            log("autoequip: need <bag> <slot>")
+            return
+        w.autoequip(int(rest[0]), int(rest[1]))
     elif verb == "attack-stop":
         w.attack_stop()
     elif verb == "spellclick":
