@@ -13,6 +13,7 @@
 #include <functional>
 #include <map>
 #include <mutex>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -27,12 +28,25 @@ namespace Heartseed
     // Server-side passive (spell_dbc) carrying the core passive's bonus weapon damage.
     constexpr uint32 SPELL_CORE_WEAPON_BONUS = 310008;
 
+    // Gossip the Heartseed opens from the player itself to ask before it feeds (Heartseed gossip block).
+    constexpr uint32 GOSSIP_MENU_FEED = 90001;
+    constexpr uint32 NPC_TEXT_FEED = 90001;
+    enum FeedGossipAction : uint32
+    {
+        FEED_ACTION_FEED = 1,
+        FEED_ACTION_KEEP = 2,
+    };
+
     // Story beats; stored as rows in heartseed_story_flag. Append only: the values are saved.
     enum StoryFlag : uint16
     {
         STORY_FLAG_FIRST_DUNGEON    = 1,
         STORY_FLAG_REACHED_PANDARIA = 2,
         STORY_FLAG_FIRST_WORLD_BOSS = 3,
+
+        // 1000 and up: hints the character has seen. Stored with the story flags so they persist, but never
+        // listed in Heartseed.Rank.AwakeningFlags, so they do not raise the cap.
+        HINT_TWINK_WEAPON           = 1001,
     };
 
     struct State
@@ -58,6 +72,8 @@ namespace Heartseed
         std::map<uint32, uint32> EssenceLastProc;     // essence id -> getMSTime() of its last proc
         uint32 EssenceProcCount = 0;                  // essence procs since login
         ObjectGuid MainHand;                          // main-hand weapon last seen, to find the one replaced
+        ObjectGuid PendingFeed;                       // replaced weapon the feed prompt is asking about
+        std::set<ObjectGuid> DeclinedFeeds;           // weapons the player chose to keep this session
         uint64 FirstNewItemGuid = 0;                  // items from this counter on were created after login
         uint32 FedWeapons = 0;                        // weapons fed in total (heartseed_fed_weapon)
         bool CapNoticeSent = false;                   // "it needs you to grow" is said once per session
@@ -91,8 +107,24 @@ namespace Heartseed
         Disabled,                                     // Heartseed.Enabled = 0
         NotWeapon,                                    // not a weapon, or a fishing pole or miscellaneous one
         Excluded,                                     // quality worth no Growth (legendary, heirloom), quest item
+        Twink,                                        // twink item: fed only when the player deletes it
         Refundable,                                   // can still go back to the vendor
         Equipped,                                     // only weapons in bags are fed
+    };
+
+    // Why a weapon is fed. Twink items are refused on replacement; deleting one feeds it.
+    enum class FeedSource
+    {
+        Command,                                      // GM command or another system
+        Replace,                                      // the player confirmed the prompt after an upgrade
+        Delete,                                       // the player deleted it; the item is destroyed by the caller
+    };
+
+    // Where a weapon appearance was unlocked (characters character_weapon_appearance).
+    enum AppearanceSource : uint8
+    {
+        APPEARANCE_FED      = 1,
+        APPEARANCE_DELETED  = 2,
     };
 
     // What feeding a weapon gives; FeedPreview fills it without consuming anything.
@@ -152,7 +184,7 @@ public:
     static HeartseedMgr* instance();
 
     void LoadConfig();
-    void LoadData();                       // world: heartseed_stage, _glow, _trait, _essence_template, _essence_source
+    void LoadData();                       // world: heartseed_stage, _glow, _trait, _essence_template, _essence_source, twink_item
     bool IsEnabled() const { return _enabled; }
 
     void LoadPlayer(Player* player);       // characters: all heartseed_* rows of one character
@@ -184,14 +216,22 @@ public:
     std::vector<uint16> GetAwakeningFlags() const;
 
     // Feeding: a weapon in the character's bags is consumed for Growth and a chance at an essence by origin.
-    Heartseed::FeedResult CanFeed(Player const* player, Item const* item) const;
+    Heartseed::FeedResult CanFeed(Player const* player, Item const* item, Heartseed::FeedSource source) const;
     void FeedPreview(ItemTemplate const* proto, uint32 itemLevel, Heartseed::FeedOutcome& out) const;
-    Heartseed::FeedResult Feed(Player* player, Item* item, Heartseed::FeedOutcome& out);
-    // The main hand changed. Feeds the weapon it replaced when that one is now in the bags and has a lower
-    // item level (Heartseed.Feed.OnReplace), one update later so the swap has finished.
+    Heartseed::FeedResult Feed(Player* player, Item* item, Heartseed::FeedOutcome& out, Heartseed::FeedSource source);
+    // The main hand changed. When the weapon it replaced is now in the bags and has a lower item level
+    // (Heartseed.Feed.OnReplace), the Heartseed asks, one update later so the swap has finished, whether to feed
+    // it. Nothing is consumed until the player confirms.
     void OnMainHandChanged(Player* player, Item* newWeapon);
-    void FeedReplaced(Player* player, ObjectGuid oldWeapon);
+    void OfferReplacedFeed(Player* player, ObjectGuid oldWeapon);
+    void OnFeedGossipSelect(Player* player, uint32 action);
+    // The player deleted an item: a twink weapon is fed, every weapon's appearance is recorded.
+    void OnItemDestroyedByPlayer(Player* player, Item* item);
     bool IsFeedOnReplace() const { return _feedOnReplace; }
+    bool IsTwinkItem(uint32 entry) const;                // world twink_item
+    uint32 GetTwinkItemCount() const;
+    // Records a weapon appearance for the appearance collection (later) to read.
+    static void RecordAppearance(Player* player, ItemTemplate const* proto, Heartseed::AppearanceSource source);
 
     // Essences. AddEssence puts a new essence into the first free open slot (Heartseed.Essence.AutoSlot).
     // SetEssenceSlot moves an essence to a slot (0 = inactive); whatever held that slot goes inactive. force
@@ -267,6 +307,7 @@ private:
     std::map<uint32, Heartseed::TraitInfo> _traits;     // trait id -> trait
     std::map<uint32, Heartseed::EssenceInfo> _essences; // essence id -> essence
     std::vector<Heartseed::EssenceSource> _essenceSources;
+    std::set<uint32> _twinkItems;                       // item entries flagged as twink gear
 
     mutable std::mutex _lock;                           // players save from map threads
     std::unordered_map<uint32, Heartseed::State> _states;   // guid counter -> state

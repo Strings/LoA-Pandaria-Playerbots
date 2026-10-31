@@ -1425,6 +1425,11 @@ void ScriptMgr::OnPlayerSpecializationChanged(Player* player)
     FOREACH_SCRIPT(PlayerScript)->OnSpecializationChanged(player);
 }
 
+void ScriptMgr::OnPlayerItemDestroyedByPlayer(Player* player, Item* item)
+{
+    FOREACH_SCRIPT(PlayerScript)->OnItemDestroyedByPlayer(player, item);
+}
+
 void ScriptMgr::OnPlayerFreeTalentPointsChanged(Player* player, uint32 points)
 {
 #ifdef ELUNA

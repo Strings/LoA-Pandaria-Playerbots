@@ -7,6 +7,7 @@
 #include "Config.h"
 #include "DatabaseEnv.h"
 #include "DBCStores.h"
+#include "GossipDef.h"
 #include "Log.h"
 #include "ObjectMgr.h"
 #include "ObjectAccessor.h"
@@ -49,7 +50,7 @@ namespace
         uint32 _essenceId;
     };
 
-    // Feeds the replaced main hand one update after the swap, once both items sit where they end up.
+    // Asks about the replaced main hand one update after the swap, once both items sit where they end up.
     class HeartseedFeedEvent : public BasicEvent
     {
     public:
@@ -57,7 +58,7 @@ namespace
 
         bool Execute(uint64 /*time*/, uint32 /*diff*/) override
         {
-            sHeartseedMgr->FeedReplaced(_player, _oldWeapon);
+            sHeartseedMgr->OfferReplacedFeed(_player, _oldWeapon);
             return true;
         }
 
@@ -265,6 +266,14 @@ void HeartseedMgr::LoadData()
         } while (result->NextRow());
     }
 
+    std::set<uint32> twinkItems;
+    if (QueryResult result = WorldDatabase.Query("SELECT `entry` FROM `twink_item`"))
+    {
+        do
+            twinkItems.insert(result->Fetch()[0].GetUInt32());
+        while (result->NextRow());
+    }
+
     if (!sSpellMgr->GetSpellInfo(Heartseed::SPELL_CORE_WEAPON_BONUS))
         TC_LOG_ERROR("sql.sql", "Heartseed: core passive spell %u is missing from `spell_dbc`; no bonus weapon damage.", Heartseed::SPELL_CORE_WEAPON_BONUS);
     if (_procSpellId && !sSpellMgr->GetSpellInfo(_procSpellId))
@@ -278,10 +287,12 @@ void HeartseedMgr::LoadData()
         _traits = std::move(traits);
         _essences = std::move(essences);
         _essenceSources = std::move(essenceSources);
+        _twinkItems = std::move(twinkItems);
     }
 
-    TC_LOG_INFO("server.loading", ">> Loaded %u Heartseed stages, %u glows, %u traits, %u essences and %u essence sources in %u ms", uint32(_stages.size()),
-        uint32(_glow.size()), uint32(_traits.size()), uint32(_essences.size()), uint32(_essenceSources.size()), GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded %u Heartseed stages, %u glows, %u traits, %u essences, %u essence sources and %u twink items in %u ms",
+        uint32(_stages.size()), uint32(_glow.size()), uint32(_traits.size()), uint32(_essences.size()), uint32(_essenceSources.size()),
+        uint32(_twinkItems.size()), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void HeartseedMgr::LoadPlayer(Player* player)
@@ -596,7 +607,26 @@ float HeartseedMgr::GetFeedQualityPct(uint32 quality) const
     return quality < _feedQualityPct.size() ? _feedQualityPct[quality] : 0.0f;
 }
 
-Heartseed::FeedResult HeartseedMgr::CanFeed(Player const* player, Item const* item) const
+bool HeartseedMgr::IsTwinkItem(uint32 entry) const
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    return _twinkItems.count(entry) != 0;
+}
+
+uint32 HeartseedMgr::GetTwinkItemCount() const
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    return uint32(_twinkItems.size());
+}
+
+void HeartseedMgr::RecordAppearance(Player* player, ItemTemplate const* proto, Heartseed::AppearanceSource source)
+{
+    // Keeps the first way each appearance was unlocked.
+    CharacterDatabase.PExecute("INSERT IGNORE INTO `character_weapon_appearance` (`guid`, `item_entry`, `display_id`, `source`, `unlock_time`) "
+        "VALUES (%u, %u, %u, %u, %u)", player->GetGUID().GetCounter(), proto->ItemId, proto->DisplayInfoID, uint32(source), uint32(time(nullptr)));
+}
+
+Heartseed::FeedResult HeartseedMgr::CanFeed(Player const* player, Item const* item, Heartseed::FeedSource source) const
 {
     if (!HasHeartseed(player))
         return Heartseed::FeedResult::NoHeartseed;
@@ -613,6 +643,9 @@ Heartseed::FeedResult HeartseedMgr::CanFeed(Player const* player, Item const* it
         return Heartseed::FeedResult::Refundable;
     if (item->IsEquipped())
         return Heartseed::FeedResult::Equipped;
+    // Twink gear is kept on purpose; only deleting it (or a GM) feeds it.
+    if (source == Heartseed::FeedSource::Replace && IsTwinkItem(proto->ItemId))
+        return Heartseed::FeedResult::Twink;
     return Heartseed::FeedResult::Ok;
 }
 
@@ -638,9 +671,9 @@ void HeartseedMgr::FeedPreview(ItemTemplate const* proto, uint32 itemLevel, Hear
     }
 }
 
-Heartseed::FeedResult HeartseedMgr::Feed(Player* player, Item* item, Heartseed::FeedOutcome& out)
+Heartseed::FeedResult HeartseedMgr::Feed(Player* player, Item* item, Heartseed::FeedOutcome& out, Heartseed::FeedSource source)
 {
-    Heartseed::FeedResult result = CanFeed(player, item);
+    Heartseed::FeedResult result = CanFeed(player, item, source);
     if (result != Heartseed::FeedResult::Ok)
         return result;
 
@@ -658,8 +691,11 @@ Heartseed::FeedResult HeartseedMgr::Feed(Player* player, Item* item, Heartseed::
     GetState(player, before);
     out.OldRank = before.Rank;
 
-    // Consumed first, so nothing below can leave the weapon behind after it has paid out.
-    player->DestroyItem(item->GetBagSlot(), item->GetSlot(), true);
+    RecordAppearance(player, proto, Heartseed::APPEARANCE_FED);
+    // Consumed first, so nothing below can leave the weapon behind after it has paid out. A deleted item is
+    // destroyed by the delete handler right after this returns.
+    if (source != Heartseed::FeedSource::Delete)
+        player->DestroyItem(item->GetBagSlot(), item->GetSlot(), true);
 
     // Every weapon fed is kept by entry: consumed weapons become appearances later (DESIGN.md, Leveling).
     CharacterDatabase.PExecute("INSERT INTO `heartseed_fed_weapon` (`guid`, `item_entry`, `count`, `first_time`) VALUES (%u, %u, 1, %u) "
@@ -676,8 +712,8 @@ Heartseed::FeedResult HeartseedMgr::Feed(Player* player, Item* item, Heartseed::
     ChatHandler handler(player->GetSession());
     handler.PSendSysMessage("Your Heartseed consumes %s: +%u Growth.", itemName.c_str(), out.Growth);
     if (firstFeed)
-        handler.SendSysMessage("The Heartseed feeds on the weapons you outgrow. When a better weapon replaces your main hand, it eats the old one "
-            "and grows; essences of a weapon's origin may stay behind in it.");
+        handler.SendSysMessage("The Heartseed feeds on the weapons you outgrow. When a better weapon replaces your main hand, it asks to eat "
+            "the old one and grows from it; essences of a weapon's origin may stay behind in it.");
 
     for (uint32 essenceId : out.Essences)
     {
@@ -713,13 +749,26 @@ void HeartseedMgr::OnMainHandChanged(Player* player, Item* newWeapon)
         newSinceLogin = newGuid.GetCounter() >= itr->second.FirstNewItemGuid;
     }
 
+    // First twink weapon in the main hand: say once that twink gear never feeds the Heartseed on its own.
+    if (_enabled && IsTwinkItem(newWeapon->GetEntry()))
+    {
+        Heartseed::State state;
+        if (GetState(player, state) && !state.StoryFlags.count(Heartseed::HINT_TWINK_WEAPON))
+        {
+            SetStoryFlag(player, Heartseed::HINT_TWINK_WEAPON, true);
+            player->GetSession()->SendNotification("Twink weapons never feed your Heartseed on their own.");
+            ChatHandler(player->GetSession()).SendSysMessage("This is twink gear. Your Heartseed asks to eat the weapons you outgrow, but never "
+                "twink weapons: they stay yours however you swap them. To feed one to the Heartseed, delete it from your bags.");
+        }
+    }
+
     // Only a weapon gained since login replaces anything. Swapping between weapons the character already
-    // carried (a situational weapon, a second spec's) never feeds one of them.
+    // carried (a situational weapon, a second spec's) never asks about one of them.
     if (_enabled && _feedOnReplace && newSinceLogin && !oldGuid.IsEmpty() && oldGuid != newGuid)
         player->m_Events.AddEvent(new HeartseedFeedEvent(player, oldGuid), player->m_Events.CalculateTime(0));
 }
 
-void HeartseedMgr::FeedReplaced(Player* player, ObjectGuid oldWeapon)
+void HeartseedMgr::OfferReplacedFeed(Player* player, ObjectGuid oldWeapon)
 {
     Item* weapon = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
     Item* replaced = player->GetItemByGuid(oldWeapon);
@@ -729,9 +778,72 @@ void HeartseedMgr::FeedReplaced(Player* player, ObjectGuid oldWeapon)
         return;
     if (weapon->GetItemLevel() <= replaced->GetItemLevel())
         return;
+    if (CanFeed(player, replaced, Heartseed::FeedSource::Replace) != Heartseed::FeedResult::Ok)
+        return;
+
+    {
+        std::lock_guard<std::mutex> guard(_lock);
+        auto itr = _states.find(player->GetGUID().GetCounter());
+        if (itr == _states.end() || itr->second.DeclinedFeeds.count(oldWeapon))
+            return;
+        itr->second.PendingFeed = oldWeapon;
+    }
 
     Heartseed::FeedOutcome outcome;
-    Feed(player, replaced, outcome);
+    FeedPreview(replaced->GetTemplate(), replaced->GetItemLevel(), outcome);
+    std::string name = replaced->GetTemplate()->Name1;
+
+    // A gossip menu from the player itself: the 5.4.8 client's only server-driven dialog with a confirm box.
+    player->PlayerTalkClass->ClearMenus();
+    GossipMenu& menu = player->PlayerTalkClass->GetGossipMenu();
+    menu.SetMenuId(Heartseed::GOSSIP_MENU_FEED);
+    menu.AddMenuItem(-1, GOSSIP_ICON_CHAT, "Feed " + name + " to the Heartseed (+" + std::to_string(outcome.Growth) + " Growth).",
+        0, Heartseed::FEED_ACTION_FEED, "Your Heartseed will consume " + name + ". It cannot be undone.", 0);
+    menu.AddMenuItem(-1, GOSSIP_ICON_CHAT, "Keep " + name + ".", 0, Heartseed::FEED_ACTION_KEEP, "", 0);
+    player->PlayerTalkClass->SendGossipMenu(Heartseed::NPC_TEXT_FEED, player->GetGUID());
+}
+
+void HeartseedMgr::OnFeedGossipSelect(Player* player, uint32 action)
+{
+    player->PlayerTalkClass->SendCloseGossip();
+
+    ObjectGuid pending;
+    {
+        std::lock_guard<std::mutex> guard(_lock);
+        auto itr = _states.find(player->GetGUID().GetCounter());
+        if (itr == _states.end())
+            return;
+        pending = itr->second.PendingFeed;
+        itr->second.PendingFeed.Clear();
+        if (action == Heartseed::FEED_ACTION_KEEP && !pending.IsEmpty())
+            itr->second.DeclinedFeeds.insert(pending);
+    }
+
+    Item* item = pending.IsEmpty() ? nullptr : player->GetItemByGuid(pending);
+    if (action != Heartseed::FEED_ACTION_FEED || !item)
+        return;
+
+    // Checked again: the weapon may have been moved, sold or equipped while the prompt was open.
+    if (!player->IsInventoryPos(item->GetPos()))
+        return;
+    Heartseed::FeedOutcome outcome;
+    Feed(player, item, outcome, Heartseed::FeedSource::Replace);
+}
+
+void HeartseedMgr::OnItemDestroyedByPlayer(Player* player, Item* item)
+{
+    ItemTemplate const* proto = item->GetTemplate();
+    if (proto->Class != ITEM_CLASS_WEAPON)
+        return;
+
+    // A twink weapon is fed when the player deletes it; any other deleted weapon only unlocks its appearance.
+    if (IsTwinkItem(proto->ItemId) && !item->IsEquipped())
+    {
+        Heartseed::FeedOutcome outcome;
+        if (Feed(player, item, outcome, Heartseed::FeedSource::Delete) == Heartseed::FeedResult::Ok)
+            return;
+    }
+    RecordAppearance(player, proto, Heartseed::APPEARANCE_DELETED);
 }
 
 Heartseed::EssenceResult HeartseedMgr::AddEssence(Player* player, uint32 essenceId, uint32 count)
@@ -833,6 +945,7 @@ namespace
         { Heartseed::STORY_FLAG_FIRST_DUNGEON,    "first_dungeon" },
         { Heartseed::STORY_FLAG_REACHED_PANDARIA, "reached_pandaria" },
         { Heartseed::STORY_FLAG_FIRST_WORLD_BOSS, "first_world_boss" },
+        { Heartseed::HINT_TWINK_WEAPON,           "hint_twink_weapon" },
     };
 }
 

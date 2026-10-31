@@ -121,6 +121,18 @@ public:
         }
     }
 
+    void OnItemDestroyedByPlayer(Player* player, Item* item) override
+    {
+        if (!player->GetSession()->IsBot())
+            sHeartseedMgr->OnItemDestroyedByPlayer(player, item);
+    }
+
+    void OnGossipSelect(Player* player, uint32 menuId, uint32 /*sender*/, uint32 action) override
+    {
+        if (menuId == Heartseed::GOSSIP_MENU_FEED)
+            sHeartseedMgr->OnFeedGossipSelect(player, action);
+    }
+
     void OnSpecializationChanged(Player* player) override
     {
         // Each specialization has its own loadout, and the glow follows its dominant path.
@@ -347,7 +359,7 @@ public:
         Player* target = GetTarget(handler);
         if (target && sHeartseedMgr->HasHeartseed(target))
             sHeartseedMgr->Refresh(target);
-        handler->SendSysMessage("Heartseed stages, glows, traits and essences reloaded. Other characters pick up trait changes at their next refresh (relog, level, weapon or spec change).");
+        handler->SendSysMessage("Heartseed stages, glows, traits, essences and twink items reloaded. Other characters pick up trait changes at their next refresh (relog, level, weapon or spec change).");
         return true;
     }
 
@@ -513,6 +525,7 @@ public:
             case Heartseed::FeedResult::Disabled:    return "Heartseed.Enabled = 0";
             case Heartseed::FeedResult::NotWeapon:   return "not a weapon it eats (fishing poles and miscellaneous weapons are not)";
             case Heartseed::FeedResult::Excluded:    return "excluded (quest item, or its quality is worth 0 in Heartseed.Feed.QualityPct)";
+            case Heartseed::FeedResult::Twink:       return "twink item; fed only when deleted";
             case Heartseed::FeedResult::Refundable:  return "still refundable at a vendor";
             case Heartseed::FeedResult::Equipped:    return "equipped; only weapons in the bags are fed";
         }
@@ -633,8 +646,12 @@ public:
         sHeartseedMgr->FeedPreview(proto, itemLevel, outcome);
         handler->PSendSysMessage("Feeding %u %s (item level %u, quality %u): +%u Growth. Essence chances: %s.", entry, proto->Name1.c_str(),
             itemLevel, proto->Quality, outcome.Growth, DescribeEssenceChances(outcome).c_str());
+        if (sHeartseedMgr->IsTwinkItem(entry))
+            handler->SendSysMessage("Twink item: never offered on replacement; fed when the player deletes it.");
         if (item)
-            handler->PSendSysMessage("%s carries one: %s.", target->GetName().c_str(), DescribeFeedResult(sHeartseedMgr->CanFeed(target, item)));
+            handler->PSendSysMessage("%s carries one. On replacement: %s. By GM command: %s.", target->GetName().c_str(),
+                DescribeFeedResult(sHeartseedMgr->CanFeed(target, item, Heartseed::FeedSource::Replace)),
+                DescribeFeedResult(sHeartseedMgr->CanFeed(target, item, Heartseed::FeedSource::Command)));
         else
             handler->PSendSysMessage("%s carries none in the bags.", target->GetName().c_str());
         return true;
@@ -661,7 +678,7 @@ public:
 
         // The same path as feeding on replacement, without the upgrade check.
         Heartseed::FeedOutcome outcome;
-        Heartseed::FeedResult result = sHeartseedMgr->Feed(target, item, outcome);
+        Heartseed::FeedResult result = sHeartseedMgr->Feed(target, item, outcome, Heartseed::FeedSource::Command);
         if (result != Heartseed::FeedResult::Ok)
         {
             handler->PSendSysMessage("Item %u cannot be fed: %s.", entry, DescribeFeedResult(result));
