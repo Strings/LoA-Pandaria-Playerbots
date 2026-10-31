@@ -91,6 +91,8 @@
 #include "Weather.h"
 #include "WeatherMgr.h"
 #include "World.h"
+#include "SoloConfig.h"
+#include "CurrencyLimits.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
 #include "WorldStateBuilder.h"
@@ -6121,6 +6123,8 @@ bool Player::UpdateFishingSkill()
     uint32 SkillValue = GetPureSkillValue(SKILL_FISHING);
 
     int32 chance = SkillValue < 75 ? 100 : 10000 / (SkillValue + 25);
+    if (SoloConfig::GuaranteedFishingSkillups())
+        chance = 100;
 
     uint32 gathering_skill_gain = sWorld->getIntConfig(CONFIG_SKILL_GAIN_GATHERING);
 
@@ -7645,8 +7649,8 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bo
 
     // count can't be more then weekCap if used (weekCap > 0)
     uint32 weekCap = GetCurrencyWeekCap(currency);
-    if (!ignoreLimit && weekCap && count > int32(weekCap))
-        count = weekCap;
+    if (!ignoreLimit)
+        count = SoloConfig::LimitCurrencyAward(count, weekCap, oldWeekCount);
 
     // count can't be more then totalCap if used (totalCap > 0)
     uint32 totalCap = GetCurrencyTotalCap(currency);
@@ -7668,7 +7672,7 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bo
     if (!ignoreLimit)
     {
         // if we get more then weekCap just set to limit
-        if (weekCap && int32(weekCap) < newWeekCount)
+        if (count > 0 && weekCap && int32(weekCap) < newWeekCount)
         {
             count -= (newWeekCount - weekCap);
             newWeekCount = int32(weekCap);
@@ -7775,7 +7779,7 @@ void Player::ResetCurrencyWeekCap()
 
 uint32 Player::GetCurrencyWeekCap(CurrencyTypesEntry const* currency) const
 {
-    if (!currency)
+    if (!currency || !SoloConfig::WeeklyCurrencyCapsEnabled())
         return 0;
 
     uint32 cap = currency->WeekCap;
@@ -31301,7 +31305,7 @@ void Player::LeaveFromSoloQueueIfNeed()
 void Player::ModifyCurrencyMetaConquest(CurrencyTypesEntry const* currency, int32 count, bool printLog)
 {
     auto itr = _currencyStorage.find(currency->ID);
-    int32 actualWeekCount = 0;
+    uint32 actualWeekCount = 0;
     if (itr == _currencyStorage.end())
     {
         PlayerCurrency cur;
@@ -31315,26 +31319,24 @@ void Player::ModifyCurrencyMetaConquest(CurrencyTypesEntry const* currency, int3
     }
     else
     {
-        actualWeekCount = int32(itr->second.weekCount);
+        actualWeekCount = itr->second.weekCount;
     }
 
-    int32 actualWeekCap = GetCurrencyWeekCap(currency->ID, false);
+    uint32 actualWeekCap = GetCurrencyWeekCap(currency->ID, false);
 
     // Actual cap
-    if (actualWeekCount + count > actualWeekCap)
-        count = actualWeekCap - actualWeekCount;
+    count = SoloConfig::LimitCurrencyAward(count, actualWeekCap, actualWeekCount);
 
     if (!count)
         return;
 
     // Okay, allowed to get more by default, check highest cap
-    int32 weekCapArena = GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_ARENA, false);
-    int32 weekCapRatedBg = GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_RATED_BG, false);
-    int32 maxCap = std::max(weekCapArena, weekCapRatedBg);
-    int32 actualConquestCount = GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_POINTS, false);
+    uint32 weekCapArena = GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_ARENA, false);
+    uint32 weekCapRatedBg = GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_RATED_BG, false);
+    uint32 maxCap = std::max(weekCapArena, weekCapRatedBg);
+    uint32 actualConquestCount = GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_POINTS, false);
 
-    if (actualConquestCount + count > maxCap)
-        count = maxCap - actualConquestCount;
+    count = SoloConfig::LimitCurrencyAward(count, maxCap, actualConquestCount);
 
     if (!count)
         return;
@@ -31796,7 +31798,9 @@ void Player::UpdateValorOfTheAncients()
     if (itr == _currencyStorage.end())
         return; // noting to do here
 
-    uint32 weekCap = GetCurrencyWeekCap(sCurrencyTypesStore.LookupEntry(CURRENCY_TYPE_VALOR_POINTS));
+    // The bonus remains a milestone even when earning past it is allowed.
+    CurrencyTypesEntry const* currency = sCurrencyTypesStore.LookupEntry(CURRENCY_TYPE_VALOR_POINTS);
+    uint32 weekCap = currency ? currency->WeekCap : 0;
     bool hasWeekCap = weekCap && itr->second.weekCount >= weekCap;
     if (!GetSession()->HasFlag(ACC_FLAG_VALOR_CAP_REACHED) && hasWeekCap)
         GetSession()->AddFlag(ACC_FLAG_VALOR_CAP_REACHED);
