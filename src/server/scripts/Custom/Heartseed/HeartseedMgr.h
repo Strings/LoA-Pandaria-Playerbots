@@ -1,5 +1,7 @@
 /*
- * Heartseed state per character (characters DB) and stage/glow data (world DB).
+ * Heartseed state per account and per character (characters DB) and stage/glow data (world DB).
+ * One seed per account (T-049): rank, Growth, the essence collection and the weapons fed are shared by every
+ * character of the account; loadouts, essence slotting and story flags belong to each character.
  * See README.md in this folder and docs/DESIGN.md, "The Heartseed".
  */
 
@@ -76,13 +78,19 @@ namespace Heartseed
 
     struct State
     {
-        uint8 Rank = 1;
+        // Shared by the account (account_heartseed*): every loaded character of the account holds the same
+        // values, and a change to one is copied to the others.
+        uint32 AccountId = 0;
+        uint8 Rank = 1;                               // the account's rank; a character uses EffectiveRank
         uint32 Growth = 0;
         uint32 GrantedTime = 0;
+        uint32 FedWeapons = 0;                        // weapons fed in total (account_heartseed_fed_weapon)
+        // essence id -> (times collected: account, active slot or 0: this character)
+        std::map<uint32, std::pair<uint32, uint8>> Essences;
+
+        // This character's own (heartseed_loadout, heartseed_essence slots, heartseed_story_flag).
         // spec id -> trait chosen at each major tier (0 = not chosen)
         std::map<uint16, std::array<uint32, MaxMajorTiers>> Loadouts;
-        // essence id -> (times collected, active slot or 0)
-        std::map<uint32, std::pair<uint32, uint8>> Essences;
         // story flag -> unix time it was set
         std::map<uint16, uint32> StoryFlags;
         bool Dirty = false;
@@ -100,7 +108,6 @@ namespace Heartseed
         ObjectGuid PendingFeed;                       // replaced weapon the feed prompt is asking about
         std::set<ObjectGuid> DeclinedFeeds;           // weapons the player chose to keep this session
         uint64 FirstNewItemGuid = 0;                  // items from this counter on were created after login
-        uint32 FedWeapons = 0;                        // weapons fed in total (heartseed_fed_weapon)
         bool CapNoticeSent = false;                   // "it needs you to grow" is said once per session
     };
 
@@ -210,17 +217,21 @@ public:
 
     void LoadConfig();
     void LoadData();                       // world: heartseed_stage, _glow, _trait, _essence_template, _essence_source, twink_item
+    void LoadAccounts();                   // characters: which accounts have a Heartseed, so bots skip the queries
     bool IsEnabled() const { return _enabled; }
 
-    void LoadPlayer(Player* player);       // characters: all heartseed_* rows of one character
+    // Players log in with their account's Heartseed; a playerbot only when its account has one (the player's
+    // own alts), so random bots cost no queries.
+    bool ShouldLoad(Player const* player) const;
+    void LoadPlayer(Player* player);       // characters: account_heartseed* of the account, heartseed_* of the character
     void SavePlayer(Player* player);       // writes state if changed
     void UnloadPlayer(Player* player);
 
     bool HasHeartseed(Player const* player) const;
     // Copy of the state, so callers never hold a pointer into the map other threads may change.
     bool GetState(Player const* player, Heartseed::State& out) const;
-    bool Grant(Player* player);            // false if it already has one
-    bool Revoke(Player* player);           // deletes every heartseed_* row of the character
+    bool Grant(Player* player);            // false if it already has one; grants the whole account
+    bool Revoke(Player* player);           // deletes the account's Heartseed and every heartseed_* row of its characters
 
     // State changes for GM commands and later systems (feeding, story hooks). Each saves at once and
     // returns false when the character has no Heartseed.
@@ -234,6 +245,8 @@ public:
     // Spends banked Growth after the cap rose (level, awakening). Returns the ranks gained.
     uint8 ApplyRankUps(Player* player);
     uint8 GetRankCap(Player const* player) const;
+    // The account rank held to this character's cap: what its traits use.
+    uint8 GetEffectiveRank(Player const* player) const;
     uint32 GetAwakenings(Heartseed::State const& state) const;   // story flags that count toward the cap
     uint32 GetGrowthForNextRank(uint8 rank) const;
     float GetCapPerLevel() const { return _capPerLevel; }
@@ -332,6 +345,10 @@ private:
 
     bool ModifyState(Player* player, std::function<void(Heartseed::State&)> const& change);
     // Callers hold _lock.
+    // Copies the account's shared fields from one character's state to the account's other loaded characters.
+    void ShareAccountState(uint32 guid, Heartseed::State const& from);
+    uint8 EffectiveRank(Player const* player, Heartseed::State const& state) const;
+    uint32 CountAwakenings(Heartseed::State const& state) const;
     std::array<uint8, Heartseed::MaxPaths> MajorsPerPath(Heartseed::State const& state, uint16 specId) const;
     static void RemoveAuras(Player* player, std::map<uint32, int32> const& auras);
     float GetFeedQualityPct(uint32 quality) const;
@@ -375,6 +392,7 @@ private:
 
     mutable std::mutex _lock;                           // players save from map threads
     std::unordered_map<uint32, Heartseed::State> _states;   // guid counter -> state
+    std::set<uint32> _seedAccounts;                     // accounts with a Heartseed (account_heartseed)
 };
 
 #define sHeartseedMgr HeartseedMgr::instance()

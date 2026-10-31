@@ -194,6 +194,34 @@ void HeartseedMgr::LoadConfig()
     _choicePromptOnLogin = sConfigMgr->GetBoolDefault("Heartseed.Choice.PromptOnLogin", true);
     _choicePromptDelay = sConfigMgr->GetIntDefault("Heartseed.Choice.PromptDelay", 6000);
     _choiceShrineOnly = sConfigMgr->GetBoolDefault("Heartseed.Choice.ChangeAtShrineOnly", true);
+
+    Heartseed::UnlockLevels& unlocks = Heartseed::Unlocks();
+    if (!Heartseed::SetLevels(unlocks.MajorTiers, ParseList<uint32>(sConfigMgr->GetStringDefault("Heartseed.Majors.TierLevels", "10 25 40 55 70 85"))))
+        TC_LOG_ERROR("server.loading", "Heartseed.Majors.TierLevels needs %u ascending levels from 1 to 255; keeping the current levels.", uint32(Heartseed::MaxMajorTiers));
+    if (!Heartseed::SetLevels(unlocks.EssenceSlots, ParseList<uint32>(sConfigMgr->GetStringDefault("Heartseed.Essence.SlotLevels", "10 40 70"))))
+        TC_LOG_ERROR("server.loading", "Heartseed.Essence.SlotLevels needs %u ascending levels from 1 to 255; keeping the current levels.", uint32(Heartseed::MaxEssenceSlots));
+}
+
+void HeartseedMgr::LoadAccounts()
+{
+    std::set<uint32> accounts;
+    if (QueryResult result = CharacterDatabase.Query("SELECT `account` FROM `account_heartseed`"))
+    {
+        do
+            accounts.insert(result->Fetch()[0].GetUInt32());
+        while (result->NextRow());
+    }
+    std::lock_guard<std::mutex> guard(_lock);
+    _seedAccounts.swap(accounts);
+    TC_LOG_INFO("server.loading", ">> Loaded %u accounts with a Heartseed", uint32(_seedAccounts.size()));
+}
+
+bool HeartseedMgr::ShouldLoad(Player const* player) const
+{
+    if (!player->GetSession()->IsBot())
+        return true;
+    std::lock_guard<std::mutex> guard(_lock);
+    return _seedAccounts.count(player->GetSession()->GetAccountId()) != 0;
 }
 
 void HeartseedMgr::LoadData()
@@ -404,19 +432,55 @@ void HeartseedMgr::LoadData()
 void HeartseedMgr::LoadPlayer(Player* player)
 {
     uint32 guid = player->GetGUID().GetCounter();
+    uint32 account = player->GetSession()->GetAccountId();
 
-    QueryResult stateResult = CharacterDatabase.PQuery("SELECT `rank`, `growth`, `granted_time` FROM `heartseed_state` WHERE `guid` = %u", guid);
-    if (!stateResult)
+    // Another character of the account already loaded holds the newest shared values; else the database.
+    Heartseed::State state;
+    bool shared = false;
     {
-        UnloadPlayer(player);
-        return;
+        std::lock_guard<std::mutex> guard(_lock);
+        for (auto const& [otherGuid, other] : _states)
+        {
+            if (otherGuid == guid || other.AccountId != account)
+                continue;
+            state.Rank = other.Rank;
+            state.Growth = other.Growth;
+            state.GrantedTime = other.GrantedTime;
+            state.FedWeapons = other.FedWeapons;
+            for (auto const& [essenceId, held] : other.Essences)
+                state.Essences[essenceId] = { held.first, 0 };
+            shared = true;
+            break;
+        }
     }
 
-    Heartseed::State state;
-    Field* fields = stateResult->Fetch();
-    state.Rank = fields[0].GetUInt8();
-    state.Growth = fields[1].GetUInt32();
-    state.GrantedTime = fields[2].GetUInt32();
+    Field* fields = nullptr;
+    if (!shared)
+    {
+        QueryResult accountResult = CharacterDatabase.PQuery("SELECT `rank`, `growth`, `granted_time` FROM `account_heartseed` WHERE `account` = %u", account);
+        if (!accountResult)
+        {
+            UnloadPlayer(player);
+            return;
+        }
+        fields = accountResult->Fetch();
+        state.Rank = fields[0].GetUInt8();
+        state.Growth = fields[1].GetUInt32();
+        state.GrantedTime = fields[2].GetUInt32();
+
+        if (QueryResult result = CharacterDatabase.PQuery("SELECT `essence_id`, `count` FROM `account_heartseed_essence` WHERE `account` = %u", account))
+        {
+            do
+            {
+                fields = result->Fetch();
+                state.Essences[fields[0].GetUInt32()] = { fields[1].GetUInt32(), 0 };
+            } while (result->NextRow());
+        }
+
+        if (QueryResult result = CharacterDatabase.PQuery("SELECT CAST(COALESCE(SUM(`count`), 0) AS UNSIGNED) FROM `account_heartseed_fed_weapon` WHERE `account` = %u", account))
+            state.FedWeapons = uint32(result->Fetch()[0].GetUInt64());
+    }
+    state.AccountId = account;
 
     if (QueryResult result = CharacterDatabase.PQuery("SELECT `spec_id`, `tier`, `trait_id` FROM `heartseed_loadout` WHERE `guid` = %u", guid))
     {
@@ -431,12 +495,15 @@ void HeartseedMgr::LoadPlayer(Player* player)
         } while (result->NextRow());
     }
 
-    if (QueryResult result = CharacterDatabase.PQuery("SELECT `essence_id`, `count`, `active_slot` FROM `heartseed_essence` WHERE `guid` = %u", guid))
+    // Only the slotting is this character's; an essence the account no longer holds stays out.
+    if (QueryResult result = CharacterDatabase.PQuery("SELECT `essence_id`, `active_slot` FROM `heartseed_essence` WHERE `guid` = %u", guid))
     {
         do
         {
             fields = result->Fetch();
-            state.Essences[fields[0].GetUInt32()] = { fields[1].GetUInt32(), fields[2].GetUInt8() };
+            auto essence = state.Essences.find(fields[0].GetUInt32());
+            if (essence != state.Essences.end())
+                essence->second.second = fields[1].GetUInt8();
         } while (result->NextRow());
     }
 
@@ -448,9 +515,6 @@ void HeartseedMgr::LoadPlayer(Player* player)
             state.StoryFlags[fields[0].GetUInt16()] = fields[1].GetUInt32();
         } while (result->NextRow());
     }
-
-    if (QueryResult result = CharacterDatabase.PQuery("SELECT CAST(COALESCE(SUM(`count`), 0) AS UNSIGNED) FROM `heartseed_fed_weapon` WHERE `guid` = %u", guid))
-        state.FedWeapons = uint32(result->Fetch()[0].GetUInt64());
 
     if (Item* weapon = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND))
         state.MainHand = weapon->GetGUID();
@@ -473,10 +537,16 @@ void HeartseedMgr::SavePlayer(Player* player)
         state = itr->second;
     }
 
-    // Loadouts, essences and flags are written as whole sets: they are small and change rarely.
+    // Loadouts, essences and flags are written as whole sets: they are small and change rarely. The account's
+    // shared values are the same in every loaded character, so whichever saves writes them.
+    uint32 account = state.AccountId;
     CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
-    trans->PAppend("REPLACE INTO `heartseed_state` (`guid`, `rank`, `growth`, `granted_time`) VALUES (%u, %u, %u, %u)",
-        guid, uint32(state.Rank), state.Growth, state.GrantedTime);
+    trans->PAppend("REPLACE INTO `account_heartseed` (`account`, `rank`, `growth`, `granted_time`) VALUES (%u, %u, %u, %u)",
+        account, uint32(state.Rank), state.Growth, state.GrantedTime);
+    trans->PAppend("DELETE FROM `account_heartseed_essence` WHERE `account` = %u", account);
+    for (auto const& [essenceId, essence] : state.Essences)
+        trans->PAppend("INSERT INTO `account_heartseed_essence` (`account`, `essence_id`, `count`) VALUES (%u, %u, %u)",
+            account, essenceId, essence.first);
 
     trans->PAppend("DELETE FROM `heartseed_loadout` WHERE `guid` = %u", guid);
     for (auto const& [specId, traits] : state.Loadouts)
@@ -485,10 +555,12 @@ void HeartseedMgr::SavePlayer(Player* player)
                 trans->PAppend("INSERT INTO `heartseed_loadout` (`guid`, `spec_id`, `tier`, `trait_id`) VALUES (%u, %u, %u, %u)",
                     guid, uint32(specId), uint32(tier), traits[tier]);
 
+    // This character's slotting; count is the account's, kept so the row reads on its own.
     trans->PAppend("DELETE FROM `heartseed_essence` WHERE `guid` = %u", guid);
     for (auto const& [essenceId, essence] : state.Essences)
-        trans->PAppend("INSERT INTO `heartseed_essence` (`guid`, `essence_id`, `count`, `active_slot`) VALUES (%u, %u, %u, %u)",
-            guid, essenceId, essence.first, uint32(essence.second));
+        if (essence.second)
+            trans->PAppend("INSERT INTO `heartseed_essence` (`guid`, `essence_id`, `count`, `active_slot`) VALUES (%u, %u, %u, %u)",
+                guid, essenceId, essence.first, uint32(essence.second));
 
     trans->PAppend("DELETE FROM `heartseed_story_flag` WHERE `guid` = %u", guid);
     for (auto const& [flagId, setTime] : state.StoryFlags)
@@ -527,7 +599,23 @@ bool HeartseedMgr::Grant(Player* player)
         auto [itr, inserted] = _states.try_emplace(player->GetGUID().GetCounter());
         if (!inserted)
             return false;
+        // Another character of the account may already hold the seed (an alt online since before the grant).
+        uint32 account = player->GetSession()->GetAccountId();
+        itr->second.AccountId = account;
+        _seedAccounts.insert(account);
         itr->second.GrantedTime = uint32(time(nullptr));
+        for (auto const& [otherGuid, other] : _states)
+        {
+            if (otherGuid == itr->first || other.AccountId != account)
+                continue;
+            itr->second.Rank = other.Rank;
+            itr->second.Growth = other.Growth;
+            itr->second.GrantedTime = other.GrantedTime;
+            itr->second.FedWeapons = other.FedWeapons;
+            for (auto const& [essenceId, held] : other.Essences)
+                itr->second.Essences[essenceId] = { held.first, 0 };
+            break;
+        }
         itr->second.FirstNewItemGuid = sObjectMgr->GetGenerator<HighGuid::Item>().GetNextAfterMaxUsed();
         if (Item* weapon = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND))
             itr->second.MainHand = weapon->GetGUID();
@@ -542,32 +630,49 @@ bool HeartseedMgr::Grant(Player* player)
 bool HeartseedMgr::Revoke(Player* player)
 {
     uint32 guid = player->GetGUID().GetCounter();
-    std::map<uint32, int32> applied;
+    uint32 account = player->GetSession()->GetAccountId();
+    // The seed is the account's: every loaded character of it loses its state and auras.
+    std::map<uint32, std::map<uint32, int32>> applied;
     {
         std::lock_guard<std::mutex> guard(_lock);
-        auto itr = _states.find(guid);
-        if (itr == _states.end())
+        if (!_states.count(guid))
             return false;
-        applied = std::move(itr->second.AppliedAuras);
-        _states.erase(itr);
+        for (auto itr = _states.begin(); itr != _states.end();)
+        {
+            if (itr->first == guid || itr->second.AccountId == account)
+            {
+                applied[itr->first] = std::move(itr->second.AppliedAuras);
+                itr = _states.erase(itr);
+            }
+            else
+                ++itr;
+        }
+        _seedAccounts.erase(account);
     }
 
-    RemoveAuras(player, applied);
-
+    // The pre-T-049 per-character tables go too, so running the migration again cannot bring the seed back.
+    std::string characters = "SELECT `guid` FROM `characters` WHERE `account` = " + std::to_string(account);
     CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
-    trans->PAppend("DELETE FROM `heartseed_state` WHERE `guid` = %u", guid);
-    trans->PAppend("DELETE FROM `heartseed_loadout` WHERE `guid` = %u", guid);
-    trans->PAppend("DELETE FROM `heartseed_essence` WHERE `guid` = %u", guid);
-    trans->PAppend("DELETE FROM `heartseed_story_flag` WHERE `guid` = %u", guid);
-    trans->PAppend("DELETE FROM `heartseed_fed_weapon` WHERE `guid` = %u", guid);
+    trans->PAppend("DELETE FROM `account_heartseed` WHERE `account` = %u", account);
+    trans->PAppend("DELETE FROM `account_heartseed_essence` WHERE `account` = %u", account);
+    trans->PAppend("DELETE FROM `account_heartseed_fed_weapon` WHERE `account` = %u", account);
+    for (char const* table : { "heartseed_state", "heartseed_loadout", "heartseed_essence", "heartseed_story_flag", "heartseed_fed_weapon" })
+        trans->PAppend("DELETE FROM `%s` WHERE `guid` IN (%s)", table, characters.c_str());
+    // The quest is the canonical marker, so revoking makes it available again on every character.
+    trans->PAppend("DELETE FROM `character_queststatus_rewarded` WHERE `quest` = %u AND `guid` IN (%s)", _grantQuestId, characters.c_str());
     CharacterDatabase.CommitTransaction(trans);
 
-    // The quest is the canonical marker, so revoking makes it available again.
-    if (player->GetQuestStatus(_grantQuestId) != QUEST_STATUS_NONE)
-        player->RemoveActiveQuest(_grantQuestId, true, true);
-    player->RemoveRewardedQuest(_grantQuestId);
-
-    RefreshGlow(player);
+    for (auto const& [revokedGuid, auras] : applied)
+    {
+        Player* revoked = revokedGuid == guid ? player : ObjectAccessor::FindConnectedPlayer(ObjectGuid::Create<HighGuid::Player>(revokedGuid));
+        if (!revoked)
+            continue;
+        RemoveAuras(revoked, auras);
+        if (revoked->GetQuestStatus(_grantQuestId) != QUEST_STATUS_NONE)
+            revoked->RemoveActiveQuest(_grantQuestId, true, true);
+        revoked->RemoveRewardedQuest(_grantQuestId);
+        RefreshGlow(revoked);
+    }
     return true;
 }
 
@@ -580,6 +685,7 @@ bool HeartseedMgr::ModifyState(Player* player, std::function<void(Heartseed::Sta
             return false;
         change(itr->second);
         itr->second.Dirty = true;
+        ShareAccountState(itr->first, itr->second);
     }
 
     // Saved now rather than with the character, so a crash or a GM test never loses the change.
@@ -677,7 +783,7 @@ void HeartseedMgr::SendChoiceMenu(Player* player)
     menu.SetMenuId(Heartseed::GOSSIP_MENU_CHOICE);
     for (uint8 tier = 0; tier < Heartseed::MaxMajorTiers; ++tier)
     {
-        std::string text = "Level " + std::to_string(Heartseed::MajorTierLevels[tier]) + ": ";
+        std::string text = "Level " + std::to_string(Heartseed::MajorTierLevel(tier)) + ": ";
         if (!Heartseed::MajorTierOpen(tier, player->GetLevel()))
         {
             // Only the next locked tier is shown, as something to look forward to.
@@ -876,6 +982,11 @@ std::vector<uint16> HeartseedMgr::GetAwakeningFlags() const
 uint32 HeartseedMgr::GetAwakenings(Heartseed::State const& state) const
 {
     std::lock_guard<std::mutex> guard(_lock);
+    return CountAwakenings(state);
+}
+
+uint32 HeartseedMgr::CountAwakenings(Heartseed::State const& state) const
+{
     uint32 awakenings = 0;
     for (uint16 flag : _awakeningFlags)
         awakenings += state.StoryFlags.count(flag) ? 1 : 0;
@@ -890,6 +1001,39 @@ uint8 HeartseedMgr::GetRankCap(Player const* player) const
     return Heartseed::RankCap(player->GetLevel(), _capPerLevel, GetAwakenings(state), _capPerAwakening);
 }
 
+uint8 HeartseedMgr::GetEffectiveRank(Player const* player) const
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    auto itr = _states.find(player->GetGUID().GetCounter());
+    return itr != _states.end() ? EffectiveRank(player, itr->second) : 0;
+}
+
+uint8 HeartseedMgr::EffectiveRank(Player const* player, Heartseed::State const& state) const
+{
+    return Heartseed::EffectiveRank(state.Rank, Heartseed::RankCap(player->GetLevel(), _capPerLevel, CountAwakenings(state), _capPerAwakening));
+}
+
+void HeartseedMgr::ShareAccountState(uint32 guid, Heartseed::State const& from)
+{
+    for (auto& [otherGuid, other] : _states)
+    {
+        if (otherGuid == guid || other.AccountId != from.AccountId)
+            continue;
+        other.Rank = from.Rank;
+        other.Growth = from.Growth;
+        other.GrantedTime = from.GrantedTime;
+        other.FedWeapons = from.FedWeapons;
+        // Counts follow the account; each character keeps its own slots, and loses an essence the account lost.
+        std::map<uint32, std::pair<uint32, uint8>> essences;
+        for (auto const& [essenceId, held] : from.Essences)
+        {
+            auto own = other.Essences.find(essenceId);
+            essences[essenceId] = { held.first, own != other.Essences.end() ? own->second.second : uint8(0) };
+        }
+        other.Essences.swap(essences);
+    }
+}
+
 uint32 HeartseedMgr::GetGrowthForNextRank(uint8 rank) const
 {
     return Heartseed::GrowthForNextRank(rank, _rankGrowthBase, _rankGrowthPerRank);
@@ -897,7 +1041,8 @@ uint32 HeartseedMgr::GetGrowthForNextRank(uint8 rank) const
 
 uint8 HeartseedMgr::AddGrowth(Player* player, uint32 amount)
 {
-    if (!amount || !HasHeartseed(player))
+    // Only the character being played earns; the player's alts logged in as playerbots use the seed but never grow it.
+    if (!amount || player->GetSession()->IsBot() || !HasHeartseed(player))
         return 0;
 
     uint8 cap = GetRankCap(player);
@@ -950,6 +1095,7 @@ uint8 HeartseedMgr::ApplyRankUps(Player* player)
         itr->second.Growth = progress.Growth;
         itr->second.CapNoticeSent = false;
         itr->second.Dirty = true;
+        ShareAccountState(itr->first, itr->second);
     }
 
     SavePlayer(player);
@@ -1061,15 +1207,18 @@ Heartseed::FeedResult HeartseedMgr::Feed(Player* player, Item* item, Heartseed::
         player->DestroyItem(item->GetBagSlot(), item->GetSlot(), true);
 
     // Every weapon fed is kept by entry: consumed weapons become appearances later (DESIGN.md, Leveling).
-    CharacterDatabase.PExecute("INSERT INTO `heartseed_fed_weapon` (`guid`, `item_entry`, `count`, `first_time`) VALUES (%u, %u, 1, %u) "
-        "ON DUPLICATE KEY UPDATE `count` = `count` + 1", player->GetGUID().GetCounter(), entry, uint32(time(nullptr)));
+    CharacterDatabase.PExecute("INSERT INTO `account_heartseed_fed_weapon` (`account`, `item_entry`, `count`, `first_time`) VALUES (%u, %u, 1, %u) "
+        "ON DUPLICATE KEY UPDATE `count` = `count` + 1", before.AccountId, entry, uint32(time(nullptr)));
 
     bool firstFeed = before.FedWeapons == 0;
     {
         std::lock_guard<std::mutex> guard(_lock);
         auto itr = _states.find(player->GetGUID().GetCounter());
         if (itr != _states.end())
+        {
             ++itr->second.FedWeapons;
+            ShareAccountState(itr->first, itr->second);
+        }
     }
 
     ChatHandler handler(player->GetSession());
@@ -1461,12 +1610,13 @@ void HeartseedMgr::RefreshTraits(Player* player)
 
         if (_enabled)
         {
+            uint8 rank = EffectiveRank(player, state);
             std::array<uint8, Heartseed::MaxPaths> majors = MajorsPerPath(state, specId);
             auto loadout = state.Loadouts.find(specId);
             for (auto const& [traitId, trait] : _traits)
             {
                 bool active = trait.Kind == Heartseed::TraitKind::Minor
-                    ? Heartseed::MinorActive(trait.TraitPath, trait.MinRank, state.Rank, majors)
+                    ? Heartseed::MinorActive(trait.TraitPath, trait.MinRank, rank, majors)
                     : loadout != state.Loadouts.end() && loadout->second[trait.Tier] == traitId;
                 if (active)
                     desired[trait.SpellId] += Heartseed::TraitAmount(trait.BaseAmount, trait.AmountPerItemLevel, itemLevel);

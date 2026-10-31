@@ -8,22 +8,31 @@ The living jewel that rides on a character's main-hand weapon and grows with it.
 | File | What |
 |---|---|
 | `HeartseedRules.h` | Pure rules with no server dependencies (stage by level, dominant path, tier levels, minor activation, trait and core passive amounts, rank cap, Growth per rank, feeding Growth, essence slots). Unit-test these. |
-| `HeartseedMgr.h/.cpp` | State cache per character, loading and saving, stage and glow lookup, traits, major choice, core and essence procs, Growth and rank-ups, feeding, essences. |
+| `HeartseedMgr.h/.cpp` | State cache per character (account fields shared across the account's loaded characters), loading and saving, stage and glow lookup, traits, major choice, core and essence procs, Growth and rank-ups, feeding, essences. |
 | `heartseed_scripts.cpp` | World, player, unit and command scripts. |
 
 ## Data
 
-Characters database (`sql/updates/characters/2026_10_31_claude_00_heartseed_state.sql`):
+One seed per account (T-049, DESIGN.md "One seed per account"). Account tables
+(`sql/updates/characters/2026_10_31_claude_16_heartseed_account.sql`, which also migrates pre-T-049 rows):
 
-- `heartseed_state`: one row per character that has a Heartseed (rank, Growth, grant time). Having a
-  row is what "has a Heartseed" means to code; the granting quest (T-025) creates it.
+- `account_heartseed`: one row per account that has a Heartseed (shared rank, Growth, grant time). Having a
+  row is what "has a Heartseed" means to code, for every character of the account; the granting quest (T-025)
+  creates it.
+- `account_heartseed_essence`: essences the account has collected, and how many times.
+- `account_heartseed_fed_weapon`: every weapon entry the seed has eaten, how often and when first.
+
+Character tables (`sql/updates/characters/2026_10_31_claude_00_heartseed_state.sql`):
+
 - `heartseed_loadout`: the major chosen at each of the six major tiers, per specialization.
-- `heartseed_essence`: essences collected and which slot (1 to 3) each is active in.
-- `heartseed_story_flag`: story beats reached and when (`Heartseed::StoryFlag`).
+- `heartseed_essence`: which slot (1 to 3) each of the account's essences is active in for this character
+  (only slotted essences have a row; `count` repeats the account's).
+- `heartseed_story_flag`: story beats this character reached and when (`Heartseed::StoryFlag`).
+- `heartseed_state` and `heartseed_fed_weapon` (T-020, T-022) are no longer written; kept for the migration.
 
-Characters database (`sql/updates/characters/2026_10_31_claude_05_heartseed_fed_weapon.sql`):
-
-- `heartseed_fed_weapon`: every weapon entry the Heartseed has eaten, how often and when first.
+Every loaded character of an account holds the same shared values (`State::AccountId`, rank, Growth,
+essence counts, weapons fed); a change through one is copied to the others under the manager's lock, so the
+player's alts logged in as playerbots see it at once.
 
 Characters database (`sql/updates/characters/2026_10_31_claude_08_weapon_appearance.sql`):
 
@@ -72,6 +81,12 @@ World database (`sql/updates/world/2026_10_31_claude_06_heartseed_feed_prompt.sq
   1. Awakenings are the story flags listed in `Heartseed.Rank.AwakeningFlags` that the character has.
 - Growth past the cap is **banked**. A level-up, a new awakening or a login spends it (`ApplyRankUps`).
 - GM `.heartseed rank` and a bare `.heartseed growth N` set values directly and ignore the cap.
+- **Rank and Growth are the account's**; a character uses `min(account rank, its own cap)` (`GetEffectiveRank`),
+  so an alt or a twink has the balance it would have alone. Growth is spent up to the cap of the character that
+  earns or logs in, so a higher-level alt can raise the shared rank further.
+- **Only the character being played earns.** The player's alts logged in as playerbots load the seed (the
+  account is in `account_heartseed`), use it at their cap and proc, but earn no Growth and get no story beats,
+  rank-ups or prompts. Random bots never load it.
 
 ## Choosing majors
 
@@ -177,7 +192,9 @@ worldserver.conf:
   `.GrowthBase` (100), `.GrowthPerRank` (20).
 - Feeding: `Heartseed.Feed.OnReplace` (1), `.GrowthBase` (20), `.GrowthPerItemLevel` (2), `.QualityPct`
   ("50 100 150 250 400 0 0 0", poor to heirloom).
-- Essences: `Heartseed.Essence.ProcCooldown` (3000 ms), `.AutoSlot` (1).
+- Essences: `Heartseed.Essence.ProcCooldown` (3000 ms), `.AutoSlot` (1), `.SlotLevels` ("10 40 70").
+- Major tiers: `Heartseed.Majors.TierLevels` ("10 25 40 55 70 85"). The number of tiers and slots is fixed;
+  saved loadouts keep their tier index.
 - Granting quest: `Heartseed.Grant.QuestId` (90000), `.OfferOnLogin` (1), `.OfferDelay` (5000 ms).
 - Choices: `Heartseed.Choice.PromptOnLogin` (1), `.PromptDelay` (6000 ms), `.ChangeAtShrineOnly` (1).
 - Story beats: `Heartseed.Story.Hooks` (1), `.PandariaMaps` ("870"), `.WorldBosses` (MoP and old world boss

@@ -24,8 +24,37 @@ namespace Heartseed
     };
 
     constexpr uint8_t MaxPaths = 5;          // including None
-    constexpr uint8_t MaxMajorTiers = 6;     // majors at 10, 25, 40, 55, 70, 85
-    constexpr uint8_t MaxEssenceSlots = 3;   // slots open at 10, 40, 70
+    constexpr uint8_t MaxMajorTiers = 6;     // majors at 10, 25, 40, 55, 70, 85 by default
+    constexpr uint8_t MaxEssenceSlots = 3;   // slots open at 10, 40, 70 by default
+
+    // Character levels that open each major tier and each essence slot. The counts are fixed (saved data uses
+    // the tier and slot indexes); the levels come from Heartseed.Majors.TierLevels and
+    // Heartseed.Essence.SlotLevels, set once at config load.
+    struct UnlockLevels
+    {
+        std::array<uint8_t, MaxMajorTiers> MajorTiers = { 10, 25, 40, 55, 70, 85 };
+        std::array<uint8_t, MaxEssenceSlots> EssenceSlots = { 10, 40, 70 };
+    };
+
+    inline UnlockLevels& Unlocks()
+    {
+        static UnlockLevels levels;
+        return levels;
+    }
+
+    // Accepts exactly count levels from 1 to 255, ascending; anything else keeps the current levels.
+    template <size_t N>
+    inline bool SetLevels(std::array<uint8_t, N>& levels, std::vector<uint32_t> const& values)
+    {
+        if (values.size() != N)
+            return false;
+        for (size_t i = 0; i < N; ++i)
+            if (!values[i] || values[i] > 255 || (i && values[i] < values[i - 1]))
+                return false;
+        for (size_t i = 0; i < N; ++i)
+            levels[i] = uint8_t(values[i]);
+        return true;
+    }
 
     // Stage is the index of the last stage whose minimum level the character has reached.
     // stageMinLevels must be sorted ascending; levels below the first entry still count as stage 0.
@@ -64,21 +93,25 @@ namespace Heartseed
         Major = 2,   // chosen, one per major tier
     };
 
-    // Character level at which each major tier opens, between MoP's talent tiers (15, 30, ...).
-    constexpr std::array<uint8_t, MaxMajorTiers> MajorTierLevels = { 10, 25, 40, 55, 70, 85 };
+    // Character level at which a major tier opens; by default between MoP's talent tiers (15, 30, ...).
+    inline uint8_t MajorTierLevel(uint8_t tier)
+    {
+        return tier < MaxMajorTiers ? Unlocks().MajorTiers[tier] : 0;
+    }
 
-    // Tier index for a tier's opening level, or MaxMajorTiers if the level opens no tier.
+    // Tier index for a tier's opening level, or MaxMajorTiers if the level opens no tier. With two tiers at the
+    // same level, the first.
     inline uint8_t MajorTierForLevel(uint8_t level)
     {
         for (uint8_t tier = 0; tier < MaxMajorTiers; ++tier)
-            if (MajorTierLevels[tier] == level)
+            if (Unlocks().MajorTiers[tier] == level)
                 return tier;
         return MaxMajorTiers;
     }
 
     inline bool MajorTierOpen(uint8_t tier, uint8_t level)
     {
-        return tier < MaxMajorTiers && level >= MajorTierLevels[tier];
+        return tier < MaxMajorTiers && level >= Unlocks().MajorTiers[tier];
     }
 
     // A minor fills in once the rank reaches it, on a path the character has taken at least one major in.
@@ -114,16 +147,20 @@ namespace Heartseed
 
     constexpr uint8_t MaxRank = 255;           // rank is saved as TINYINT UNSIGNED
 
-    // Character level at which each essence slot opens (1 at 10, 2 at 40, 3 at 70).
-    constexpr std::array<uint8_t, MaxEssenceSlots> EssenceSlotLevels = { 10, 40, 70 };
-
     inline uint8_t EssenceSlotsForLevel(uint8_t level)
     {
         uint8_t slots = 0;
-        for (uint8_t openLevel : EssenceSlotLevels)
+        for (uint8_t openLevel : Unlocks().EssenceSlots)
             if (level >= openLevel)
                 ++slots;
         return slots;
+    }
+
+    // The rank a character uses: the account's shared rank, held to the character's own cap, so an alt or a
+    // twink has the balance it would have alone (DESIGN.md, One seed per account).
+    inline uint8_t EffectiveRank(uint8_t accountRank, uint8_t characterCap)
+    {
+        return accountRank < characterCap ? accountRank : characterCap;
     }
 
     // Rank cap: the character level sets it, each awakening (story flag that counts) raises it.
