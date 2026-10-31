@@ -55,7 +55,7 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 | T-016 | Free talent and glyph changes (no gold, no reagents); spec switching from level 10 | `src/server/scripts/Custom/Respec/` | | open |
 | T-017 | Server-side spec loadouts (spec, talents, glyphs, action bars, Heartseed paths), one per spec by default plus named extras; addon picker | `src/server/scripts/Custom/Loadouts/`, `addons/Loadouts/` | | open |
 | T-018 | Gear pages per loadout: detached storage, page swap through the normal equip path, addon page panel | `src/server/scripts/Custom/Loadouts/`, `addons/Loadouts/` | | open |
-| T-019 | Config quick wins: cross-faction play (`AllowTwoSide.*`), all flight paths, guaranteed skill-ups, no weekly currency caps, lighter death penalties. Confirm each key exists in the fork | codex | in progress |
+| T-019 | Config quick wins: cross-faction play (`AllowTwoSide.*`), all flight paths, guaranteed skill-ups, no weekly currency caps, lighter death penalties. Confirm each key exists in the fork | codex | review |
 | T-041 | Script and data quick wins: guild perks for everyone, unrestricted transmog (mixed types), bigger stacks via item hotfixes, free character services NPC, shorter hearthstone cooldown | `src/server/scripts/Custom/SoloQoL/`, `sql/updates/` | | open |
 | T-042 | 36-slot bags: expensive vendor (gold sink); hooks to plant them in rare loot later | `sql/updates/world/` | | open |
 | T-043 | Reagent bank in detached storage, with crafting drawing from it | `src/server/scripts/Custom/ReagentBank/` | | open |

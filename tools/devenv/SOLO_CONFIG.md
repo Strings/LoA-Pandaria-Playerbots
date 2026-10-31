@@ -24,7 +24,7 @@ This does not change combat wear or the spirit healer's separate hardcoded 25%
 durability charge. Disabling reclaim escalation is not a claim of zero PvP delay.
 Skill training/rank limits, reagents and specialization eligibility remain.
 
-## New core switches (compiled validation deferred)
+## Core switches
 
 The user authorized these hooks on 2026-10-31. World::LoadConfigSettings caches
 both bools, including on reload. Shipped defaults and dev/test overlays select
@@ -50,31 +50,20 @@ remain enforced there. Setting 0 restores the exact original formula: 100 below
 skill 75, otherwise integer 10000/(skill+25). Discovery rolls and special skill
 systems are separate.
 
-## Validation boundary and post-build checks
+## Verification
 
-The two Python checks verify loaded keys/defaults/profile consistency and byte-
-idempotent runtime application. Earlier live tests covered the existing alchemy
-config path only. **The new C++ hooks have not been compiled or run.** Keep this
-PR draft until Claude's Ninja/sccache tooling lands and the following checks pass
-on an isolated Codex test runtime:
+Run `python tools/devenv/test_solo.py`, the standalone CTest unit suite, and
+`python tests/regression/run.py --runtime build/devenv --suite tools/devenv/solo_smoke.json`
+with GM fixture credentials. The live smoke checks each effective setting, taxi
+access after login, PvE/PvP reclaim delays, and the weekly-cap getter. It checks
+configuration and these direct probes; it does not simulate every social feature.
 
-1. Build with the approved tooling; check touched files for new warnings.
-2. Seed a fixture's Valor weekly count at its DBC limit, total holding count below
-   the holding cap. Earn Valor via a normal reward path, not a GM grant that may
-   bypass limits. With WeeklyCaps.Enable=0 the reward must arrive; with 1 the
-   same path must stop at the DBC cap. Test spending/earning across the threshold.
-3. Seed Conquest meta-arena/meta-rated-BG counts at/beyond their rating caps,
-   total holding count below its cap. Trigger normal arena/random-BG and rated-BG
-   rewards. With 0 each must award a positive expected count, update meta/main
-   counters consistently and never subtract currency; with 1 stock clamps apply.
-4. Verify weekly reset/accounting and total holding caps still work, and the
-   Valor bonus unlocks at the original milestone while currency can exceed it.
-5. On a fishing fixture at 200/600, enable entities.player.skills DEBUG and catch
-   fish. With Fishing.Always=1 every valid catch must log 100% and raise skill;
-   with 0 the log must show the original integer chance (44% at 200). At learned
-   cap no catch may raise skill further. Failed casts/catches must grant nothing.
-6. Toggle/reload both keys, then relog and inspect currency/PvP cap displays.
-   Run the headless regression suite on test/none after the rebuilt server starts.
+Use `.solo fishskill` below/at the learned cap and `.solo award` on disposable
+currency fixtures for the new hooks. Check weekly caps both disabled and enabled,
+including re-enabling while weekly earnings already exceed the cap: a reward must
+never deduct currency. `tests/solo_config` covers the cap arithmetic, uncapped
+awards, partial awards, deductions, and integer boundaries. Total holding limits
+and existing Valor bonus thresholds stay in place.
 
 Source evidence: World.cpp config loading; CharacterHandler.cpp all-taxi login;
 Player.cpp SkillGainChance, UpdateCraftSkill, UpdateGatherSkill, UpdateFishingSkill,

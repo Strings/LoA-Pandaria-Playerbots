@@ -76,7 +76,6 @@
 #include "CreatureGroups.h"
 #include "Transport.h"
 #include "ScriptMgr.h"
-#include "SoloConfig.h"
 #include "AddonMgr.h"
 #include "LFGMgr.h"
 #include "LFGAnyLevel.h"                // #702: LFG.AnyLevel.* (off by default)

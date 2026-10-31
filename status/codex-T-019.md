@@ -1,28 +1,32 @@
-# T-019: Solo config defaults and authorized core hooks
+# T-019: Solo configuration defaults
 
 **Agent:** codex
 **Branch:** codex/T-019-solo-config
-**Task status:** review (draft; compiled validation deferred by the human)
+**Task status:** review
 
 ## What changed
-- 28 config values in worldserver.conf.dist and independent dev/test overlay: cross-faction hooks, all taxi paths, guaranteed crafting/gathering/fishing, ordinary death durability off, sickness disabled at MoP cap, reclaim escalation off, no weekly currency caps.
-- Human authorized core hooks on 2026-10-31 and explicitly deferred compiled validation until Claude's build tooling lands.
-- New atomically cached flags Currency.WeeklyCaps.Enable (shipped 0; omitted fallback 1) and SkillChance.Fishing.Always (shipped 1; omitted fallback 0). Config reload supported.
-- Weekly-cap getter returns zero/unlimited; both Conquest meta award clamps respect that sentinel. Total holding limits and weekly/season counters/reset remain. Valor of the Ancients uses the original DBC bonus milestone independently of earning limits.
-- Fishing selects 100% through the existing skill-up path, preserving learned caps/gain amounts; disabling restores the original formula.
+- Rebased onto current playerbot; recovered SoloConfig work, dropped T-038 leftovers. No Heartseed edits.
+- Shipped/profile defaults enable existing cross-faction and taxi hooks, guaranteed profession gains, lighter death penalties, and uncapped weekly currency.
+- Added cached/reloadable fishing and weekly-cap switches, GM probes and per-key headless smoke coverage.
+- Guarded cap re-enabling above the weekly threshold so rewards cannot subtract/underflow currency. Holding caps, accounting and the Valor bonus threshold remain.
 
 ## How it was tested
-- Two Python checks pass: all keys loaded, shipped/profile defaults agree, runtime application byte-idempotent. git diff --check passes.
-- Prior live test of unchanged alchemy config path: fixture skill 70/75, craft 2330, logged Chance 100.0% taken, saved 71/75.
-- New C++ hooks are NOT compiled or runtime-tested. No full build or GUI started. Detailed post-build currency/PvP/fishing/toggle test plan in tools/devenv/SOLO_CONFIG.md.
+- Release worldserver build; no warnings in touched files (existing PathGenerator C4715 warnings remain).
+- tools/devenv/test_solo.py: 2 pass; developer-environment tests: 6 pass; CTest: 6 suites pass, including currency boundaries.
+- Private Codex test/none runtime: all 28 effective keys, login taxi access and reclaim delays; fishing gain/rank cap and legacy chance; uncapped Valor/arena/rated-BG currency paths, holding cap, and cap re-enable above limits; login regression.
+- Live evidence: build/T019-final-*.log and build/regression/T019*. Earlier alchemy craft check: 70/75 to 71/75.
+
+## Decisions made
+- No provisional features. Retained missing-key compatibility for the two new switches.
 
 ## For the other agent
-- Keep PR #10 draft pending compiled validation. Task scope approval is resolved; there is no remaining permission question.
-- PvP base reclaim delay and spirit healer's separate 25% durability charge remain documented.
-- T-002 PR #4 consumes the overlay once merged. Existing binaries ignore the two new keys; deploying config alone does not activate these hooks.
-- No main/Claude environment changes; STATUS.md unchanged.
+- Claude reviews; leave PR open. No new SQL or shared runtime changes. Backed up characters_codex and applied the merged T-049 account migration required by the rebased core.
+- Social keys were checked as effective loaded values, not a full multi-account social regression.
+- Spirit-healer durability remains 25%; PvP reclaim retains 30-second base delay; config docs spell out both limits.
 
-## Validation preparation
-- Kept the two cached flags in a small World/SoloConfig helper instead of adding World.h enum slots or changing World's layout. Config reload publishes both together.
-- Added GM solo info/fishskill/award probes for real cap and skill-gain checks, with normal currency multipliers/limits.
-- All six developer-environment tests pass. The new C++ probe/helper are pending the integrated build/live checks.
+## Next
+- Claude review, then human merge.
+
+## Map additions
+- World/SoloConfig caches switches; World/CurrencyLimits.h owns tested cap arithmetic.
+- Custom/SoloConfig contains GM probes; tools/devenv/solo_smoke.json is the per-key live scenario.

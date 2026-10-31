@@ -1,0 +1,135 @@
+{
+  "name": "solo-config",
+  "timeout_seconds": 90,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "2"
+  ],
+  "steps": [
+    "say .solo info"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "AllFlightPaths=1"
+    },
+    {
+      "type": "contains",
+      "text": "SkillChance.Orange=100"
+    },
+    {
+      "type": "contains",
+      "text": "SkillChance.Yellow=100"
+    },
+    {
+      "type": "contains",
+      "text": "SkillChance.Green=100"
+    },
+    {
+      "type": "contains",
+      "text": "SkillChance.Grey=100"
+    },
+    {
+      "type": "contains",
+      "text": "SkillChance.MiningSteps=0"
+    },
+    {
+      "type": "contains",
+      "text": "SkillChance.SkinningSteps=0"
+    },
+    {
+      "type": "contains",
+      "text": "SkillChance.Prospecting=1"
+    },
+    {
+      "type": "contains",
+      "text": "SkillChance.Milling=1"
+    },
+    {
+      "type": "contains",
+      "text": "DurabilityLoss.InPvP=0"
+    },
+    {
+      "type": "contains",
+      "text": "DurabilityLoss.OnDeath=0"
+    },
+    {
+      "type": "contains",
+      "text": "Death.SicknessLevel=91"
+    },
+    {
+      "type": "contains",
+      "text": "Death.CorpseReclaimDelay.PvP=0"
+    },
+    {
+      "type": "contains",
+      "text": "Death.CorpseReclaimDelay.PvE=0"
+    },
+    {
+      "type": "contains",
+      "text": "AllowTwoSide.Interaction.Calendar=1"
+    },
+    {
+      "type": "contains",
+      "text": "AllowTwoSide.Interaction.Channel=1"
+    },
+    {
+      "type": "contains",
+      "text": "AllowTwoSide.Interaction.Group=1"
+    },
+    {
+      "type": "contains",
+      "text": "AllowTwoSide.Interaction.Guild=1"
+    },
+    {
+      "type": "contains",
+      "text": "AllowTwoSide.Interaction.Auction=1"
+    },
+    {
+      "type": "contains",
+      "text": "AllowTwoSide.Trade=1"
+    },
+    {
+      "type": "contains",
+      "text": "AllowTwoSide.WhoList=1"
+    },
+    {
+      "type": "contains",
+      "text": "AllowTwoSide.Accounts=1"
+    },
+    {
+      "type": "contains",
+      "text": "AllowTwoSide.AddFriend=1"
+    },
+    {
+      "type": "contains",
+      "text": "AllowTwoSide.Interaction.Mail=1"
+    },
+    {
+      "type": "contains",
+      "text": "AllowTwoSide.Interaction.Chat=1"
+    },
+    {
+      "type": "contains",
+      "text": "AllowTwoSide.Interaction.DungeonFinder=1"
+    },
+    {
+      "type": "contains",
+      "text": "Solo: weekly caps=off; fishing always=on; Valor cap=0; arena cap=0; rated cap=0"
+    },
+    {
+      "type": "contains",
+      "text": "Player: all taxis=1; reclaim PvE=0; reclaim PvP=30"
+    },
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback (most recent call last)"
+    }
+  ]
+}
