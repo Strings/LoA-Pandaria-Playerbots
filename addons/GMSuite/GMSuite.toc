@@ -1,0 +1,7 @@
+## Interface: 50400
+## Title: GMSuite
+## Notes: UltimateMoP GM test suite: checkpoints, kits and ability tester. The server does the work; this panel sends GM commands.
+## Version: 0.1
+## SavedVariables: GMSuiteDB
+
+GMSuite.lua
