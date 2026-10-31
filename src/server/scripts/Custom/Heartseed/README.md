@@ -35,6 +35,8 @@ World database (`sql/updates/world/2026_10_31_claude_01_heartseed_stage.sql`):
 - `heartseed_stage`: stage number, starting character level, name.
 - `heartseed_glow`: glow enchant per stage and dominant path (path 0 = none).
 
+World database (`sql/updates/world/2026_10_31_claude_09_heartseed_grant_quest.sql`): quest 90000, the granting quest.
+
 World database (`sql/updates/world/2026_10_31_claude_03_heartseed_trait.sql`):
 
 - `heartseed_trait`: one row per trait: path, kind (1 minor, 2 major), major tier or minor rank, the
@@ -65,6 +67,18 @@ World database (`sql/updates/world/2026_10_31_claude_06_heartseed_feed_prompt.sq
   1. Awakenings are the story flags listed in `Heartseed.Rank.AwakeningFlags` that the character has.
 - Growth past the cap is **banked**. A level-up, a new awakening or a login spends it (`ApplyRankUps`).
 - GM `.heartseed rank` and a bare `.heartseed growth N` set values directly and ignore the cap.
+
+## Granting quest
+
+Quest 90000 "The Heartseed" (`sql/updates/world/2026_10_31_claude_09_heartseed_grant_quest.sql`) is the
+canonical "has a Heartseed" marker: rewarding it grants the Heartseed (`PlayerScript::OnQuestRewarded`),
+however it is completed. The Theramore intro scenario will later complete the same quest.
+
+- At login, a character with no Heartseed that has not done the quest is offered it after
+  `Heartseed.Grant.OfferDelay` ms. The player is its own quest giver (quest flags AUTO_TAKE | AUTO_COMPLETE),
+  so no NPC is needed. Accepting completes it and opens the reward window; turning it in grants the Heartseed.
+- Declining offers it again at the next login. Logging out at the reward window reopens the reward window.
+- `.heartseed revoke` also resets the quest; `.heartseed grant` grants without it (GM shortcut).
 
 ## Story beats
 
@@ -144,6 +158,7 @@ worldserver.conf:
 - Feeding: `Heartseed.Feed.OnReplace` (1), `.GrowthBase` (20), `.GrowthPerItemLevel` (2), `.QualityPct`
   ("50 100 150 250 400 0 0 0", poor to heirloom).
 - Essences: `Heartseed.Essence.ProcCooldown` (3000 ms), `.AutoSlot` (1).
+- Granting quest: `Heartseed.Grant.QuestId` (90000), `.OfferOnLogin` (1), `.OfferDelay` (5000 ms).
 - Story beats: `Heartseed.Story.Hooks` (1), `.PandariaMaps` ("870"), `.WorldBosses` (MoP and old world boss
   entries), `.AwakeningSound` (0 = none).
 - All pacing numbers are placeholders until v0.5.
@@ -155,7 +170,8 @@ Permission 90000 (`Command: heartseed`, Gamemaster role). Target is the selected
 - `.heartseed info`: rank, Growth, stage, loadout, essences, glow, story flags and the main hand's
   visible enchant field as the client receives it.
 - `.heartseed grant`: give a Heartseed (rank 1, no Growth).
-- `.heartseed revoke`: remove it with all its rows.
+- `.heartseed revoke`: remove it with all its rows, and reset the granting quest.
+- `.heartseed offer`: show the granting quest now (no Heartseed and quest not done).
 - `.heartseed rank <1-255>`: set the rank. Ignores the level cap, so states can be tested without leveling.
 - `.heartseed growth <n> | +<n> | -<n>`: set Growth or take from it (never below 0); `+<n>` earns it,
   ranking up to the cap like real Growth.

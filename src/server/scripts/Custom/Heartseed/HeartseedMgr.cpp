@@ -13,6 +13,7 @@
 #include "ObjectMgr.h"
 #include "ObjectAccessor.h"
 #include "Player.h"
+#include "QuestDef.h"
 #include "Random.h"
 #include "SpellAuraEffects.h"
 #include "SpellAuras.h"
@@ -68,6 +69,45 @@ namespace
         ObjectGuid _oldWeapon;
     };
 
+    // Shows the granting quest a moment after login, once the client's UI is ready for a quest window.
+    class HeartseedOfferEvent : public BasicEvent
+    {
+    public:
+        explicit HeartseedOfferEvent(Player* player) : _player(player) { }
+
+        bool Execute(uint64 /*time*/, uint32 /*diff*/) override
+        {
+            sHeartseedMgr->OfferGrantQuest(_player);
+            return true;
+        }
+
+    private:
+        Player* _player;
+    };
+
+    // Opens the reward window right after the quest is accepted, outside the accept handler.
+    class HeartseedGrantRewardEvent : public BasicEvent
+    {
+    public:
+        HeartseedGrantRewardEvent(Player* player, uint32 questId) : _player(player), _questId(questId) { }
+
+        bool Execute(uint64 /*time*/, uint32 /*diff*/) override
+        {
+            Quest const* quest = sObjectMgr->GetQuestTemplate(_questId);
+            if (!quest || sHeartseedMgr->HasHeartseed(_player))
+                return true;
+            if (_player->GetQuestStatus(_questId) == QUEST_STATUS_INCOMPLETE)
+                _player->CompleteQuest(_questId);
+            if (_player->GetQuestStatus(_questId) == QUEST_STATUS_COMPLETE)
+                _player->PlayerTalkClass->SendQuestGiverOfferReward(quest, _player->GetGUID(), true);
+            return true;
+        }
+
+    private:
+        Player* _player;
+        uint32 _questId;
+    };
+
     std::string ToLower(std::string text)
     {
         std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) { return char(std::tolower(c)); });
@@ -119,6 +159,9 @@ void HeartseedMgr::LoadConfig()
         "60491 62346 69099 69161 71952 71953 71954 71955 72057 6109 12397 14887 14888 14889 14890 17711 18728"));
     _worldBossEntries = std::set<uint32>(bosses.begin(), bosses.end());
     _awakeningSound = sConfigMgr->GetIntDefault("Heartseed.Story.AwakeningSound", 0);
+    _grantQuestId = sConfigMgr->GetIntDefault("Heartseed.Grant.QuestId", 90000);
+    _grantOfferOnLogin = sConfigMgr->GetBoolDefault("Heartseed.Grant.OfferOnLogin", true);
+    _grantOfferDelay = sConfigMgr->GetIntDefault("Heartseed.Grant.OfferDelay", 5000);
 }
 
 void HeartseedMgr::LoadData()
@@ -463,6 +506,11 @@ bool HeartseedMgr::Revoke(Player* player)
     trans->PAppend("DELETE FROM `heartseed_fed_weapon` WHERE `guid` = %u", guid);
     CharacterDatabase.CommitTransaction(trans);
 
+    // The quest is the canonical marker, so revoking makes it available again.
+    if (player->GetQuestStatus(_grantQuestId) != QUEST_STATUS_NONE)
+        player->RemoveActiveQuest(_grantQuestId, true, true);
+    player->RemoveRewardedQuest(_grantQuestId);
+
     RefreshGlow(player);
     return true;
 }
@@ -509,6 +557,56 @@ bool HeartseedMgr::SetStoryFlag(Player* player, uint16 flag, bool set)
     if (set)
         ApplyRankUps(player);
     return true;
+}
+
+void HeartseedMgr::ScheduleGrantOffer(Player* player)
+{
+    if (_grantOfferOnLogin && CanOfferGrantQuest(player))
+        player->m_Events.AddEvent(new HeartseedOfferEvent(player), player->m_Events.CalculateTime(_grantOfferDelay));
+}
+
+bool HeartseedMgr::CanOfferGrantQuest(Player* player) const
+{
+    // The quest's completion is the canonical "has a Heartseed"; a GM grant without it still counts as having one.
+    return _enabled && !HasHeartseed(player) && sObjectMgr->GetQuestTemplate(_grantQuestId)
+        && !player->GetQuestRewardStatus(_grantQuestId);
+}
+
+bool HeartseedMgr::OfferGrantQuest(Player* player)
+{
+    if (!player->IsInWorld() || !CanOfferGrantQuest(player))
+        return false;
+
+    Quest const* quest = sObjectMgr->GetQuestTemplate(_grantQuestId);
+    switch (player->GetQuestStatus(_grantQuestId))
+    {
+        case QUEST_STATUS_NONE:
+            if (!player->CanTakeQuest(quest, false))
+                return false;
+            // The player is its own quest giver; the quest's auto-take flag lets the accept through.
+            player->PlayerTalkClass->SendQuestGiverQuestDetails(quest, player->GetGUID(), true);
+            return true;
+        case QUEST_STATUS_INCOMPLETE:
+        case QUEST_STATUS_COMPLETE:
+            // Accepted earlier but never turned in (logged out at the reward window).
+            player->m_Events.AddEvent(new HeartseedGrantRewardEvent(player, _grantQuestId), player->m_Events.CalculateTime(0));
+            return true;
+        default:
+            return false;
+    }
+}
+
+void HeartseedMgr::OnQuestAdded(Player* player, Quest const* quest)
+{
+    if (quest->GetQuestId() == _grantQuestId)
+        player->m_Events.AddEvent(new HeartseedGrantRewardEvent(player, _grantQuestId), player->m_Events.CalculateTime(0));
+}
+
+void HeartseedMgr::OnQuestRewarded(Player* player, Quest const* quest)
+{
+    // Any way of completing the quest grants it: this one, and later the Theramore intro scenario.
+    if (quest->GetQuestId() == _grantQuestId && Grant(player))
+        ChatHandler(player->GetSession()).SendSysMessage("A Heartseed has taken root in your weapon.");
 }
 
 bool HeartseedMgr::ReachStoryBeat(Player* player, uint16 flag)

@@ -1,5 +1,5 @@
 /*
- * Heartseed hooks and GM commands (T-020, T-021, T-022, T-024, T-026). State lives in HeartseedMgr.
+ * Heartseed hooks and GM commands (T-020 to T-022, T-024 to T-026). State lives in HeartseedMgr.
  */
 
 #include "Bag.h"
@@ -66,6 +66,20 @@ public:
         sHeartseedMgr->ApplyRankUps(player);
         // Characters that were already in Pandaria when the hook arrived.
         sHeartseedMgr->OnMapChanged(player);
+        // No Heartseed yet: offer the granting quest.
+        sHeartseedMgr->ScheduleGrantOffer(player);
+    }
+
+    void OnQuestAdded(Player* player, Quest const* quest) override
+    {
+        if (!player->GetSession()->IsBot())
+            sHeartseedMgr->OnQuestAdded(player, quest);
+    }
+
+    void OnQuestRewarded(Player* player, Quest const* quest) override
+    {
+        if (!player->GetSession()->IsBot())
+            sHeartseedMgr->OnQuestRewarded(player, quest);
     }
 
     void OnSave(Player* player) override
@@ -206,6 +220,7 @@ public:
             { "info",   &HandleInfoCommand,   RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "grant",  &HandleGrantCommand,  RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "revoke", &HandleRevokeCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
+            { "offer",  &HandleOfferCommand,  RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "rank",   &HandleRankCommand,   RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "growth", &HandleGrowthCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "flag",   flagCommandTable,     RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
@@ -832,6 +847,23 @@ public:
             return true;
         }
         handler->PSendSysMessage("Granted a Heartseed to %s.", target->GetName().c_str());
+        return true;
+    }
+
+    static bool HandleOfferCommand(ChatHandler* handler, char const* /*args*/)
+    {
+        Player* target = GetTarget(handler);
+        if (!target)
+            return false;
+
+        if (!sHeartseedMgr->OfferGrantQuest(target))
+        {
+            handler->PSendSysMessage("Cannot offer quest %u to %s: it already has a Heartseed, has done the quest, or the quest is missing.",
+                sHeartseedMgr->GetGrantQuestId(), target->GetName().c_str());
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+        handler->PSendSysMessage("Offered the granting quest to %s.", target->GetName().c_str());
         return true;
     }
 
