@@ -15,6 +15,7 @@ class Tests(unittest.TestCase):
         policy = json.loads(Path(__file__).with_name('profile.d').joinpath('019-solo.json').read_text())
         dist = (m.ROOT / 'src/server/worldserver/worldserver.conf.dist').read_text(encoding='utf-8-sig')
         loader = (m.ROOT / 'src/server/game/World/World.cpp').read_text(encoding='utf-8-sig')
+        loader += (m.ROOT / 'src/server/game/World/SoloConfig.cpp').read_text()
         for key, value in policy['dev']['world'].items():
             self.assertIn('"' + key + '"', loader)
             self.assertEqual(re.search(r'^' + re.escape(key) + r'\s*=\s*(.+)$', dist, re.M)[1].strip(), value)

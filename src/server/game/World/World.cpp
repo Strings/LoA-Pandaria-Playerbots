@@ -76,6 +76,7 @@
 #include "CreatureGroups.h"
 #include "Transport.h"
 #include "ScriptMgr.h"
+#include "SoloConfig.h"
 #include "AddonMgr.h"
 #include "LFGMgr.h"
 #include "LFGAnyLevel.h"                // #702: LFG.AnyLevel.* (off by default)
@@ -85,6 +86,7 @@
 #include "DisableMgr.h"
 #include "CharacterDatabaseCleaner.h"
 #include "ScriptMgr.h"
+#include "SoloConfig.h"
 #include "WeatherMgr.h"
 #include "CreatureTextMgr.h"
 #include "SmartAI.h"
@@ -812,7 +814,7 @@ void World::LoadConfigSettings(bool reload)
         TC_LOG_ERROR("server.loading", "Currency.StartConquestPoints (%i) must be >= 0, set to default 0.", m_int_configs[CONFIG_CURRENCY_START_CONQUEST_POINTS]);
         m_int_configs[CONFIG_CURRENCY_START_CONQUEST_POINTS] = 0;
     }
-    m_bool_configs[CONFIG_CURRENCY_WEEKLY_CAPS_ENABLED] = sConfigMgr->GetBoolDefault("Currency.WeeklyCaps.Enable", true);
+    SoloConfig::Load();
     m_int_configs[CONFIG_CURRENCY_CONQUEST_POINTS_WEEK_CAP] = sConfigMgr->GetIntDefault("Currency.ConquestPointsWeekCap", 1650);
     if (int32(m_int_configs[CONFIG_CURRENCY_CONQUEST_POINTS_WEEK_CAP]) <= 0)
     {
@@ -960,7 +962,6 @@ void World::LoadConfigSettings(bool reload)
 
     m_bool_configs[CONFIG_SKILL_PROSPECTING] = sConfigMgr->GetBoolDefault("SkillChance.Prospecting", false);
     m_bool_configs[CONFIG_SKILL_MILLING] = sConfigMgr->GetBoolDefault("SkillChance.Milling", false);
-    m_bool_configs[CONFIG_SKILL_FISHING_ALWAYS] = sConfigMgr->GetBoolDefault("SkillChance.Fishing.Always", false);
 
     m_int_configs[CONFIG_SKILL_GAIN_CRAFTING]  = sConfigMgr->GetIntDefault("SkillGain.Crafting", 1);
 

@@ -91,6 +91,7 @@
 #include "Weather.h"
 #include "WeatherMgr.h"
 #include "World.h"
+#include "SoloConfig.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
 #include "WorldStateBuilder.h"
@@ -6121,7 +6122,7 @@ bool Player::UpdateFishingSkill()
     uint32 SkillValue = GetPureSkillValue(SKILL_FISHING);
 
     int32 chance = SkillValue < 75 ? 100 : 10000 / (SkillValue + 25);
-    if (sWorld->getBoolConfig(CONFIG_SKILL_FISHING_ALWAYS))
+    if (SoloConfig::GuaranteedFishingSkillups())
         chance = 100;
 
     uint32 gathering_skill_gain = sWorld->getIntConfig(CONFIG_SKILL_GAIN_GATHERING);
@@ -7777,7 +7778,7 @@ void Player::ResetCurrencyWeekCap()
 
 uint32 Player::GetCurrencyWeekCap(CurrencyTypesEntry const* currency) const
 {
-    if (!currency || !sWorld->getBoolConfig(CONFIG_CURRENCY_WEEKLY_CAPS_ENABLED))
+    if (!currency || !SoloConfig::WeeklyCurrencyCapsEnabled())
         return 0;
 
     uint32 cap = currency->WeekCap;
