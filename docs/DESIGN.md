@@ -196,6 +196,33 @@ Each team has a list of open calls that bots read at their normal decision ticks
 - **Beyond battlegrounds:** war fronts (plus generals posting objectives), world PvP and Sha ambushes (help calls bring nearby buddies), and dungeons (tank calls, with trust applied to reckless tanks).
 - **Cost:** a short list per team, evaluated at existing decision ticks. Layers onto the port's battleground tactics, replacing fixed role assignment.
 
+### Social coupling (decided)
+
+Between explicit calls, bots neither decide alone nor share a hive mind: each blends its own choice with what
+the allies it can see are doing. For every candidate action,
+`U_total = alpha * U_self + (1 - alpha) * U_social`, where `alpha` (0 to 1) is the bot's independence.
+
+- **Independence (`alpha`)** comes from the confidence mood and traits, adjusted by gear (item level, Heartseed
+  rank), role (tanks and melee higher) and leading the group. Shotcallers sit near 0.8 to 0.95 and initiate;
+  pack players near 0.4 to 0.6 follow once two allies or a leader commit; hesitant bots near 0.15 to 0.35 hang
+  back at range, leave the gate with the biggest cluster and peel first when allies retreat. A bot answering a
+  call-board call acts on the call with high independence until it ends.
+- **Four social signals,** from allies already in the perception radius, no extra pathfinding:
+  1. **Momentum:** the confidence-weighted average velocity of allies within 30 yards, with extra weight
+     (2 to 3x) on the player, the flag carrier and the tank. Bots bend their path toward the pack after a
+     reaction delay (400 to 900 ms) instead of taking ten separate roads out of the gate.
+  2. **Focus-fire contagion:** the pull toward a target grows with allies already attacking it, how fast its
+     health is dropping and visible weakness (stun, crowd control, carrier debuff, raid marker), so bots pile
+     onto a stunned, chunked healer 0.5 to 1.2 s later rather than on the same server tick.
+  3. **Morale:** allies advancing minus allies retreating or dead nearby. A committed push lifts hesitant bots'
+     confidence and they follow it in; two quick deaths and one ally turning tail start a rout that low-confidence
+     bots join half a second later.
+  4. **Anchoring:** in dungeons and raids, bots with low encounter familiarity pull toward high-familiarity bots
+     or the player during spread, soak and pre-position chunks, trailing 0.4 to 0.8 s behind.
+- **The player is always a strong anchor** when nearby: solo-first means the bots form up around you.
+- **Cost:** four numbers per bot, computed at existing decision ticks for bots at full activity only. Telemetry
+  (`ally_centroid_*`, `target_ally_attacker_count`) fits the weights and delays from the player's own group play.
+
 ### Skill
 
 Skill is a per-bot value separate from personality, seeded from the GUID, with roster bots higher. Personality decides what a bot wants; skill decides how well it does it.
@@ -1197,7 +1224,7 @@ Splitting data into general, class-specific and situation-specific behavior happ
 - **Decision events** (cast, target change, pull, flee, mount, consumable use, loot choice) carry a context snapshot:
   - Self: class, spec, level, health, power and secondary resource (%), active buffs and debuffs, cooldowns ready, item level, mounted, swimming, flying, in combat, speed.
   - Target: creature entry or player class, level gap, classification (normal, elite, rare, boss), creature type, health %, distance, angle, casting (spell), who it is attacking.
-  - Surroundings: hostiles within 5, 15 and 40 yards with their level gaps, attackers on self, enemies near death, friendly players and bots nearby, group size and roles.
+  - Surroundings: hostiles within 5, 15 and 40 yards with their level gaps, attackers on self, enemies near death, friendly players and bots nearby, group size and roles; where the friendly pack is (distance and angle to the allies' centroid, their mean heading); and on a target change, how many allies were already attacking the new target (initiating a swap versus joining focus fire).
   - Place and time: map, zone, subzone, instance type, indoors, server time, minutes into the session.
   - Line of sight and terrain: line of sight to the target (a raycast, so on decision events only, never per
     movement sample) and the height difference to the target (ledges, roofs, drops).
