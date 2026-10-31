@@ -111,3 +111,11 @@ SOAP, so they need the SOAP settings above. `.botscenario` is the playerbots tes
 By default the character stays in the world until the server times the socket out, so a test
 driver can keep using it after the script exits. Set `HEADLESS_LOGOUT=1` to send a clean logout
 when the session ends.
+
+## Assertion-driven regression suite
+
+Use `python tests/regression/run.py --runtime build/devenv` from the repo root
+with a generated test/none or test/local runtime and dedicated MOP_ACCOUNT /
+MOP_PASSWORD credentials. See `tests/regression/README.md` for scenario JSON,
+assertions, redacted logs, JSON/JUnit reports and timeout behavior. The runner
+selects the runtime ports and exits nonzero when an expected outcome is absent.
