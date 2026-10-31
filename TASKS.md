@@ -37,7 +37,8 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 | BUG-002 | Accept quoted source columns in migration checks while rejecting client SOURCE directives | `tools/backup/` | codex | done |
 | T-009 | Enable Eluna in the dev and test profiles; `lua_scripts/` layout and a README for prototypes | `lua_scripts/`, `tools/devenv/` | codex | review |
 | T-035 | Headless-client regression suite runner with assertions; one example scenario | `tests/regression/`, `contrib/headless-client/` | codex | done |
-| T-038 | Hot reload framework for custom tables (`.reload <table>`), settable global RNG seed for tests, faster links (lld-link where it works with MSVC) | `src/server/scripts/Custom/Reload/`, build config | codex | review |
+| T-038 | Hot reload framework for custom tables (`.reload <table>`), settable global RNG seed for tests. Built by Codex, finished and merged by Claude; faster links moved to T-060 | `src/server/scripts/Custom/Reload/` | codex, claude | done |
+| T-060 | Faster links: lld-link where it works with MSVC (split out of T-038) | build config, `tools/build/` | | open |
 | T-039 | GM tools, first set: server clock speed-up and jump, `.scenario load <name>` on top of `.botscenario`, `.bot why` (last decision with candidate scores), `.bot traits/memory/skill`, invisible spectate. Overlays and force-any-system commands grow with each system | `src/server/scripts/Custom/GMTools/`, `modules/mod_playerbots/src/Scenario/` | | open |
 | T-040 | `/idea` and `/bug` capture: save a note with position, target, nearby bots and their last decisions, active systems and a screenshot path as a ticket file agents can pick up | `src/server/scripts/Custom/Capture/`, `tickets/` | | open |
 
