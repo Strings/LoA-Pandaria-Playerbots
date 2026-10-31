@@ -35,6 +35,7 @@
 #include "SkillExtraItems.h"
 #include "SkillDiscovery.h"
 #include "World.h"
+#include "MountedSpeed.h"
 #include "UpdateTime.h"
 #include "AccountMgr.h"
 #include "RBAC.h"
@@ -543,6 +544,7 @@ void World::LoadConfigSettings(bool reload)
 
     ///- Read other configuration items from the config file
 
+    MountedSpeed::Load();
     m_bool_configs[CONFIG_DURABILITY_LOSS_IN_PVP] = sConfigMgr->GetBoolDefault("DurabilityLoss.InPvP", false);
 
     m_int_configs[CONFIG_COMPRESSION] = sConfigMgr->GetIntDefault("Compression", 1);

@@ -62,6 +62,7 @@
 #include "Util.h"
 #include "Vehicle.h"
 #include "World.h"
+#include "MountedSpeed.h"
 #include "WorldPacket.h"
 #include "MovementStructures.h"
 #include "MovementPacketBuilder.h"
@@ -12440,6 +12441,11 @@ void Unit::UpdateSpeed(UnitMoveType mtype, bool forced)
     float speed = std::max(non_stack_bonus, stack_bonus);
     if (main_speed_mod)
         AddPct(speed, main_speed_mod);
+
+    // Keep shapeshifts, taxis and non-player movement on their existing paths.
+    if (GetTypeId() == TYPEID_PLAYER && IsMounted() && !IsInFlight() &&
+        (mtype == MOVE_RUN || mtype == MOVE_FLIGHT))
+        speed = MountedSpeed::AdjustRate(speed, MountedSpeed::Multiplier());
 
     switch (mtype)
     {
