@@ -14,10 +14,12 @@
 #include "RBAC.h"
 #include "ReputationMgr.h"
 #include "Timer.h"
+#include "TwinkGearRules.h"
 #include "WorldSession.h"
 
 #include <algorithm>
 #include <cctype>
+#include <set>
 
 namespace
 {
@@ -45,6 +47,72 @@ namespace
             case 4: return "epic";
             default: return "quality " + std::to_string(quality);
         }
+    }
+
+    // Moves an equipped item to the bags; false when they are full.
+    bool UnequipToBags(Player* target, uint8 slot)
+    {
+        Item* item = target->GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
+        if (!item)
+            return true;
+        ItemPosCountVec bagDest;
+        if (target->CanStoreItem(NULL_BAG, NULL_SLOT, bagDest, item, false) != EQUIP_ERR_OK)
+            return false;
+        target->RemoveItem(INVENTORY_SLOT_BAG_0, slot, true);
+        target->StoreItem(bagDest, item, true);
+        return true;
+    }
+
+    // Equips an item in one equipment slot: a copy already in the bags if there is one (unique items, and applying a
+    // checkpoint twice stays tidy), else a new one. Whatever the slot held goes to the bags, so nothing is lost; when
+    // the bags are full the old item stays and the new one is not equipped.
+    bool EquipNewItemIn(Player* target, uint8 slot, uint32 entry)
+    {
+        if (Item* old = target->GetItemByPos(INVENTORY_SLOT_BAG_0, slot))
+            if (old->GetEntry() == entry)
+                return true;
+
+        if (Item* carried = target->GetItemByEntry(entry))
+        {
+            uint16 dest = 0;
+            if (!carried->IsEquipped() && target->CanEquipItem(slot, dest, carried, true) == EQUIP_ERR_OK)
+            {
+                target->SwapItem(carried->GetPos(), dest);
+                target->AutoUnequipOffhandIfNeed();
+                return target->GetItemByPos(INVENTORY_SLOT_BAG_0, slot) == carried;
+            }
+        }
+
+        if (Item* old = target->GetItemByPos(INVENTORY_SLOT_BAG_0, slot))
+        {
+            ItemPosCountVec bagDest;
+            if (target->CanStoreItem(NULL_BAG, NULL_SLOT, bagDest, old, false) != EQUIP_ERR_OK)
+                return false;
+            target->RemoveItem(INVENTORY_SLOT_BAG_0, slot, true);
+            target->StoreItem(bagDest, old, true);
+        }
+        uint16 dest = 0;
+        if (target->CanEquipNewItem(slot, dest, entry, false) != EQUIP_ERR_OK || !target->EquipNewItem(dest, entry, true))
+            return false;
+        target->AutoUnequipOffhandIfNeed();
+        return true;
+    }
+
+    uint8 PrimaryStats(ItemTemplate const* proto)
+    {
+        uint8 stats = 0;
+        for (uint8 i = 0; i < MAX_ITEM_PROTO_STATS; ++i)
+        {
+            switch (proto->ItemStat[i].ItemStatType)
+            {
+                case ITEM_MOD_STRENGTH: stats |= TwinkGear::StatStrength; break;
+                case ITEM_MOD_AGILITY: stats |= TwinkGear::StatAgility; break;
+                case ITEM_MOD_INTELLECT:
+                case ITEM_MOD_SPELL_POWER: stats |= TwinkGear::StatIntellect; break;
+                default: break;
+            }
+        }
+        return stats;
     }
 
     // Runs a GM command as the applying GM, so a step can reuse an existing command instead of duplicating it.
@@ -213,6 +281,66 @@ CheckpointMgr::CheckpointMgr()
         },
         [](Step const& step) { return "Teleport to " + step.Text + " (game_tele; Alliance|Horde)."; });
 
+    // Best twink gear for the target's class, spec and current level, from the twink candidates (T-045's shortlist
+    // and its tuned items). The class spells must be learned first: armor and weapon proficiencies come with them.
+    RegisterStep("twink_gear",
+        [this](ChatHandler* /*handler*/, Player* target, Step const& /*step*/, std::string& message)
+        {
+            std::vector<std::pair<uint32, uint8>> pool;
+            {
+                std::lock_guard<std::mutex> guard(_lock);
+                pool = _twinkCandidates;
+            }
+            std::vector<TwinkGear::Candidate> candidates;
+            for (auto const& [entry, bracket] : pool)
+            {
+                ItemTemplate const* proto = sObjectMgr->GetItemTemplate(entry);
+                if (!proto || bracket > target->GetLevel() || target->CanUseItem(proto) != EQUIP_ERR_OK)
+                    continue;
+                candidates.push_back({ entry, uint8(proto->Class), uint8(proto->SubClass), uint8(proto->InventoryType),
+                    proto->ItemLevel, uint8(proto->Quality), PrimaryStats(proto), uint8(proto->RequiredLevel) });
+            }
+            candidates = TwinkGear::WithinLevel(candidates, target->GetLevel());
+
+            // After a level-down, equipped gear the character can no longer use goes to the bags.
+            uint32 unequipped = 0;
+            for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
+            {
+                Item* item = target->GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
+                if (item && target->CanUseItem(item->GetTemplate()) != EQUIP_ERR_OK && UnequipToBags(target, slot))
+                    ++unequipped;
+            }
+
+            TwinkGear::Profile profile = TwinkGear::ProfileFor(target->GetClass(), target->GetTalentSpecialization());
+            std::vector<TwinkGear::Pick> picks = TwinkGear::Select(profile, candidates);
+            uint32 equipped = 0;
+            std::string missed;
+            std::set<uint8> picked;
+            for (TwinkGear::Pick const& pick : picks)
+            {
+                picked.insert(pick.Slot);
+                if (EquipNewItemIn(target, pick.Slot, pick.Entry))
+                    ++equipped;
+                else
+                    missed += " " + std::to_string(pick.Entry);
+            }
+            // The slots twink gear manages end up with twink gear or nothing, so a checkpoint gives the same result
+            // whatever was worn before. Shirt, tabard and ranged are left alone.
+            for (uint8 slot = EQUIPMENT_SLOT_START; slot <= EQUIPMENT_SLOT_OFFHAND; ++slot)
+                if (slot != EQUIPMENT_SLOT_BODY && !picked.count(slot) && target->GetItemByPos(INVENTORY_SLOT_BAG_0, slot) &&
+                    UnequipToBags(target, slot))
+                    ++unequipped;
+            message = std::to_string(equipped) + " of " + std::to_string(picks.size()) + " twink items equipped from " +
+                std::to_string(candidates.size()) + " usable candidates" +
+                (unequipped ? "; " + std::to_string(unequipped) + " unusable items moved to the bags" : "") +
+                (missed.empty() ? "" : "; not equipped:" + missed);
+            return !picks.empty() && missed.empty();
+        },
+        [](Step const& /*step*/)
+        {
+            return std::string("Equip the best twink gear for the class, spec and level (armor type, primary stat, weapon style).");
+        });
+
     RegisterStep("kit",
         [this](ChatHandler* /*handler*/, Player* target, Step const& step, std::string& message)
         {
@@ -339,13 +467,27 @@ void CheckpointMgr::LoadData()
         } while (result->NextRow());
     }
 
+    // Twink candidates: the shortlist plus the tuned twink items (Heartseed's twink_item), each at its lowest bracket.
+    std::map<uint32, uint8> twink;
+    if (QueryResult result = WorldDatabase.Query("SELECT `entry`, `bracket` FROM `gmtools_twink_candidate` UNION ALL SELECT `entry`, `bracket` FROM `twink_item`"))
+    {
+        do
+        {
+            Field* fields = result->Fetch();
+            auto [itr, added] = twink.emplace(fields[0].GetUInt32(), fields[1].GetUInt8());
+            if (!added)
+                itr->second = std::min(itr->second, fields[1].GetUInt8());
+        } while (result->NextRow());
+    }
+
     {
         std::lock_guard<std::mutex> guard(_lock);
         _checkpoints.swap(checkpoints);
         _kits.swap(kits);
+        _twinkCandidates.assign(twink.begin(), twink.end());
     }
-    TC_LOG_INFO("server.loading", ">> Loaded %u checkpoints (%u steps) and %u kits (%u items) in %u ms",
-        uint32(_checkpoints.size()), steps, uint32(_kits.size()), items, GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded %u checkpoints (%u steps), %u kits (%u items) and %u twink candidates in %u ms",
+        uint32(_checkpoints.size()), steps, uint32(_kits.size()), items, uint32(twink.size()), GetMSTimeDiffToNow(oldMSTime));
 }
 
 std::vector<Checkpoints::Checkpoint> CheckpointMgr::GetCheckpoints() const
@@ -451,25 +593,10 @@ uint32 CheckpointMgr::ApplyKit(Player* target, Checkpoints::Kit const& kit, std:
                 ++skipped;
                 continue;
             }
-            uint16 dest = 0;
-            if (slot < EQUIPMENT_SLOT_END && target->CanEquipNewItem(slot, dest, item.Entry, true) == EQUIP_ERR_OK)
+            if (slot < EQUIPMENT_SLOT_END && EquipNewItemIn(target, slot, item.Entry))
             {
-                // Whatever the slot held goes to the bags first, so nothing is lost.
-                if (Item* old = target->GetItemByPos(INVENTORY_SLOT_BAG_0, slot))
-                {
-                    ItemPosCountVec bagDest;
-                    if (target->CanStoreItem(NULL_BAG, NULL_SLOT, bagDest, old, false) == EQUIP_ERR_OK)
-                    {
-                        target->RemoveItem(INVENTORY_SLOT_BAG_0, slot, true);
-                        target->StoreItem(bagDest, old, true);
-                    }
-                }
-                if (target->CanEquipNewItem(slot, dest, item.Entry, false) == EQUIP_ERR_OK && target->EquipNewItem(dest, item.Entry, true))
-                {
-                    target->AutoUnequipOffhandIfNeed();
-                    ++equipped;
-                    continue;
-                }
+                ++equipped;
+                continue;
             }
         }
 
