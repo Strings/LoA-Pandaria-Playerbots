@@ -1,0 +1,51 @@
+{
+  "name": "professions",
+  "timeout_seconds": 120,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "1"
+  ],
+  "steps": [
+    "say .professions status",
+    "say .professions learnall",
+    "say .professions status"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "event",
+      "kind": "login",
+      "minimum": 1,
+      "maximum": 1
+    },
+    {
+      "type": "contains",
+      "text": "Professions: configured="
+    },
+    {
+      "type": "contains",
+      "text": "known="
+    },
+    {
+      "type": "contains",
+      "text": "free="
+    },
+    {
+      "type": "contains",
+      "text": "Professions: configured=11; known=11; free=0"
+    },
+    {
+      "type": "contains",
+      "text": "Profession skill=171; rank=1; max=75"
+    },
+    {
+      "type": "contains",
+      "text": "Profession skill=197; rank=1; max=75"
+    }
+  ]
+}

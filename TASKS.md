@@ -134,6 +134,7 @@ top to bottom. Rules:
 | T-072 | World boss loot audit: Sha of Anger (60491), Galleon (62346), Oondasta (69161) and all MoP world bosses / Timeless Isle rare elites. Audit creature_loot_template and reference tables; report gaps in docs/agents/world-boss-loot.md | docs/agents/ | audit complete; gaps and data source notes documented in docs/agents/world-boss-loot.md | flash | done |
 | T-073 | Regression scenarios for remaining quick-win commands: `.mountspeed` and `.solo info` (one scenario each in `tests/regression/scenarios/`, expected messages from the code) | `tests/regression/scenarios/` | `python tests/regression/run.py` passes both against the gemini server | flash | done |
 | T-071 | `docs/MAP.md` coverage check: ensure every major path in the repo exists in MAP.md and all paths in MAP.md exist on disk | `docs/MAP.md`, `tools/map-check/` | verification script passes with 0 missing paths | flash | done |
+| T-074 | Regression scenario for profession commands: `.professions status`, `.professions learnall`, `.professions status` in `tests/regression/scenarios/professions.json` | `tests/regression/scenarios/`, `docs/PLAYTEST.md` | `python tests/regression/run.py` passes against the gemini server | flash | review |
 
 ## Suggested split
 

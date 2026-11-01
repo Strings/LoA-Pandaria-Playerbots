@@ -12,7 +12,7 @@ any time, in any order. Agents keep this list current as systems land; tick noth
 
 ## Setup
 
-- Copy `addons/GMSuite`, `addons/Capture`, `addons/Loadouts` and `addons/ReagentBank` into the client's
+- Copy `addons/GMSuite`, `addons/Capture`, `addons/Loadouts`, `addons/ReagentBank` and `addons/ProfessionBar` into the client's
   `Interface/AddOns`.
 - `/gms` opens the GM panel. Checkpoints (`hs-10`, `hs-25`, ... and twink brackets) put a character into a state in
   one click, so you can test late systems without leveling.
@@ -36,6 +36,7 @@ any time, in any order. Agents keep this list current as systems land; tick noth
 - [ ] Twink gear tooltips show the buffed stats (client hotfixes), and a twink bracket feels strong but fair.
 - [ ] Raid saves stay until finished or abandoned and reset every 2 days (after T-013 merges).
 - [ ] Starting kit: Apprentice Riding, a mount and four 10-slot bags on a new character (after T-011 merges).
+- [ ] Profession bar: `/profbar` toggles the extra bar for primary professions beyond the spellbook's first two.
 
 ## Loadouts and gear pages
 
