@@ -178,18 +178,16 @@ CheckpointMgr::CheckpointMgr()
         });
 
     RegisterStep("class_spells",
-        [](ChatHandler* handler, Player* target, Step const& /*step*/, std::string& message)
+        [](ChatHandler* /*handler*/, Player* target, Step const& /*step*/, std::string& message)
         {
-            // .learn all my class only works on the GM's own character.
-            if (!handler->GetSession() || handler->GetSession()->GetPlayer() != target)
-            {
-                message = "class spells only on yourself; skipped";
-                return false;
-            }
+            // What a character who leveled normally knows: the level-up skill spells and its specialization's
+            // spells. Not .learn all my class, which also learns every talent of every tier.
+            target->UpdateSkillsForLevel();
+            target->LearnSpecializationSpells();
             message = "class spells";
-            return RunCommand(handler, ".learn all my class");
+            return true;
         },
-        [](Step const& /*step*/) { return std::string("Learn every class spell for the level (only when applied to yourself)."); });
+        [](Step const& /*step*/) { return std::string("Learn the class and specialization spells a character of this level knows."); });
 
     RegisterStep("spell",
         [](ChatHandler* /*handler*/, Player* target, Step const& step, std::string& message)
@@ -205,6 +203,60 @@ CheckpointMgr::CheckpointMgr()
             return true;
         },
         [](Step const& step) { return "Learn spell " + std::to_string(step.Arg1) + "."; });
+
+    RegisterStep("riding",
+        [](ChatHandler* /*handler*/, Player* target, Step const& /*step*/, std::string& message)
+        {
+            // Riding for the level (Apprentice always: the starting kit gives it at creation), the race's
+            // ground mount, and a faction flying mount once flying is trained.
+            struct LevelSpell { uint8 Level; uint32 Spell; };
+            static LevelSpell const riding[] =
+            {
+                { 1, 33388 },   // Apprentice Riding
+                { 40, 33391 },  // Journeyman Riding
+                { 60, 34090 },  // Expert Riding
+                { 60, 90267 },  // Flight Master's License
+                { 68, 54197 },  // Cold Weather Flying
+                { 70, 34091 },  // Artisan Riding
+                { 80, 90265 },  // Master Riding
+                { 90, 115913 }, // Wisdom of the Four Winds
+            };
+            uint32 learned = 0;
+            auto learn = [&](uint32 spell)
+            {
+                if (!sSpellStore.LookupEntry(spell) || target->HasSpell(spell))
+                    return;
+                target->LearnSpell(spell, false);
+                ++learned;
+            };
+            for (LevelSpell const& entry : riding)
+                if (target->GetLevel() >= entry.Level)
+                    learn(entry.Spell);
+
+            uint32 ground = 0;
+            switch (target->GetRace())
+            {
+                case RACE_HUMAN:              ground = 458; break;    // Brown Horse
+                case RACE_ORC:                ground = 6654; break;   // Brown Wolf
+                case RACE_DWARF:              ground = 6899; break;   // Brown Ram
+                case RACE_NIGHTELF:           ground = 8394; break;   // Striped Frostsaber
+                case RACE_UNDEAD_PLAYER:      ground = 17462; break;  // Red Skeletal Horse
+                case RACE_TAUREN:             ground = 18989; break;  // Gray Kodo
+                case RACE_GNOME:              ground = 10969; break;  // Blue Mechanostrider
+                case RACE_TROLL:              ground = 10796; break;  // Turquoise Raptor
+                case RACE_GOBLIN:             ground = 87090; break;  // Goblin Trike
+                case RACE_BLOODELF:           ground = 34795; break;  // Red Hawkstrider
+                case RACE_DRAENEI:            ground = 34406; break;  // Brown Elekk
+                case RACE_WORGEN:             ground = 103195; break; // Mountain Horse
+                default:                      ground = 120395; break; // Green Dragon Turtle (Pandaren)
+            }
+            learn(ground);
+            if (target->GetLevel() >= 60)
+                learn(target->GetTeam() == ALLIANCE ? 32235 : 32243); // Golden Gryphon / Tawny Wind Rider
+            message = "riding and mounts (" + std::to_string(learned) + " new)";
+            return true;
+        },
+        [](Step const& /*step*/) { return std::string("Learn riding for the level, the race's ground mount and, from 60, a faction flying mount."); });
 
     RegisterStep("item",
         [](ChatHandler* /*handler*/, Player* target, Step const& step, std::string& message)

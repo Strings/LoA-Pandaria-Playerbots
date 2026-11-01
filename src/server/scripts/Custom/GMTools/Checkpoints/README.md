@@ -18,12 +18,13 @@ being played to. The GMSuite addon (`addons/GMSuite/`) puts these commands on bu
 | Type | Args | Does |
 |---|---|---|
 | `level` | arg1 level | Sets the level (down works too) and clears experience |
-| `class_spells` | | `.learn all my class` (only when applied to yourself) |
+| `class_spells` | | The skill and specialization spells a character of this level knows (no talents) |
 | `gear` | arg1 quality (2 green, 3 blue, 4 epic), text `nocap` | Playerbots gear factory via `.botscenario <name> equip`; upgrades only |
 | `kit` | text kit name | Applies a kit |
 | `twink_gear` | | Best twink gear for the class, spec and level (see Twink gear); after `class_spells` |
 | `item` | arg1 entry, arg2 count | Adds an item |
 | `spell` | arg1 spell | Learns a spell |
+| `riding` | | Riding for the level (Apprentice always), the race's ground mount and, from 60, a faction flying mount |
 | `quest` | arg1 quest | Completes and turns in a quest; put it before `level`, which resets the experience |
 | `reputation` | arg1 faction, arg2 standing | Sets reputation (3000 friendly, 9000 honored, 21000 revered, 42000 exalted) |
 | `tele` | text `game_tele` name, or `Alliance|Horde` | Teleports |
