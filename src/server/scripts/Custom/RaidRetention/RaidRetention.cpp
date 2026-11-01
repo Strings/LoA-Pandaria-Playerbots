@@ -65,9 +65,9 @@ namespace
                 ++count;
                 Difficulty difficulty = Difficulty(fields[1].GetUInt32());
                 uint32 completed = fields[2].GetUInt32();
-                handler->PSendSysMessage("Raid bind %u: map=%u; difficulty=%u; progress=%u; expected=%u; finished=%u; retained=%u; next=%u",
+                handler->PSendSysMessage("Raid bind %u: map=%u; difficulty=%u; progress=%u; expected=%u; finished=%u; script-progress=%u; retained=%u; next=%u",
                     id, map, uint32(difficulty), completed, RaidRetention::ExpectedMask(map, difficulty),
-                    uint32(fields[3].GetUInt32() != 0), uint32(RaidRetention::Enabled() && RaidResetPolicy::Preserve(completed, fields[3].GetUInt32() != 0)), uint32(sInstanceSaveMgr->GetResetTimeFor(map, difficulty)));
+                    uint32(RaidResetPolicy::Finished(fields[3].GetUInt32())), uint32(fields[3].GetUInt32() == RaidResetPolicy::PartialMarker), uint32(RaidRetention::Enabled() && RaidResetPolicy::Preserve(RaidResetPolicy::HasProgress(completed, fields[3].GetUInt32()), RaidResetPolicy::Finished(fields[3].GetUInt32()))), uint32(sInstanceSaveMgr->GetResetTimeFor(map, difficulty)));
             }
         handler->PSendSysMessage("Raid bind IDs: %u", count);
         return true;
@@ -129,6 +129,29 @@ namespace
         handler->PSendSysMessage("Raid %u: credited creature %u; progress=%u", map->GetInstanceId(), entry, script->GetCompletedEncounterMask());
         return true;
     }
+    bool Boss(ChatHandler* handler, char const* args)
+    {
+        std::istringstream input(args ? args : "");
+        uint32 index;
+        std::string state, extra;
+        if (!(input >> index) || ((input >> state) && (input >> extra)))
+            return Fail(handler, "Usage: raidprogress boss <index> [not-started|in-progress|done]");
+        if (!RaidRetention::Enabled())
+            return Fail(handler, "Raid retention is disabled");
+        Map* map = handler->GetSession()->GetPlayer()->GetMap();
+        InstanceScript* script = map->IsRaid() ? map->ToInstanceMap()->GetInstanceScript() : nullptr;
+        if (!script || index >= script->GetEncounterCount())
+            return Fail(handler, "Enter a raid and use a valid boss index");
+        bool changed = false;
+        if (!state.empty())
+        {
+            if (state != "not-started" && state != "in-progress" && state != "done")
+                return Fail(handler, "State must be not-started, in-progress or done");
+            changed = script->SetBossState(index, state == "done" ? DONE : state == "in-progress" ? IN_PROGRESS : NOT_STARTED);
+        }
+        handler->PSendSysMessage("Raid %u boss %u: state=%u; changed=%u; encounters=%u", map->GetInstanceId(), index, uint32(script->GetBossState(index)), uint32(changed), script->GetEncounterCount());
+        return true;
+    }
     class raid_retention_commandscript : public CommandScript
     {
     public:
@@ -143,7 +166,8 @@ namespace
                 { "abandon", &Abandon, rbac::RBAC_PERM_COMMAND_HELP, Console::No },
                 { "force-abandon", &Force, rbac::RBAC_PERM_COMMAND_INSTANCE_UNBIND, Console::Yes },
                 { "force-reset", &Force, rbac::RBAC_PERM_COMMAND_INSTANCE_UNBIND, Console::Yes },
-                { "credit", &Credit, rbac::RBAC_PERM_COMMAND_INSTANCE_UNBIND, Console::No }
+                { "credit", &Credit, rbac::RBAC_PERM_COMMAND_INSTANCE_UNBIND, Console::No },
+                { "boss", &Boss, rbac::RBAC_PERM_COMMAND_INSTANCE_UNBIND, Console::No }
             };
             return { { "raidprogress", children, rbac::RBAC_PERM_COMMAND_HELP, Console::Yes } };
         }

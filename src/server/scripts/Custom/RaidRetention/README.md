@@ -7,15 +7,21 @@ Invalid periods fall back to 172800. Restart applies a new period immediately;
 reload affects subsequent cycles. Non-raid resets remain unchanged.
 
 At each deadline, unstarted and fully completed raid saves reset. An active boss
-fight defers the boundary even before the first encounter credit. A nonzero partial
-completed-encounter mask without a completion marker keeps its save, respawns and player/group binds, even
-when empty or across restarts. Completion masks use existing world
-instance_encounters rows and DBC indices, with the core's difficulty expansion.
-LFR wing finals mark completion without requiring other wings' bosses. Unknown
-definitions retain nonzero progress conservatively; GM listing exposes expected=0
-for data repair. Encounter credits atomically save the mask, script state and a
-completion marker in existing instance.resettime (positive = finished deadline,
-zero = unfinished). This also covers credits arriving after a boss's DONE save.
+fight defers the boundary even before the first encounter credit. Partial clears
+keep script state, respawns and player/group binds across empty periods/restarts.
+Both ordinary encounter credits and script BossState saves are covered: the
+shipped world data omits MoP raid credit definitions. Script completion uses
+existing boss indices, LFGDungeons.dbc wing IDs (excluding off-wing DONE states),
+and excludes heroic-only Ra-den in normal Throne of Thunder. No raid scripts or
+canonical encounter bits are rewritten.
+
+Progress and script state commit together. Existing instance.resettime carries
+metadata: 0 = no saved progress, UINT32_MAX = partial script/encounter progress,
+other positive values = a finished raid's deadline. Wing completion remains
+finished across subsequent script saves. Client/save deadlines always use the
+map/difficulty cadence. Legacy scheduling also recognizes the reserved partial
+marker when the feature is disabled. Unknown definitions preserve known progress
+conservatively; listing exposes expected=0 and script-progress for inspection.
 
 Players use `.raidprogress list` and `.raidprogress abandon <instance id>`.
 Abandonment clears that instance and ALL its binds: a bound group's current
@@ -31,6 +37,8 @@ aliases for removing a raid save and all bindings. Non-raid IDs are rejected.
 GM `current` may replace the reset/abandon ID while inside a raid.
 `.raidprogress credit <creature entry>` runs the normal encounter-credit path
 inside the current raid for progress/completion verification.
+`.raidprogress boss <index> [not-started|in-progress|done]` inspects or drives the
+normal script BossState/save path, including MoP raids without credit rows.
 `.raidprogress status` reports the enabled flag and effective period.
 `Raid.Retention.NotifyOnEnter = 1` explains retention on human raid entry.
 

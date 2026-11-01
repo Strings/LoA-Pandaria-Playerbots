@@ -108,6 +108,11 @@ InstanceSave* InstanceSaveManager::AddInstanceSave(uint32 mapId, uint32 instance
         return NULL;
     }
 
+    // Raid resettime stores retention metadata, never a client-facing save deadline.
+    // Recognize the reserved marker even when returning to the legacy lifecycle.
+    if (entry->IsRaid() && (RaidRetention::Enabled() || resetTime == RaidResetPolicy::PartialMarker))
+        resetTime = 0;
+
     if (!resetTime)
     {
         // initialize reset time
@@ -225,7 +230,10 @@ void InstanceSave::SaveToDB()
     stmt->setUInt8(4, uint8(isLfg));
     stmt->setUInt32(5, completedEncounters);
     stmt->setString(6, data);
-    CharacterDatabase.Execute(stmt);
+    if (RaidRetention::Enabled() && GetMapEntry()->IsRaid())
+        CharacterDatabase.DirectExecute(stmt); // Create the row before synchronous encounter saves.
+    else
+        CharacterDatabase.Execute(stmt);
 }
 
 time_t InstanceSave::GetResetTimeForDB()
@@ -290,7 +298,7 @@ void InstanceSaveManager::LoadInstances()
             {
                 Field* fields = result->Fetch();
                 MapEntry const* entry = sMapStore.LookupEntry(fields[1].GetUInt32());
-                if (!entry || !entry->IsRaid() || !RaidResetPolicy::Preserve(fields[3].GetUInt32(), fields[4].GetUInt32() != 0))
+                if (!entry || !entry->IsRaid() || !RaidResetPolicy::Preserve(RaidResetPolicy::HasProgress(fields[3].GetUInt32(), fields[4].GetUInt32()), RaidResetPolicy::Finished(fields[4].GetUInt32())))
                     expired.push_back(fields[0].GetUInt32());
             } while (result->NextRow());
         for (uint32 id : expired)
@@ -360,8 +368,8 @@ void InstanceSaveManager::LoadResetTimes()
             if (time_t resettime = time_t(fields[3].GetUInt32()))
             {
                 MapEntry const* entry = sMapStore.LookupEntry(fields[1].GetUInt32());
-                // Positive raid resettime is the durable completion marker, not a normal-instance timer.
-                if (RaidRetention::Enabled() && entry && entry->IsRaid())
+                // Raid resettime carries durable progress/completion metadata, not a normal-instance timer.
+                if (entry && entry->IsRaid() && (RaidRetention::Enabled() || resettime == RaidResetPolicy::PartialMarker))
                     continue;
                 uint32 mapid = fields[1].GetUInt16();
                 uint32 difficulty = fields[2].GetUInt8();
@@ -880,13 +888,14 @@ void InstanceSaveManager::ResetRaidCycle(uint32 mapId, Difficulty difficulty, ti
         uint32 id;
         uint32 completed;
         bool finished;
+        bool scriptProgress;
     };
     std::vector<RaidRow> instances;
     if (QueryResult result = CharacterDatabase.PQuery("SELECT id,completedEncounters,resettime FROM instance WHERE map=%u AND difficulty=%u", mapId, uint32(difficulty)))
         do
         {
             Field* fields = result->Fetch();
-            instances.push_back({ fields[0].GetUInt32(), fields[1].GetUInt32(), fields[2].GetUInt32() != 0 });
+            instances.push_back({ fields[0].GetUInt32(), fields[1].GetUInt32(), RaidResetPolicy::Finished(fields[2].GetUInt32()), fields[2].GetUInt32() == RaidResetPolicy::PartialMarker });
         } while (result->NextRow());
     for (auto const& instance : instances)
     {
@@ -898,7 +907,7 @@ void InstanceSaveManager::ResetRaidCycle(uint32 mapId, Difficulty difficulty, ti
                 completed = script->GetCompletedEncounterMask();
                 encounterInProgress = script->IsEncounterInProgress();
             }
-        if (RaidResetPolicy::Preserve(completed, instance.finished, encounterInProgress))
+        if (RaidResetPolicy::Preserve(completed || instance.scriptProgress, instance.finished, encounterInProgress))
         {
             if (InstanceSave* save = GetInstanceSave(instance.id))
                 save->SetResetTime(next);

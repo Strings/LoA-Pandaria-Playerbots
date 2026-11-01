@@ -3,8 +3,11 @@
 #include "Define.h"
 #include "DBCEnums.h"
 #include <ctime>
+class Map;
+class InstanceScript;
 namespace RaidRetention
 {
+    void SaveProgress(Map* map, InstanceScript* script, bool wingFinished = false);
     void LoadConfig();
     bool Enabled();
     uint32 PeriodSeconds();
