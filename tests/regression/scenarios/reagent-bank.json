@@ -1,0 +1,58 @@
+{
+  "name": "reagent-bank",
+  "timeout_seconds": 120,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "2"
+  ],
+  "steps": [
+    "say .reagent list",
+    "say .reagent inspect",
+    "say .reagent add 2589 10",
+    "say .reagent list",
+    "say .reagent take 2589 5",
+    "say .reagent deposit"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "event",
+      "kind": "login",
+      "minimum": 1,
+      "maximum": 1
+    },
+    {
+      "type": "contains",
+      "text": "reagent bank"
+    },
+    {
+      "type": "contains",
+      "text": "Reagent bank: enabled="
+    },
+    {
+      "type": "contains",
+      "text": "Added"
+    },
+    {
+      "type": "contains",
+      "text": "Took"
+    },
+    {
+      "type": "contains",
+      "text": "Deposited"
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback (most recent call last)"
+    }
+  ]
+}
