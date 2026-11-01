@@ -47,3 +47,5 @@ normal script BossState/save path, including MoP raids without credit rows.
 
 No table/schema migration: existing instance masks, instance_reset deadlines and
 bind tables are used. The human confirmed no existing raid saves at rollout.
+
+Defeated raid bosses use a held respawn timestamp until reset/abandonment clears their respawn rows. Cleared BossState values cannot downgrade while retention is enabled. Terrace has a small legacy-load bridge so its private encounter array restores those core states after restart.
