@@ -1,7 +1,8 @@
 # Raid retention
 
 `Raid.Retention.Enable = 1` selects the new raid-only lifecycle. Set 0 for the
-legacy global cleanup path. `Raid.ResetPeriodSeconds = 172800` defines the shared
+legacy global cleanup path. Restart after changing this switch to reinitialize
+the schedule. `Raid.ResetPeriodSeconds = 172800` defines the shared
 map/difficulty cadence; any positive number of seconds is supported for tests.
 Invalid periods fall back to 172800. Restart applies a new period immediately;
 reload affects subsequent cycles. Non-raid resets remain unchanged.

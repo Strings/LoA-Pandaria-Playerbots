@@ -17,7 +17,7 @@ Startup cleanup and global resets currently delete saves/binds by map/difficulty
 ## Implementation in progress
 Raid-only startup/cycle retention, explicit owner/leader abandonment and GM probes are implemented. Atomic script/credit saves reuse existing resettime metadata (reserved UINT32_MAX means partial; finite timestamp means finished), leaving encounter bits and raid scripts unchanged. MoP world encounter rows are missing, so existing script BossState and validated LFG wing masks cover those raids; normal Throne excludes heroic-only Ra-den. No schema changes.
 
-Eight unit suites pass, including boundaries, permissions, wing completion and script masks. Release build is running; live save/restart/abandon checks remain.
+Eleven unit suites pass on current playerbot, including boundaries, permissions, wing completion and script masks. The default RelWithDebInfo build is running; live save/restart/abandon checks remain.
 
 ## Next
 Finish build and live verification. PR #45 stays draft until build and tests pass; Claude reviews, do not merge.
