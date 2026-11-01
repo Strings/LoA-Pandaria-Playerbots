@@ -56,6 +56,14 @@ namespace Loadouts
         std::function<void(Player* player, uint16 specId, std::string const& data)> Apply;
     };
 
+    // A system that follows the active loadout itself (gear pages). OnSwitched runs after every change of the worn
+    // loadout, through .loadout switch or the client's own spec switch. CanDelete may refuse deleting a loadout.
+    struct Listener
+    {
+        std::function<void(Player* player, uint32 fromId, uint32 toId)> OnSwitched;
+        std::function<bool(Player* player, uint32 loadoutId)> CanDelete;
+    };
+
     enum class SwitchResult
     {
         Ok,
@@ -78,6 +86,7 @@ namespace Loadouts
         IsDefault,
         IsActive,
         NoSpecs,
+        NotEmpty,            // a listener still holds something for it (gear on its page)
     };
 }
 
@@ -87,6 +96,7 @@ public:
     static LoadoutMgr* instance();
 
     void RegisterPart(Loadouts::Part part);
+    void RegisterListener(Loadouts::Listener listener);
 
     void LoadPlayer(Player* player);
     void SavePlayer(Player* player);                   // captures the active group, then writes changed loadouts
@@ -119,11 +129,15 @@ private:
         std::map<uint32, Loadouts::Loadout> Loadouts;
         std::map<uint32, std::string> Saved;           // id -> fingerprint last written, to skip unchanged writes
         std::vector<uint32> Deleted;
+        uint32 Worn = 0;                               // the loadout whose gear is equipped; listeners follow it
     };
 
     // Callers hold _lock.
     Loadouts::Loadout* AttachedTo(PlayerData& data, uint8 group);
     Loadouts::Loadout* DefaultFor(PlayerData& data, uint16 specId);
+    // Records the newly active loadout as worn; returns the previously worn one when listeners must follow.
+    uint32 UpdateWorn(Player* player, PlayerData& data);
+    void NotifySwitched(Player* player, uint32 fromId, uint32 toId);
     void AttachGroups(Player* player, PlayerData& data);
     void CaptureGroup(Player* player, Loadouts::Loadout& loadout, uint8 group);
     void WriteActions(Player* player, Loadouts::Loadout const& loadout, uint8 group);
@@ -134,6 +148,7 @@ private:
     mutable std::mutex _lock;
     std::unordered_map<uint32, PlayerData> _players;   // guid counter -> loadouts
     std::vector<Loadouts::Part> _parts;
+    std::vector<Loadouts::Listener> _listeners;
 };
 
 #define sLoadoutMgr LoadoutMgr::instance()
