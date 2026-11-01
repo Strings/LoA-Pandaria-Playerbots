@@ -35,3 +35,6 @@
 
 ## Map additions
 - game/Entities/Item/BindingRules and NoBinding; Custom/NoBinding; tests/no_binding; tools/no-binding; headless item-hotfix/transmog verbs.
+
+## Review follow-up
+- Claude approved with nonblocking notes. Rebased on playerbot 2c654e81; preserved merged profession registration/settings/task state. Owned no-binding policy/code/tests unchanged; existing build/live evidence above precedes this rebase. Human core merge held. No main SQL applied: the large characters cleanup requires human approval, already raised by Claude.
