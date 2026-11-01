@@ -1,0 +1,60 @@
+{
+  "name": "checkpoint-hs10",
+  "timeout_seconds": 120,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "1"
+  ],
+  "steps": [
+    "say .checkpoint list",
+    "say .checkpoint explain hs-10",
+    "say .checkpoint apply hs-10",
+    "say .heartseed info"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "event",
+      "kind": "login",
+      "minimum": 1,
+      "maximum": 1
+    },
+    {
+      "type": "contains",
+      "text": "checkpoints (.checkpoint explain <name>, .checkpoint apply <name>):"
+    },
+    {
+      "type": "contains",
+      "text": "hs-10"
+    },
+    {
+      "type": "contains",
+      "text": "Applying checkpoint hs-10 to"
+    },
+    {
+      "type": "contains",
+      "text": "Checkpoint hs-10 applied"
+    },
+    {
+      "type": "contains",
+      "text": "Heartseed of"
+    },
+    {
+      "type": "contains",
+      "text": "at level 10"
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback (most recent call last)"
+    }
+  ]
+}
