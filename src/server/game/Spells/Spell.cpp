@@ -54,6 +54,7 @@
 #include "SpellScript.h"
 #include "InstanceScript.h"
 #include "SpellInfo.h"
+#include "ReagentSource.h"
 #include "DB2Stores.h"
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
@@ -4533,7 +4534,7 @@ void Spell::SendCastResult(Player* caster, SpellInfo const* spellInfo, uint8 cas
                 uint32 itemid    = spellInfo->Reagent[i];
                 uint32 itemcount = spellInfo->ReagentCount[i];
 
-                if (!caster->HasItemCount(itemid, itemcount))
+                if (!ReagentSource::HasReagent(caster, itemid, itemcount))
                 {
                     missingItem = itemid;
                     break;
@@ -6168,7 +6169,7 @@ void Spell::TakeReagents()
         if (m_targets.GetItemTargetEntry() == itemid)
             m_targets.SetItemTarget(NULL);
 
-        p_caster->DestroyItemCount(itemid, itemcount, true);
+        ReagentSource::TakeReagent(p_caster, itemid, itemcount);
     }
 }
 
@@ -7701,7 +7702,7 @@ SpellCastResult Spell::CheckItems()
                         }
                     }
                 }
-                if (!player->HasItemCount(itemid, itemcount))
+                if (!ReagentSource::HasReagent(player, itemid, itemcount))
                     return IsTriggered() ? SPELL_FAILED_DONT_REPORT : SPELL_FAILED_REAGENTS;
             }
         }

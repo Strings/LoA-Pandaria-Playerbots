@@ -5678,6 +5678,24 @@ Loadouts.MaxNamed = 10
 Loadouts.GearPages.Enable = 1
 
 ###################################################################################################
+# REAGENT BANK (.reagent)
+#
+#    ReagentBank.Enable
+#        Description: Crafting reagents can be kept outside the bags; spells and crafting take reagents
+#                     from the bags first, then from the reagent bank.
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled, the bank keeps its contents until enabled again)
+
+ReagentBank.Enable = 1
+
+#
+#    ReagentBank.MaxStacks
+#        Description: Stacks the reagent bank holds per character.
+#        Default:     0 - (No limit)
+
+ReagentBank.MaxStacks = 0
+
+###################################################################################################
 # IN-GAME IDEA AND BUG CAPTURE (.idea, .bug, .capture)
 #
 #    Capture.TicketsDir
