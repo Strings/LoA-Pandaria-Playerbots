@@ -11,7 +11,7 @@
 - Bot WorldSession classification skips the kit before BotFactory initialization. GM startingkit inspects selected player/self.
 
 ## How it was tested
-- Rebased onto playerbot 1458a64d. Default RelWithDebInfo build and final unit/regression integration recorded below. Race mapping and first-login callback registration/order have unit coverage.
+- Rebased onto playerbot 5f3b23a7. Default RelWithDebInfo build and final unit/regression integration recorded below. All 12 current unit suites pass, including race mapping and first-login callback registration/order. Final current-base build/regression integration is running.
 - Live: human gets riding 75, racial mount and four 10-slot bags. Neutral race-24 Pandaren learns and successfully mounts Green Dragon Turtle with GM mode off. Mount-only, bags-only and both-off configurations pass; enabling after first login does not backfill. Relog preserves the same four bag GUIDs.
 - Playerbot first login skips the kit before its own AI/gear initialization; normal bot init equips four Portable Holes, with zero kit bags and identical bag GUIDs after relog. No random-bot load used.
 - Headless neutral Pandaren language mapping is corrected to LANG_PANDAREN_NEUTRAL (42), necessary for its live command checks.
@@ -20,10 +20,10 @@
 - First login owns the durable core flag; no played-time heuristic, backfill, SQL, new timers or dependencies.
 
 ## For the other agent
-- Claude reviews; do not merge. No Heartseed source or shared runtime changes.
+- Core changes require human review; do not merge. No Heartseed source or shared runtime changes.
 
 ## Next
-- Claude review; human merges.
+- Human review: this PR touches the core first-login call site. Do not merge.
 
 ## Map additions
 - Scripting/FirstLoginHooks, Custom/StartingKit and tests/starting_kit.
