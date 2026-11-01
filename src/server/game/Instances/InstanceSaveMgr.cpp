@@ -26,6 +26,8 @@
 #include "GridStates.h"
 #include "Group.h"
 #include "InstanceScript.h"
+#include "RaidRetention.h"
+#include "RaidResetPolicy.h"
 #include "InstanceSaveMgr.h"
 #include "Log.h"
 #include "Map.h"
@@ -277,7 +279,25 @@ void InstanceSaveManager::LoadInstances()
     CharacterDatabase.DirectExecute("DELETE FROM instance WHERE difficulty = 8");
 
     // Delete expired instances (Instance related spawns are removed in the following cleanup queries)
-    CharacterDatabase.DirectExecute("DELETE i FROM instance i LEFT JOIN instance_reset ir ON mapid = map AND i.difficulty = ir.difficulty "
+    RaidRetention::LoadEncounterMasks();
+    if (RaidRetention::Enabled())
+    {
+        std::vector<uint32> expired;
+        if (QueryResult result = CharacterDatabase.Query("SELECT i.id, i.map, i.difficulty, i.completedEncounters, i.resettime FROM instance i "
+            "LEFT JOIN instance_reset ir ON ir.mapid=i.map AND ir.difficulty=i.difficulty "
+            "WHERE (i.resettime>0 AND i.resettime<UNIX_TIMESTAMP()) OR (ir.resettime IS NOT NULL AND ir.resettime<UNIX_TIMESTAMP())"))
+            do
+            {
+                Field* fields = result->Fetch();
+                MapEntry const* entry = sMapStore.LookupEntry(fields[1].GetUInt32());
+                if (!entry || !entry->IsRaid() || !RaidResetPolicy::Preserve(fields[3].GetUInt32(), fields[4].GetUInt32() != 0))
+                    expired.push_back(fields[0].GetUInt32());
+            } while (result->NextRow());
+        for (uint32 id : expired)
+            RaidRetention::DeleteStoredInstance(id);
+    }
+    else
+        CharacterDatabase.DirectExecute("DELETE i FROM instance i LEFT JOIN instance_reset ir ON mapid = map AND i.difficulty = ir.difficulty "
                                     "WHERE (i.resettime > 0 AND i.resettime < UNIX_TIMESTAMP()) OR (ir.resettime IS NOT NULL AND ir.resettime < UNIX_TIMESTAMP())");
 
     // Delete invalid character_instance and group_instance references
@@ -339,6 +359,10 @@ void InstanceSaveManager::LoadResetTimes()
 
             if (time_t resettime = time_t(fields[3].GetUInt32()))
             {
+                MapEntry const* entry = sMapStore.LookupEntry(fields[1].GetUInt32());
+                // Positive raid resettime is the durable completion marker, not a normal-instance timer.
+                if (RaidRetention::Enabled() && entry && entry->IsRaid())
+                    continue;
                 uint32 mapid = fields[1].GetUInt16();
                 uint32 difficulty = fields[2].GetUInt8();
 
@@ -395,6 +419,13 @@ void InstanceSaveManager::LoadResetTimes()
                 continue;
             }
 
+            MapEntry const* raidEntry = sMapStore.LookupEntry(mapid);
+            if (RaidRetention::Enabled() && raidEntry && raidEntry->IsRaid())
+            {
+                SetResetTimeFor(mapid, difficulty, oldresettime);
+                continue;
+            }
+
             tm tmNext = *localtime(&oldresettime);
             tmNext.tm_hour = hour;
             tmNext.tm_min = 0;
@@ -436,6 +467,18 @@ void InstanceSaveManager::LoadResetTimes()
         uint32 mapid = PAIR32_LOPART(map_diff_pair);
         Difficulty difficulty = Difficulty(PAIR32_HIPART(map_diff_pair));
         MapDifficulty const* mapDiff = &itr->second;
+        MapEntry const* raidEntry = sMapStore.LookupEntry(mapid);
+        if (RaidRetention::Enabled() && raidEntry && raidEntry->IsRaid())
+        {
+            time_t next = time_t(RaidResetPolicy::NextReset(GetResetTimeFor(mapid, difficulty), now, RaidRetention::PeriodSeconds()));
+            SetResetTimeFor(mapid, difficulty, next);
+            RaidRetention::RefreshCycleData(mapid, next);
+            CharacterDatabase.DirectPExecute("INSERT INTO instance_reset (mapid,difficulty,resettime) VALUES (%u,%u,%u) "
+                "ON DUPLICATE KEY UPDATE resettime=VALUES(resettime)", mapid, uint32(difficulty), uint32(next));
+            // The raid reset happens at the deadline, rather than an early eviction warning.
+            ScheduleReset(true, next, InstResetEvent(4, mapid, difficulty, 0));
+            continue;
+        }
         if (!mapDiff->resetTime)
             continue;
 
@@ -656,6 +699,13 @@ void InstanceSaveManager::_ResetOrWarnAll(uint32 mapid, Difficulty difficulty, b
     if (!mapEntry->Instanceable())
         return;
 
+    if (RaidRetention::Enabled() && mapEntry->IsRaid())
+    {
+        if (!warn)
+            ResetRaidCycle(mapid, difficulty, resetTime);
+        return;
+    }
+
     time_t now = time(NULL);
 
     if (!warn)
@@ -789,4 +839,72 @@ uint32 InstanceSaveManager::GetNumBoundGroupsTotal()
         ret += itr->second->GetGroupCount();
 
     return ret;
+}
+
+
+bool InstanceSaveManager::ResetRaidInstance(uint32 instanceId)
+{
+    if (!RaidRetention::Enabled())
+        return false;
+    QueryResult row = CharacterDatabase.PQuery("SELECT map FROM instance WHERE id=%u", instanceId);
+    if (!row)
+        return false;
+    uint32 mapId = (*row)[0].GetUInt32();
+    MapEntry const* entry = sMapStore.LookupEntry(mapId);
+    if (!entry || !entry->IsRaid())
+        return false;
+    auto it = m_instanceSaveById.find(instanceId);
+    if (it != m_instanceSaveById.end())
+        _ResetSave(it);
+    RaidRetention::DeleteStoredInstance(instanceId);
+    if (Map* map = sMapMgr->FindMap(mapId, instanceId))
+    {
+        // Use the existing occupied-map eviction/unload path; it also handles bots.
+        // Release the ID only when MapInstanced actually destroys this map.
+        m_pendingRaidResets.insert(instanceId);
+        static_cast<InstanceMap*>(map)->Reset(INSTANCE_RESET_GLOBAL);
+    }
+    else
+    {
+        Map::DeleteRespawnTimesInDB(mapId, instanceId);
+        sMapMgr->FreeInstanceId(instanceId);
+    }
+    return true;
+}
+
+void InstanceSaveManager::ResetRaidCycle(uint32 mapId, Difficulty difficulty, time_t resetTime)
+{
+    time_t next = time_t(RaidResetPolicy::NextReset(resetTime, time(NULL), RaidRetention::PeriodSeconds()));
+    struct RaidRow { uint32 id; uint32 completed; bool finished; };
+    std::vector<RaidRow> instances;
+    if (QueryResult result = CharacterDatabase.PQuery("SELECT id,completedEncounters,resettime FROM instance WHERE map=%u AND difficulty=%u", mapId, uint32(difficulty)))
+        do
+        {
+            Field* fields = result->Fetch();
+            instances.push_back({ fields[0].GetUInt32(), fields[1].GetUInt32(), fields[2].GetUInt32() != 0 });
+        } while (result->NextRow());
+    for (auto const& instance : instances)
+    {
+        uint32 completed = instance.completed;
+        if (Map* loaded = sMapMgr->FindMap(mapId, instance.id))
+            if (InstanceScript* script = static_cast<InstanceMap*>(loaded)->GetInstanceScript())
+                completed = script->GetCompletedEncounterMask();
+        if (RaidResetPolicy::Preserve(completed, instance.finished))
+        {
+            if (InstanceSave* save = GetInstanceSave(instance.id))
+                save->SetResetTime(next);
+        }
+        else
+            ResetRaidInstance(instance.id);
+    }
+    RaidRetention::RefreshCycleData(mapId, next);
+    SetResetTimeFor(mapId, difficulty, next);
+    CharacterDatabase.DirectPExecute("UPDATE instance_reset SET resettime=%u WHERE mapid=%u AND difficulty=%u", uint32(next), mapId, uint32(difficulty));
+    ScheduleReset(true, next, InstResetEvent(4, mapId, difficulty, 0));
+}
+
+void InstanceSaveManager::ReleaseRaidResetId(uint32 instanceId)
+{
+    if (m_pendingRaidResets.erase(instanceId))
+        sMapMgr->FreeInstanceId(instanceId);
 }

@@ -21,6 +21,9 @@
 #include "GameObject.h"
 #include "Group.h"
 #include "InstanceScript.h"
+#include "RaidRetention.h"
+#include "RaidResetPolicy.h"
+#include "InstanceSaveMgr.h"
 #include "LFGMgr.h"
 #include "Log.h"
 #include "Map.h"
@@ -88,7 +91,7 @@ bool InstanceScript::_SkipCheckRequiredBosses(Player const* player) const
 void InstanceScript::SaveToDB()
 {
     std::string data = GetSaveData();
-    if (data.empty())
+    if (data.empty() && !(RaidRetention::Enabled() && instance->IsRaid() && GetCompletedEncounterMask()))
         return;
 
     CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_INSTANCE_DATA);
@@ -809,6 +812,7 @@ void InstanceScript::UpdateEncounterState(EncounterCreditType type, uint32 credi
         return;
 
     uint32 dungeonId = 0;
+    uint32 previousCompleted = completedEncounters;
 
     for (DungeonEncounterList::const_iterator itr = encounters->begin(); itr != encounters->end(); ++itr)
     {
@@ -823,6 +827,29 @@ void InstanceScript::UpdateEncounterState(EncounterCreditType type, uint32 credi
                 break;
             }
         }
+    }
+
+    // Credits can arrive after the boss script's DONE save; persist the final mask too.
+    if (RaidRetention::Enabled() && instance->IsRaid() && completedEncounters != previousCompleted)
+    {
+        bool finished = RaidResetPolicy::Complete(completedEncounters,
+            RaidRetention::ExpectedMask(instance->GetId(), instance->GetDifficulty()),
+            static_cast<InstanceMap*>(instance)->IsLFGMap() && dungeonId != 0);
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+        CharacterDatabasePreparedStatement* data = CharacterDatabase.GetPreparedStatement(CHAR_UPD_INSTANCE_DATA);
+        data->setUInt32(0, completedEncounters);
+        data->setString(1, GetSaveData());
+        data->setUInt32(2, instance->GetInstanceId());
+        trans->Append(data);
+        CharacterDatabasePreparedStatement* marker = CharacterDatabase.GetPreparedStatement(CHAR_UPD_INSTANCE_RESETTIME);
+        time_t deadline = sInstanceSaveMgr->GetResetTimeFor(instance->GetId(), instance->GetDifficulty());
+        if (!deadline)
+            deadline = time(NULL) + RaidRetention::PeriodSeconds();
+        marker->setUInt32(0, finished ? uint32(deadline) : 0);
+        marker->setUInt32(1, instance->GetInstanceId());
+        trans->Append(marker);
+        // Persist credit, script state and completion together before a boundary/restart can observe them.
+        CharacterDatabase.DirectCommitTransaction(trans);
     }
 
     if (dungeonId)

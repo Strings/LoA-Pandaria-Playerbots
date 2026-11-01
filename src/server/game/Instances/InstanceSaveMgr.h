@@ -20,6 +20,7 @@
 
 #include "Define.h"
 #include <mutex>
+#include <unordered_set>
 #include <list>
 #include <map>
 #include "DBCEnums.h"
@@ -180,6 +181,8 @@ class InstanceSaveManager
         typedef std::multimap<time_t /*resetTime*/, InstResetEvent> ResetTimeQueue;
 
         void LoadInstances();
+        bool ResetRaidInstance(uint32 instanceId);
+        void ReleaseRaidResetId(uint32 instanceId);
 
         void LoadResetTimes();
         time_t GetResetTimeFor(uint32 mapid, Difficulty d) const
@@ -218,6 +221,7 @@ class InstanceSaveManager
         static uint16 ResetTimeDelay[];
 
     private:
+        void ResetRaidCycle(uint32 mapId, Difficulty difficulty, time_t resetTime);
         void _ResetOrWarnAll(uint32 mapid, Difficulty difficulty, bool warn, time_t resetTime);
         void _ResetInstance(uint32 mapid, uint32 instanceId);
         void _ResetSave(InstanceSaveHashMap::iterator &itr);
@@ -228,6 +232,7 @@ class InstanceSaveManager
         // fast lookup for reset times (always use existed functions for access/set)
         ResetTimeByMapDifficultyMap m_resetTimeByMapDifficulty;
         ResetTimeQueue m_resetTimeQueue;
+        std::unordered_set<uint32> m_pendingRaidResets;
 };
 
 #define sInstanceSaveMgr InstanceSaveManager::instance()

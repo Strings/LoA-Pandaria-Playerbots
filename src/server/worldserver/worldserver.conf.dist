@@ -5718,3 +5718,10 @@ Capture.NearbyBotRadius = 100
 
 # Brief notice explaining all-profession access and the extra-profession addon.
 Professions.IntroOnLogin = 1
+# Raid.Retention.Enable: raid-only retention/reset lifecycle (0 restores legacy cleanup).
+# Raid.ResetPeriodSeconds: positive reset period, default 172800 (two days).
+# Period changes apply on restart or the next cycle; non-raid resets are unchanged.
+# Raid.Retention.NotifyOnEnter: explain retention to humans entering raids.
+Raid.Retention.Enable = 1
+Raid.ResetPeriodSeconds = 172800
+Raid.Retention.NotifyOnEnter = 1
