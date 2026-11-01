@@ -16,6 +16,7 @@
 */
 
 #include "WordFilterMgr.h"
+#include "DatabaseEnv.h"
 #include "Timer.h"
 #include "Util.h"
 

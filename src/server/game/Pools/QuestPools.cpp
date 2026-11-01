@@ -16,6 +16,7 @@
 */
 
 #include "QuestPools.h"
+#include "DatabaseEnv.h"
 #include "Errors.h"
 #include "Random.h"
 
