@@ -12,7 +12,7 @@ import subprocess
 from typing import Dict, List, Optional, Sequence, Tuple
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_OUTPUT = ROOT / "sql/updates/world/2026_11_01_gemini_01_trade_goods_stack_sizes.sql"
+DEFAULT_OUTPUT = ROOT / "sql/updates/world/2026_11_01_gemini_02_trade_goods_stack_sizes.sql"
 DEFAULT_JSON = Path(__file__).resolve().with_name("trade_goods.json")
 HOTFIX_TYPE_ITEM = 2442913102  # 0x919E378E: Item.db2 / item hotfix table
 
@@ -36,6 +36,13 @@ def generate_sql(
     hotfix_date: str = "2026-11-01 12:00:00",
 ) -> str:
     """Generate idempotent SQL update with batch UPDATE and hotfix_data rows."""
+    entry_list_str = ",".join(str(e) for e in sorted(entries)) if entries else ""
+    update_stmt = (
+        f"UPDATE item_template SET stackable = {target_size} WHERE entry IN ({entry_list_str});"
+        if entries
+        else f"UPDATE item_template SET stackable = {target_size} WHERE 0;"
+    )
+
     lines: List[str] = [
         f"-- T-062: Raise trade goods (item class 7) stackable size to {target_size}",
         f"-- Affects {len(entries)} items with existing stackable > 1",
@@ -43,7 +50,7 @@ def generate_sql(
         "",
         "START TRANSACTION;",
         "",
-        f"UPDATE item_template SET stackable = {target_size} WHERE class = 7 AND stackable > 1 AND stackable < {target_size};",
+        update_stmt,
         "",
     ]
 

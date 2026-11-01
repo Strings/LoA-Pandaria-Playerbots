@@ -45,7 +45,7 @@ class TestStackSizes(unittest.TestCase):
         self.assertEqual([item["entry"] for item in qualifying_100], [1002])
 
         sql = generate_sql([1002], target_size=500, hotfix_date="2026-11-01 12:00:00")
-        self.assertIn("UPDATE item_template SET stackable = 500 WHERE class = 7", sql)
+        self.assertIn("UPDATE item_template SET stackable = 500 WHERE entry IN (1002);", sql)
         self.assertIn("(1002,2442913102,'2026-11-01 12:00:00')", sql)
 
     def test_generate_sql_structure(self):
@@ -55,7 +55,7 @@ class TestStackSizes(unittest.TestCase):
 
         self.assertTrue(sql.startswith("-- T-062"))
         self.assertIn("START TRANSACTION;", sql)
-        self.assertIn("UPDATE item_template SET stackable = 1000 WHERE class = 7 AND stackable > 1 AND stackable < 1000;", sql)
+        self.assertIn("UPDATE item_template SET stackable = 1000 WHERE entry IN (2001,2002,2003);", sql)
         self.assertIn(f"DELETE FROM hotfix_data WHERE type = {HOTFIX_TYPE_ITEM} AND hotfixDate = '2026-11-01 12:00:00' AND entry IN (2001,2002,2003);", sql)
         self.assertIn("INSERT INTO hotfix_data (entry, type, hotfixDate) VALUES", sql)
         self.assertIn("(2001,2442913102,'2026-11-01 12:00:00')", sql)
