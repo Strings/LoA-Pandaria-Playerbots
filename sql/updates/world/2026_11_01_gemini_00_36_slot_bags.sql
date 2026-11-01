@@ -11,8 +11,8 @@ INSERT INTO item_template (
     AllowableClass, AllowableRace, ItemLevel, RequiredLevel, stackable,
     maxcount, ContainerSlots, bonding, Material, BagFamily, VerifiedBuild
 ) VALUES
-(192000, 1, 0, -1, 'Bottomless Bag', 108865, 4, 65536, 8192, 1, 50000000, 12500000, 18, -1, -1, 90, 0, 1, 0, 36, 0, 7, 0, 18414),
-(192001, 1, 0, -1, 'Dimensional Satchel', 64151, 4, 65536, 8192, 1, 50000000, 12500000, 18, -1, -1, 90, 0, 1, 0, 36, 0, 7, 0, 18414);
+(192000, 1, 0, -1, 'Bottomless Bag', 108865, 4, 0, 8192, 1, 50000000, 12500000, 18, -1, -1, 90, 0, 1, 0, 36, 0, 7, 0, 18414),
+(192001, 1, 0, -1, 'Dimensional Satchel', 64151, 4, 0, 8192, 1, 50000000, 12500000, 18, -1, -1, 90, 0, 1, 0, 36, 0, 7, 0, 18414);
 
 DELETE FROM hotfix_data WHERE type IN (1344507586, 2442913102) AND entry IN (192000, 192001);
 INSERT INTO hotfix_data (entry, type, hotfixDate) VALUES
