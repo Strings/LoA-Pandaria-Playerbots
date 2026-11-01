@@ -220,34 +220,6 @@ namespace Capture
         return { trimmed, "" };
     }
 
-    std::string ExtractLastAction(std::string const& rawEngineAction)
-    {
-        if (rawEngineAction.empty())
-            return "";
-
-        std::vector<std::string> segments;
-        std::size_t start = 0;
-        while (start <= rawEngineAction.size())
-        {
-            std::size_t bar = rawEngineAction.find('|', start);
-            std::string seg = Trim(bar == std::string::npos
-                ? rawEngineAction.substr(start)
-                : rawEngineAction.substr(start, bar - start));
-            if (!seg.empty() && seg != "--- AI Tick ---")
-                segments.push_back(seg);
-            if (bar == std::string::npos)
-                break;
-            start = bar + 1;
-        }
-
-        for (auto it = segments.rbegin(); it != segments.rend(); ++it)
-        {
-            if (it->compare(0, 2, "A:") == 0)
-                return it->substr(2);
-        }
-        return segments.empty() ? "" : segments.back();
-    }
-
     std::string FormatTicketJson(TicketSnapshot const& snap)
     {
         std::ostringstream out;

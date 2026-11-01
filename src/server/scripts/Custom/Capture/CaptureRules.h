@@ -105,9 +105,6 @@ namespace Capture
     // Returns (cleaned text, screenshot path).
     std::pair<std::string, std::string> ParseCommandTextAndScreenshot(std::string const& rawArgs);
 
-    // Cleans Engine::GetLastAction() ring buffer ("|T:...|A:action - OK") down to the most recent action entry.
-    std::string ExtractLastAction(std::string const& rawEngineAction);
-
     std::string FormatTicketJson(TicketSnapshot const& snap);
     std::string FormatTicketMarkdown(TicketSnapshot const& snap);
 }

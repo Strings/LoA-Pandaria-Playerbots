@@ -59,14 +59,6 @@ namespace
         UMP_CHECK(p4.second.empty());
     }
 
-    void EngineActionExtraction()
-    {
-        std::string ring = "|T:12340|A:follow - OK|T:12345|A:melee - OK";
-        UMP_CHECK(ExtractLastAction(ring) == "melee - OK");
-        UMP_CHECK(ExtractLastAction("cast fireball - OK") == "cast fireball - OK");
-        UMP_CHECK(ExtractLastAction("") == "");
-    }
-
     void SnapshotSerialization()
     {
         TicketSnapshot snap;
@@ -137,6 +129,5 @@ void RunTests()
     FileNameAndSlugSanitization();
     JsonEscaping();
     CommandScreenshotParsing();
-    EngineActionExtraction();
     SnapshotSerialization();
 }

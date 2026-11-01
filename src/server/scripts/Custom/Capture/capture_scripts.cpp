@@ -24,8 +24,7 @@
 #include "WorldSession.h"
 
 #ifdef ENABLE_PLAYERBOTS
-#include "Engine.h"
-#include "Playerbots.h"
+#include "BotInspect.h"
 #endif
 
 #include <algorithm>
@@ -128,14 +127,6 @@ namespace
         return out.str();
     }
 
-#ifdef ENABLE_PLAYERBOTS
-    // Accesses PlayerbotAI::_currentEngine (protected) without modifying Engine.* or PlayerbotAI.*
-    struct PlayerbotAIInspector : public PlayerbotAI
-    {
-        Engine* CurrentEngine() const { return _currentEngine; }
-    };
-#endif
-
     Player* ResolveCapturePlayer(ChatHandler* handler)
     {
         if (handler && handler->GetSession() && handler->GetSession()->GetPlayer())
@@ -156,7 +147,7 @@ namespace
             if (!p || !p->IsInWorld())
                 continue;
 #ifdef ENABLE_PLAYERBOTS
-            if (GET_PLAYERBOT_AI(p) != nullptr)
+            if (BotInspect::IsBot(p))
             {
                 if (!fallbackBot)
                     fallbackBot = p;
@@ -260,7 +251,7 @@ namespace
                     gm.ClassName = ClassToString(member->GetClass());
                     gm.Level = member->GetLevel();
 #ifdef ENABLE_PLAYERBOTS
-                    gm.IsBot = (GET_PLAYERBOT_AI(member) != nullptr);
+                    gm.IsBot = BotInspect::IsBot(member);
 #endif
                 }
                 snap.GroupMembers.push_back(std::move(gm));
@@ -275,11 +266,10 @@ namespace
                 Player* other = pair.second;
                 if (!other || other == player || !other->IsInWorld())
                     continue;
-                if (other->GetMapId() != player->GetMapId())
+                if (other->GetMapId() != player->GetMapId() || other->GetInstanceId() != player->GetInstanceId())
                     continue;
 
-                PlayerbotAI* botAI = GET_PLAYERBOT_AI(other);
-                if (!botAI)
+                if (!BotInspect::IsBot(other))
                     continue;
 
                 float dist = player->GetExactDist(other);
@@ -291,12 +281,10 @@ namespace
                 bot.ClassName = ClassToString(other->GetClass());
                 bot.Level = other->GetLevel();
                 bot.Distance = dist;
-                bot.Strategies = botAI->GetStrategies(botAI->GetState());
-
-                Engine* eng = static_cast<PlayerbotAIInspector const*>(botAI)->CurrentEngine();
-                std::string rawAction = eng ? eng->GetLastAction() : "";
-                bot.LastAction = Capture::ExtractLastAction(rawAction);
-                bot.LastDecision = bot.LastAction;
+                bot.Strategies = BotInspect::Strategies(other);
+                bot.LastAction = BotInspect::LastAction(other);
+                // The traced choice with its score when `.bot why` is tracing this bot, else the last action.
+                bot.LastDecision = BotInspect::LastDecisionSummary(other);
 
                 snap.NearbyBots.push_back(std::move(bot));
             }

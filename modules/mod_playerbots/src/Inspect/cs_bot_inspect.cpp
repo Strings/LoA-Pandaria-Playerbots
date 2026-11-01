@@ -195,6 +195,23 @@ namespace BotInspect
         return true;
     }
 
+    bool IsBot(Player* player)
+    {
+        return player && GET_PLAYERBOT_AI(player);
+    }
+
+    std::vector<std::string> Strategies(Player* bot)
+    {
+        PlayerbotAI* botAI = bot ? GET_PLAYERBOT_AI(bot) : nullptr;
+        return botAI ? botAI->GetStrategies(botAI->GetState()) : std::vector<std::string>();
+    }
+
+    std::string LastAction(Player* bot)
+    {
+        PlayerbotAI* botAI = bot ? GET_PLAYERBOT_AI(bot) : nullptr;
+        return botAI ? LastRanAction(botAI->GetEngine(botAI->GetState())) : "";
+    }
+
     std::string LastDecisionSummary(Player* bot)
     {
         PlayerbotAI* botAI = bot ? GET_PLAYERBOT_AI(bot) : nullptr;
