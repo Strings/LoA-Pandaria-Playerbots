@@ -5715,3 +5715,13 @@ Capture.NearbyBotRadius = 100
 
 #
 ###################################################################################################
+
+# SoloQoL script switches. Native mixed armor/weapon transmog settings above already ship enabled.
+SoloQoL.GuildPerksForAll = 1
+SoloQoL.CharacterServices = 1
+SoloQoL.ShortHearthstone = 1
+# Explicit final cooldown after guild modifiers; read each cast. 0 removes it; negative keeps native.
+SoloQoL.HearthstoneCooldownSeconds = 300
+# Service NPC respawn delay, read on spawn/reset/corpse removal.
+SoloQoL.ServicesRespawnSeconds = 300
+SoloQoL.IntroOnLogin = 1
