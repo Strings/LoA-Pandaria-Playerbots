@@ -4,7 +4,7 @@
 void RunTests()
 {
     using namespace LegacyDungeons;
-    UMP_CHECK(DungeonId(" 4 ")==4);
+    UMP_CHECK(DungeonId(" 4 ")==4u);
     UMP_CHECK(!DungeonId("") && !DungeonId("0") && !DungeonId("-1"));
     UMP_CHECK(!DungeonId("4 more") && !DungeonId("0x4"));
     UMP_CHECK(!DungeonId("4294967296") && !DungeonId("16777216"));

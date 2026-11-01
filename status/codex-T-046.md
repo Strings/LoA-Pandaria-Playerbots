@@ -39,3 +39,5 @@
 - Rebased the prepared draft on playerbot 2c654e81 while T-044 waits in the normal queue. No main SQL; T-044 build/live still precede this branch. User approved guarded rebased publication for remaining Codex branches.
 
 - First production compile found the core stores lock details in LfgLockStatusType rather than the enum directly; corrected comparisons to its lockStatus field. Rebuild follows through the normal queue.
+
+- Production build now passes cleanly. All 16 current unit suites pass; fixed an unsigned test literal to remove MSVC optional-comparison warnings, and rechecking through the same shared mutex. Scoped character 06/auth 07 SQL is applied only to Codex runtime DBs. Matching private server is starting.
