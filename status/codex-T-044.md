@@ -19,7 +19,11 @@
 - Both SQL files pass lint (zero issues), apply twice identically on copied real NPC/auth rows in world_codex_t044_68cd9d80, and preserve every original row. Runtime/main DBs unchanged.
 - Full production build/live/regressions remain pending behind T-014/T-041 and the shared build queue. No claim of ready.
 
-## Next
-- Public self-only toggle/status, selected-player GM permission, config and brief login introduction.
-- Route Experience Eliminator NPCs through the free adapter when enabled; preserve paid native behavior when disabled.
-- Pure rules tests, auth SQL, build/live/regressions, final status/review. T-014 live checks remain first when the compiler is free.
+## Next / exact native check plan
+- After T-041, build this branch in the primary checkout through the normal queue. Apply world 04/auth 05 SQL to Codex DBs before its server startup; no main SQL until approved/merged.
+- Use a separate normal-security owned account and level-15 Orc fixture (preset while offline). Verify `.xp off/on/status` is available through Player Commands role 199; selection of an online GM still changes/inspects self. GM target permission 95001 must force/inspect that fixture.
+- Record money before/after toggles; repeated requests must be free and idempotent. Relog and check the native 0x02000000 player flag persists.
+- Keep the normal fixture online; selected-player GM `.quest add`, `complete`, `reward` for current MoP Ragefire quests 30983/30984 exercises real GiveXP. With XP off, level/XP stay identical; with XP on, total progress increases. Use a clean owned fixture, not another player's quest history.
+- Queue/leave a normal battleground in each XP mode and inspect native queue acceptance; code audit already shows no XP-specific queue dimension.
+- Preset the owned fixture beside existing Experience Eliminator 35364 while offline, then use native gossip: enabled path changes the flag with identical money; disabled path uses native fee/text. Restore key on and clear the test queue.
+- Run all three regressions; write actual results, mark review/ready, wait for Claude approval before routine merge. No new duration.
