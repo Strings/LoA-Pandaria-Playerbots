@@ -110,7 +110,7 @@ InstanceSave* InstanceSaveManager::AddInstanceSave(uint32 mapId, uint32 instance
 
     // Raid resettime stores retention metadata, never a client-facing save deadline.
     // Recognize the reserved marker even when returning to the legacy lifecycle.
-    if (entry->IsRaid() && (RaidRetention::Enabled() || resetTime == RaidResetPolicy::PartialMarker))
+    if (entry->IsRaid())
         resetTime = 0;
 
     if (!resetTime)
@@ -374,7 +374,7 @@ void InstanceSaveManager::LoadResetTimes()
             {
                 MapEntry const* entry = sMapStore.LookupEntry(fields[1].GetUInt32());
                 // Raid resettime carries durable progress/completion metadata, not a normal-instance timer.
-                if (entry && entry->IsRaid() && (RaidRetention::Enabled() || resettime == RaidResetPolicy::PartialMarker))
+                if (entry && entry->IsRaid())
                     continue;
                 uint32 mapid = fields[1].GetUInt16();
                 uint32 difficulty = fields[2].GetUInt8();
