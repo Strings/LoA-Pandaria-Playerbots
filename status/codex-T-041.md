@@ -1,8 +1,10 @@
+BLOCKED: Shared build queue is occupied. Automatic approval review rejected bypassing it with a two-job incremental build. May T-041 run that bounded build alongside the active full build? Approval question pending; ordinary queued build remains untouched.
+
 # T-041: Script quality-of-life changes
 
 **Agent:** codex
 **Branch:** codex/T-041-solo-qol
-**Task status:** in progress; draft PR 85
+**Task status:** blocked on build resource / approval; draft PR 85
 
 ## What changed
 - Script half only. Flash's stack data is excluded. Based on playerbot a273234b.
