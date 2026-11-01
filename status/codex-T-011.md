@@ -11,10 +11,11 @@
 - Bot WorldSession classification skips the kit before BotFactory initialization. GM startingkit inspects selected player/self.
 
 ## How it was tested
-- Rebased onto playerbot 5f3b23a7. Default RelWithDebInfo build and final unit/regression integration recorded below. All 12 current unit suites pass, including race mapping and first-login callback registration/order. Final current-base build/regression integration is running.
+- Rebased onto playerbot 5f3b23a7. Default RelWithDebInfo worldserver build passes with no new warnings in touched files. All 12 current unit suites pass, including race mapping and first-login callback registration/order. All current regression scenarios pass: capture-idea, custom-reload-rng and login.
 - Live: human gets riding 75, racial mount and four 10-slot bags. Neutral race-24 Pandaren learns and successfully mounts Green Dragon Turtle with GM mode off. Mount-only, bags-only and both-off configurations pass; enabling after first login does not backfill. Relog preserves the same four bag GUIDs.
 - Playerbot first login skips the kit before its own AI/gear initialization; normal bot init equips four Portable Holes, with zero kit bags and identical bag GUIDs after relog. No random-bot load used.
-- Headless neutral Pandaren language mapping is corrected to LANG_PANDAREN_NEUTRAL (42), necessary for its live command checks.
+- Final current-base binary: newly created human Kitfinal and neutral Pandaren Kitpandaf receive the correct kit and preserve all four bag GUIDs after relog. Low-level staging runs use GM protection to allow clean logout in Horde territory.
+- Headless neutral Pandaren language mapping is corrected to LANG_PANDAREN_NEUTRAL (42), necessary for its live command checks. Full SOAP output for regression assertions and an empty-bot-safe Capture baseline fix existing harness false negatives; Capture unit tests retain actual last-decision serialization coverage.
 
 ## Decisions made
 - First login owns the durable core flag; no played-time heuristic, backfill, SQL, new timers or dependencies.
