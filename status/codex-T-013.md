@@ -29,3 +29,6 @@
 
 ## Map additions
 - game/Instances/RaidRetention and RaidResetPolicy; Custom/RaidRetention; tests/raid_retention.
+
+## Review follow-up
+- Claude approved, with no required logic changes. Rebased on playerbot 2c654e81 as requested; resolved append-only loader/config additions by keeping both systems. Raid implementation and pure tests are byte-identical to the previously built/live-tested revision. Existing raid policy binary rerun passes; prior build/live evidence above is from before this rebase. Human core merge remains held. No SQL.
