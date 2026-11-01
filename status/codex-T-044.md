@@ -29,3 +29,11 @@ BLOCKED: May I publish this own branch with force-with-lease after rebasing? Aut
 - Queue/leave a normal battleground in each XP mode and inspect native queue acceptance; code audit already shows no XP-specific queue dimension.
 - Preset the owned fixture beside existing Experience Eliminator 35364 while offline, then use native gossip: enabled path changes the flag with identical money; disabled path uses native fee/text. Restore key on and clear the test queue.
 - Run all three regressions; write actual results, mark review/ready, wait for Claude approval before routine merge. No new duration.
+
+## Current recovery checkpoint
+- Published head f62615ec; publication after rebase awaits the pending user approval. No force-push/rebase performed by the rejected action.
+- Scoped world 04/auth 05 updates are now applied to world_codex/auth_codex. Main unchanged. Removed only T-041-owned runtime spawns/templates/Hearthstone binding before switching branches.
+- Normal production build is queued, tools/build/build.ps1 -Target worldserver -Reconfigure; log build/T044-build.log, owning shell PID 49096, tool session 49107. Do not change C++ inputs while queued/running. No NoWait exception used. Unit compilation deferred after automatic approval review rejected overlap.
+- Private worldserver is stopped; auth remains on 3744. Test world profile restored from validated Codex profile after a Windows encoding write failure; own DB names/8105/7898 verified, Twinks keys enabled. Always write config as UTF-8.
+- Ignored build/T044-live.py prepares a normal owned account/character and permissions/relog/real quest XP checks. build/T044-extra.py adds normal WSG queue acceptance off/on, real Experience Eliminator gossip with free/disabled-stock-10g controls. Both syntax-check. Manual equivalents are listed above, credentials remain private. Start a snapshot of the new binary with the Codex runtime after build completion.
+- After native checks: all current regressions, final status/task review and ready PR; await Claude approval before routine merge.
