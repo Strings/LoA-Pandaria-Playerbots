@@ -58,7 +58,7 @@
     },
     {
       "type": "contains",
-      "text": "\"last_decision\":"
+      "text": "\"nearby_bots\":"
     },
     {
       "type": "not_contains",

@@ -114,7 +114,8 @@ def main():
     env.update(MOP_HOST='127.0.0.1', MOP_AUTH_PORT=str(metadata['auth_port']),
                MOP_WORLD_PORT=str(metadata['world_port']), MOP_SOAP_HOST='127.0.0.1',
                MOP_SOAP_PORT=str(metadata['soap_port']), HEADLESS_LOGOUT='1',
-               MOP_SERVER_LOG=str(runtime / 'Logs/Server.log'), PYTHONIOENCODING='utf-8')
+               MOP_SERVER_LOG=str(runtime / 'Logs/Server.log'), PYTHONIOENCODING='utf-8',
+               MOP_SOAP_FULL_OUTPUT='1')
     destination = args.output.resolve()
     if ROOT not in destination.parents:
         raise ValueError('reports must stay within this worktree')

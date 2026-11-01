@@ -3963,7 +3963,7 @@ def run_soap(args, command):
         log("SOAP helper failed: %s (check SOAP.Enabled/IP/Port in worldserver.conf)" % exc)
         return False
     text = payload.strip()
-    if len(text) > 500:
+    if len(text) > 500 and os.environ.get("MOP_SOAP_FULL_OUTPUT") != "1":
         text = text[:500] + "..."
     log("SOAP HTTP %d: %s" % (status, text))
     return status == 200
