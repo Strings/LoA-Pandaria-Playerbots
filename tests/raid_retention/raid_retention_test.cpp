@@ -3,6 +3,10 @@
 void RunTests()
 {
     using namespace RaidResetPolicy;
+    UMP_CHECK(HoldBossRespawn(true, true, true));
+    UMP_CHECK(!HoldBossRespawn(false, true, true));
+    UMP_CHECK(!HoldBossRespawn(true, false, true));
+    UMP_CHECK(!HoldBossRespawn(true, true, false));
     UMP_CHECK(!Finished(0) && !Finished(PartialMarker) && Finished(123));
     UMP_CHECK(HasProgress(0, PartialMarker) && HasProgress(1, 0) && !HasProgress(0, 0));
     UMP_CHECK(AllBossMask(0) == 0 && AllBossMask(4) == 15);

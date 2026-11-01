@@ -113,11 +113,16 @@ void RaidRetention::SaveProgress(Map* map, InstanceScript* script, bool wingFini
         deadline = time(NULL) + PeriodSeconds();
     CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
     std::string data = script->GetSaveData();
-    CharacterDatabase.EscapeString(data);
-    trans->PAppend("UPDATE instance SET completedEncounters=%u,data='%s' WHERE id=%u", completed, data.c_str(), map->GetInstanceId());
+    if (data.empty()) // Legacy scripts can keep their cached save string empty immediately after Load.
+        trans->PAppend("UPDATE instance SET completedEncounters=%u WHERE id=%u", completed, map->GetInstanceId());
+    else
+    {
+        CharacterDatabase.EscapeString(data);
+        trans->PAppend("UPDATE instance SET completedEncounters=%u,data='%s' WHERE id=%u", completed, data.c_str(), map->GetInstanceId());
+    }
     // Keep wing completion sticky when a later script save has no LFG context.
     // The reserved partial marker leaves canonical encounter bits untouched.
-    trans->PAppend("UPDATE instance SET resettime=IF(resettime NOT IN (0,%u) OR %u,%u,%u) WHERE id=%u",
-        RaidResetPolicy::PartialMarker, uint32(finished), uint32(deadline), progress ? RaidResetPolicy::PartialMarker : 0, map->GetInstanceId());
+    trans->PAppend("UPDATE instance SET resettime=IF(resettime NOT IN (0,%u) OR %u,%u,IF(resettime=%u OR %u,%u,0)) WHERE id=%u",
+        RaidResetPolicy::PartialMarker, uint32(finished), uint32(deadline), RaidResetPolicy::PartialMarker, uint32(progress), RaidResetPolicy::PartialMarker, map->GetInstanceId());
     CharacterDatabase.DirectCommitTransaction(trans);
 }

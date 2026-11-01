@@ -16,6 +16,8 @@
 */
 
 #include "Creature.h"
+#include "RaidRetention.h"
+#include "RaidResetPolicy.h"
 #include "AutoBalanceLevelScaling.h"  // #702: instance level scaling (off unless AutoBalance.Enable.Global = 1)
 #include "BattlegroundMgr.h"
 #include "CellImpl.h"
@@ -400,7 +402,11 @@ void Creature::RemoveCorpse(bool setSpawnTime)
 
     // Should get removed later, just keep "compatibility" with scripts
     if (setSpawnTime)
+    {
         m_respawnTime = time(NULL) + respawnDelay;
+        if (RaidResetPolicy::HoldBossRespawn(RaidRetention::Enabled(), GetMap()->IsRaid(), GetCreatureTemplate()->type_flags & CREATURE_TYPEFLAGS_BOSS_MOB))
+            m_respawnTime = RaidResetPolicy::PartialMarker;
+    }
 
     float x, y, z, o;
     GetRespawnPosition(x, y, z, &o);
@@ -1769,8 +1775,13 @@ void Creature::setDeathState(DeathState s)
 
         m_respawnTime = time(NULL) + (m_respawnDelayMax ? urand(m_respawnDelay, m_respawnDelayMax) : m_respawnDelay) + m_corpseDelay;
 
+        // A retained raid owns boss deaths until its explicit/global reset clears respawn storage.
+        bool holdRaidBoss = RaidResetPolicy::HoldBossRespawn(RaidRetention::Enabled(), GetMap()->IsRaid(), GetCreatureTemplate()->type_flags & CREATURE_TYPEFLAGS_BOSS_MOB);
+        if (holdRaidBoss)
+            m_respawnTime = RaidResetPolicy::PartialMarker;
+
         // always save boss respawn time at death to prevent crash cheating
-        if (sWorld->getBoolConfig(CONFIG_SAVE_RESPAWN_TIME_IMMEDIATELY) || isWorldBoss())
+        if (sWorld->getBoolConfig(CONFIG_SAVE_RESPAWN_TIME_IMMEDIATELY) || isWorldBoss() || holdRaidBoss)
             SaveRespawnTime();
 
         SetTarget(ObjectGuid::Empty);                // remove target selection in any cases (can be set at aura remove in Unit::setDeathState)

@@ -288,6 +288,9 @@ bool InstanceScript::SetBossState(uint32 id, EncounterState state)
     if (id < bosses.size())
     {
         BossInfo* bossInfo = &bosses[id];
+        // Cleared raid encounters reopen only when the instance is reset/abandoned.
+        if (RaidRetention::Enabled() && instance->IsRaid() && bossInfo->state == DONE && state != DONE)
+            return false;
         ScenarioBosses* bossScenario = &bossesScenarios[id];
 
         if (bossInfo->state == TO_BE_DECIDED) // loading

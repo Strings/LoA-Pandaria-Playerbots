@@ -4,6 +4,10 @@
 namespace RaidResetPolicy
 {
     constexpr std::uint32_t PartialMarker = ~std::uint32_t(0);
+    constexpr bool HoldBossRespawn(bool enabled, bool raid, bool boss)
+    {
+        return enabled && raid && boss;
+    }
     constexpr bool Finished(std::uint32_t marker)
     {
         return marker && marker != PartialMarker;
