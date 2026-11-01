@@ -13,6 +13,9 @@ import sys
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from tools.dbc import DbcTable, default_schema_for_header, parse_header
 IDENT_RE = re.compile(r'^[A-Za-z0-9_]+$')
 FILENAME_RE = re.compile(r'^(?P<year>\d{4})_(?P<month>\d{2})_(?P<day>\d{2})_(?P<agent>[a-z0-9]+)_(?P<seq>\d{2,})_(?P<slug>[a-z0-9_]+)\.sql$')
 LEGACY_FILENAME_RE = re.compile(r'^(?P<year>\d{4})_(?P<month>\d{2})_(?P<day>\d{2})_(?P<rest>[A-Za-z0-9_-]+)\.sql$')
@@ -1187,15 +1190,10 @@ class WorldReferenceCatalog:
 
 
 def load_wdbc_first_uint32_ids(path: Path) -> Set[int]:
-    with path.open('rb') as stream:
-        header = stream.read(20)
-        if len(header) < 20:
-            raise ValueError(f'DBC header too short: {path}')
-        magic, record_count, _, record_size, _ = struct.unpack('<4s4I', header)
-        if magic != b'WDBC' or record_size < 4:
-            raise ValueError(f'Invalid WDBC file: {path}')
-        body = stream.read(record_count * record_size)
-    return {struct.unpack_from('<I', body, i * record_size)[0] for i in range(record_count)}
+    raw = path.read_bytes()
+    header = parse_header(raw)
+    table = DbcTable.from_bytes(raw, schema=default_schema_for_header(header, name=path.stem), path=path)
+    return set(table.keys())
 
 
 def check_schema_and_references(
