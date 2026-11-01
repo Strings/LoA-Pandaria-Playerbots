@@ -5718,3 +5718,8 @@ Capture.NearbyBotRadius = 100
 
 # Brief notice explaining all-profession access and the extra-profession addon.
 Professions.IntroOnLogin = 1
+# Ordinary items remain tradeable; quest, artifact and custom progression items stay protected.
+NoBinding.Enable = 1
+# Comma/space-separated extra protected item entries. Invalid IDs disable no-binding safely.
+NoBinding.ProtectedItemIds = ""
+NoBinding.IntroOnLogin = 1

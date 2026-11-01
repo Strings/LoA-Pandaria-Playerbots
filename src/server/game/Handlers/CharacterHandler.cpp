@@ -15,6 +15,7 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "NoBinding.h"
 #include "AccountMgr.h"
 #include "ArenaTeam.h"
 #include "Battleground.h"
@@ -1033,20 +1034,7 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder const& holder)
 
     SendTimezoneInformation();
 
-    HotfixData const& hotfix = sObjectMgr->GetHotfixData();
-
-    data.Initialize(SMSG_HOTFIX_INFO);
-    data.WriteBits(hotfix.size(), 20);
-    data.FlushBits();
-
-    for (uint32 i = 0; i < hotfix.size(); ++i)
-    {
-        data << uint32(hotfix[i].Timestamp);
-        data << uint32(hotfix[i].Entry);
-        data << uint32(hotfix[i].TableHash);
-    }
-
-    SendPacket(&data);
+    NoBinding::SendHotfixInfo(pCurrChar);
 
     pCurrChar->SendInitialPacketsBeforeAddToMap();
 
