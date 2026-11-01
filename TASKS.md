@@ -49,7 +49,7 @@ The first playtest starts when the quick wins are merged. T-003, T-004 and T-031
 | ID | Task | Owns | Owner | Status |
 |---|---|---|---|---|
 | T-010 | Double mounted movement speed via a config multiplier (default 2.0) in the core speed update; check ghost wolf and travel forms are untouched for now | codex | done |
-| T-011 | Apprentice Riding and a basic faction-appropriate mount at character creation; four 10-slot bags in the bag slots | `sql/updates/world/`, `src/server/scripts/Custom/PlayerStartScript.cpp` | codex | in progress |
+| T-011 | Apprentice Riding and a basic faction-appropriate mount at character creation; four 10-slot bags in the bag slots | `sql/updates/world/`, `src/server/scripts/Custom/PlayerStartScript.cpp` | codex | review |
 | T-012 | Raise rare mount drops to 10%: list every rare-drop mount item and update loot tables | `sql/updates/world/` | codex | done |
 | T-013 | Raid resets every 2 days instead of weekly; keep in-progress instances until finished or abandoned | `src/server/game/Instances/` | codex | review |
 | T-014 | All professions: raise `MaxPrimaryTradeSkill` (confirm the key exists); addon button bar for professions past the second | config, `addons/ProfessionBar/` | codex | review |
