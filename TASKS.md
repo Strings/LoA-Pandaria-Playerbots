@@ -53,12 +53,12 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 | T-014 | All professions: raise `MaxPrimaryTradeSkill` (confirm the key exists); addon button bar for professions past the second | config, `addons/ProfessionBar/` | codex | open |
 | T-015 | No item binding: config-keyed hook that skips binding, keeping quest items and custom progression items bound; one-time soulbound-flag cleanup SQL; tooltip fix via item hotfixes. Check the transmog interaction | `src/server/scripts/Custom/NoBinding/`, `sql/updates/` | codex | open |
 | T-016 | Free talent and glyph changes (no gold, no reagents); spec switching from level 10 | `src/server/scripts/Custom/Respec/` | codex | done |
-| T-017 | Server-side spec loadouts (spec, talents, glyphs, action bars, Heartseed paths), one per spec by default plus named extras; addon picker | `src/server/scripts/Custom/Loadouts/`, `addons/Loadouts/` | claude | review |
-| T-018 | Gear pages per loadout: detached storage, page swap through the normal equip path, addon page panel | `src/server/scripts/Custom/Loadouts/`, `addons/Loadouts/` | claude | review |
+| T-017 | Server-side spec loadouts (spec, talents, glyphs, action bars, Heartseed paths), one per spec by default plus named extras; addon picker | `src/server/scripts/Custom/Loadouts/`, `addons/Loadouts/` | claude | done |
+| T-018 | Gear pages per loadout: detached storage, page swap through the normal equip path, addon page panel | `src/server/scripts/Custom/Loadouts/`, `addons/Loadouts/` | claude | done |
 | T-019 | Config quick wins: cross-faction play (`AllowTwoSide.*`), all flight paths, guaranteed skill-ups, no weekly currency caps, lighter death penalties. Confirm each key exists in the fork | codex | done |
 | T-041 | Script and data quick wins: guild perks for everyone, unrestricted transmog (mixed types), bigger stacks via item hotfixes, free character services NPC, shorter hearthstone cooldown | `src/server/scripts/Custom/SoloQoL/`, `sql/updates/` | codex, flash | open |
 | T-042 | 36-slot bags: expensive vendor (gold sink); hooks to plant them in rare loot later | `sql/updates/world/` | flash | open |
-| T-043 | Reagent bank in detached storage, with crafting drawing from it | `src/server/scripts/Custom/ReagentBank/` | claude | review |
+| T-043 | Reagent bank in detached storage, with crafting drawing from it | `src/server/scripts/Custom/ReagentBank/` | claude | done |
 | T-044 | Free XP on/off toggle (command now, settings panel later); no separate battleground queue for XP-off characters | `src/server/scripts/Custom/Twinks/` | codex | open |
 | T-045 | **Priority:** twink gear buffs above heirlooms via item hotfixes, per bracket and breakpoint (compile the current best non-heirloom items first) | `sql/updates/world/`, `docs/twinks.md` | codex | done |
 | T-046 | Dungeon finder for outleveled dungeons: solo teleport at 20+ levels over the dungeon's level (config key). Bot groups wait for the instance pool (Phase 5) | `src/server/game/DungeonFinding/` hooks, `src/server/scripts/Custom/` | codex | open |
@@ -130,7 +130,7 @@ top to bottom. Rules:
 
 ## Suggested split
 
-Current (2026-11-01): Claude Code does detached storage (T-017, T-018, T-043). Codex finishes T-013 and
+Current (2026-11-01): Claude Code finished detached storage (T-017, T-018, T-043). Codex finishes T-013 and
 T-011, then T-015, T-014, the script half of T-041, T-044, T-046, T-047, T-007 and BUG-003. Flash fixes
 T-052 and T-053, then T-054, T-055, T-061 and T-062. The human: T-036 and the T-003 hardware.
 
