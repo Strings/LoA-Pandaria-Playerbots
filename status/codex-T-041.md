@@ -2,7 +2,7 @@
 
 **Agent:** codex
 **Branch:** codex/T-041-solo-qol
-**Task status:** in progress; final regression run, draft PR 85
+**Task status:** review; ready PR 85
 
 ## What changed
 - Script half only; Flash owns stack data. Rebased on playerbot aa0af9db.
@@ -23,7 +23,7 @@
 - Runtime durations restored to shipped 300/300; mixed settings and core bridge restored on. Native game GUI was not launched.
 
 ## Next / handoff
-- Full current headless regression suite running; finish report, set task review and mark PR ready.
+- Full current headless regression suite passes: all nine scenarios (capture, checkpoints, reload/RNG, GM tools, Heartseed, loadouts, login, reagent bank, respec). Report: ignored build/regression-T041/20261101T191050Z-690a36fe/results.json.
 - This PR touches core: Claude review plus human merge required. Do not self-merge. Apply scoped SQL to main only after merge.
 - T-013/PR45 and T-011/PR61 have Claude approval with no required fixes, held for human merge. T-014/PR82 and T-015/PR69 are ready. Next verification is T-044/PR86, then T-046/PR91.
 
