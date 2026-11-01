@@ -21,6 +21,9 @@
 #include "GameObject.h"
 #include "Group.h"
 #include "InstanceScript.h"
+#include "RaidRetention.h"
+#include "RaidResetPolicy.h"
+#include "InstanceSaveMgr.h"
 #include "LFGMgr.h"
 #include "Log.h"
 #include "Map.h"
@@ -87,6 +90,11 @@ bool InstanceScript::_SkipCheckRequiredBosses(Player const* player) const
 
 void InstanceScript::SaveToDB()
 {
+    if (RaidRetention::Enabled() && instance->IsRaid())
+    {
+        RaidRetention::SaveProgress(instance, this);
+        return;
+    }
     std::string data = GetSaveData();
     if (data.empty())
         return;
@@ -280,6 +288,9 @@ bool InstanceScript::SetBossState(uint32 id, EncounterState state)
     if (id < bosses.size())
     {
         BossInfo* bossInfo = &bosses[id];
+        // Cleared raid encounters reopen only when the instance is reset/abandoned.
+        if (RaidRetention::Enabled() && instance->IsRaid() && bossInfo->state == DONE && state != DONE)
+            return false;
         ScenarioBosses* bossScenario = &bossesScenarios[id];
 
         if (bossInfo->state == TO_BE_DECIDED) // loading
@@ -731,6 +742,8 @@ void InstanceScript::DoKilledMonsterKredit(uint32 questId, uint32 entry, ObjectG
 
 void InstanceScript::DoFinishLFGDungeon(uint32 dungeonId)
 {
+    if (RaidRetention::Enabled() && instance->IsRaid() && instance->ToInstanceMap()->IsLFGMap())
+        RaidRetention::SaveProgress(instance, this, true);
     Map::PlayerList const &plrList = instance->GetPlayers();
 
     if (!plrList.isEmpty())
@@ -809,6 +822,7 @@ void InstanceScript::UpdateEncounterState(EncounterCreditType type, uint32 credi
         return;
 
     uint32 dungeonId = 0;
+    uint32 previousCompleted = completedEncounters;
 
     for (DungeonEncounterList::const_iterator itr = encounters->begin(); itr != encounters->end(); ++itr)
     {
@@ -824,6 +838,10 @@ void InstanceScript::UpdateEncounterState(EncounterCreditType type, uint32 credi
             }
         }
     }
+
+    // Credits can arrive after the boss script's DONE save.
+    if (RaidRetention::Enabled() && instance->IsRaid() && completedEncounters != previousCompleted)
+        RaidRetention::SaveProgress(instance, this, instance->ToInstanceMap()->IsLFGMap() && dungeonId != 0);
 
     if (dungeonId)
         for (auto&& ref : instance->GetPlayers())
