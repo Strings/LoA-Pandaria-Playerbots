@@ -2,7 +2,7 @@
 
 **Agent:** codex
 **Branch:** codex/T-044-xp-toggle
-**Task status:** in progress; draft PR 86
+**Task status:** review; ready PR 86
 
 ## What changed
 - Public .xp on/off/status changes only the caller, for free; GM permission enables selected-player force/inspection. Parser rejects extra/invalid input. Repeated changes are no-ops, native no-XP flag persists.
@@ -29,3 +29,9 @@
 ## Completed verification checkpoint
 - Current-base normal-queue production build passes (build/T044-build.log), no touched-file compiler warnings. Same-mutex current CTest build/run passes all 16 suites (build/T044-unit-queued.log).
 - Native ordinary-player permissions/self-only selected-GM control, unchanged money, repeated toggle/relog, selected-player GM force and actual quest XP off/on all PASS. Native NPC/queue controls and full regressions next.
+
+## Final results
+- Normal WSG queues accept both XP modes; both test queues cleared. All four native NPC switches pass: enabled costs zero; disabled command rejects and native NPC charges exactly 100000 copper each way. Key restored on.
+- All 11 current headless regressions pass, including newly merged mountspeed/solo scenarios. Report in primary checkout: build/regression-T044/20261101T201936Z-0b9448e3/results.json.
+- PlayerSaveInterval restored to original 60000, missing current default keys appended without replacing private overrides. No new duration, no main DB changes. Claude approval before routine merge; after merge apply only world 04/auth 05 SQL to main.
+- Build and 16-unit-suite pass precede only documentation commits. Native GUI unused. T-046 compilation/live verification follows in primary; this branch is in the secondary Codex checkout for review updates.
