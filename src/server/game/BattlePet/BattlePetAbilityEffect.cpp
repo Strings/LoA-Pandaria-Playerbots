@@ -17,6 +17,7 @@
 
 #include "BattlePetAbilityEffect.h"
 #include "DBCStores.h"
+#include "Random.h"
 #include "BattlePet.h"
 #include "PetBattle.h"
 

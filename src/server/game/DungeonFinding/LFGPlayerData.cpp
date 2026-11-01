@@ -16,6 +16,7 @@
 */
 
 #include "LFGPlayerData.h"
+#include "DBCStores.h"
 
 namespace lfg
 {

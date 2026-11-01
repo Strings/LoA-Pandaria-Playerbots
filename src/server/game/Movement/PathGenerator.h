@@ -24,6 +24,7 @@
 #include "MapDefines.h"
 #include "MoveSplineInitArgs.h"
 
+class Map;
 class Unit;
 class WorldObject;
 

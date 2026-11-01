@@ -19,6 +19,7 @@
 #define PET_BATTLE_H
 
 #include "BattlePet.h"
+#include <G3D/Vector3.h>
 
 enum PetBattleMisc
 {

@@ -24,6 +24,7 @@
 #include "Common.h"
 #include "DBCEnums.h"
 #include "DBCStores.h"
+#include "DatabaseEnvFwd.h"
 #include "ObjectGuid.h"
 
 class Unit;

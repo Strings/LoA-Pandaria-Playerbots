@@ -31,6 +31,7 @@
 
 struct AchievementEntry;
 struct CharTitlesEntry;
+struct ItemTemplate;
 
 enum ArenaType : uint32;
 

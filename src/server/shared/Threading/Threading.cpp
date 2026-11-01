@@ -20,6 +20,10 @@
 #include <system_error>
 #include <vector>
 
+#ifdef WIN32
+#include <windows.h>
+#endif
+
 using namespace MopCore;
 
 Thread::Thread() : m_task(nullptr), m_iThreadId(), m_ThreadImp()

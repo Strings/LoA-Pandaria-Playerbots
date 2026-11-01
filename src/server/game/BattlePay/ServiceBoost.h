@@ -21,6 +21,8 @@
 #include "ObjectGuid.h"
 #include <map>
 
+class WorldSession;
+
 enum CharBoostMisc
 {
     // Items
