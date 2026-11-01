@@ -1,5 +1,3 @@
-BLOCKED: May I publish this own branch with force-with-lease after rebasing? Automatic approval review rejected it; build/live verification continues on current published history.
-
 # T-044: Free experience toggle
 
 **Agent:** codex
@@ -37,3 +35,5 @@ BLOCKED: May I publish this own branch with force-with-lease after rebasing? Aut
 - Private worldserver is stopped; auth remains on 3744. Test world profile restored from validated Codex profile after a Windows encoding write failure; own DB names/8105/7898 verified, Twinks keys enabled. Always write config as UTF-8.
 - Ignored build/T044-live.py prepares a normal owned account/character and permissions/relog/real quest XP checks. build/T044-extra.py adds normal WSG queue acceptance off/on, real Experience Eliminator gossip with free/disabled-stock-10g controls. Both syntax-check. Manual equivalents are listed above, credentials remain private. Start a snapshot of the new binary with the Codex runtime after build completion.
 - After native checks: all current regressions, final status/task review and ready PR; await Claude approval before routine merge.
+
+- Publication unblocked: user explicitly approved force-with-lease for remaining rebased Codex task branches. Rebased on playerbot 2c654e81 (includes merged T-014); fresh queued build follows.
