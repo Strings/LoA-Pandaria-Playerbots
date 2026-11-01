@@ -925,9 +925,9 @@ MaxPlayerLevel = 90
 #
 #    MinDualSpecLevel
 #        Description: Level requirement for Dual Talent Specialization
-#        Default:     30
+#        Default:     10
 
-MinDualSpecLevel = 30
+MinDualSpecLevel = 10
 
 #
 #    StartPlayerLevel
@@ -5611,3 +5611,12 @@ Heartseed.Choice.ChangeAtShrineOnly = 1
 #        Default:     2.0
 
 Rate.MountedSpeed = 2.0
+
+# Free talent and glyph changes. All switches are reloadable and default to 1.
+# NoResetTalentsCost removes gold costs for talent and specialization resets.
+# Respec.FreeReagents exempts only glyph-application/removal and talent-removal spells.
+# Respec.AutoDualSpec teaches both client talent groups to humans on login/level-up,
+# at MinDualSpecLevel (default 10, with a hard specialization floor of 10).
+NoResetTalentsCost = 1
+Respec.FreeReagents = 1
+Respec.AutoDualSpec = 1

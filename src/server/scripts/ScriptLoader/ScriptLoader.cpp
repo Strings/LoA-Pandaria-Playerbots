@@ -2154,6 +2154,7 @@ void AddSC_gmtools_checkpoints();
 void AddSC_custom_reload();
 void AddSC_mounted_speed();
 void AddSC_solo_config();
+void AddSC_free_respec();
 
 void AddCustomScripts()
 {
@@ -2170,6 +2171,7 @@ void AddCustomScripts()
     AddSC_custom_reload();
     AddSC_mounted_speed();
     AddSC_solo_config();
+    AddSC_free_respec();
 
 #endif
     AddSC_Anticheat();

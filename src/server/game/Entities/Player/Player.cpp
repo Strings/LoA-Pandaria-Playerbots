@@ -93,6 +93,7 @@
 #include "World.h"
 #include "SoloConfig.h"
 #include "CurrencyLimits.h"
+#include "RespecConfig.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
 #include "WorldStateBuilder.h"
@@ -4252,6 +4253,9 @@ void Player::RemoveAllSpellCooldown()
 
 uint32 Player::GetNextResetSpecializationCost() const
 {
+    if (sWorld->getBoolConfig(CONFIG_NO_RESET_TALENT_COST))
+        return 0;
+
     // The first time reset costs 1 gold
     if (GetSpecializationResetCost() < 1 * GOLD)
         return 1 * GOLD;
@@ -4285,6 +4289,9 @@ uint32 Player::GetNextResetSpecializationCost() const
 
 uint32 Player::GetNextResetTalentsCost() const
 {
+    if (sWorld->getBoolConfig(CONFIG_NO_RESET_TALENT_COST))
+        return 0;
+
     // The first time reset costs 1 gold
     if (GetTalentResetCost() < 1*GOLD)
         return 1*GOLD;
@@ -26582,6 +26589,9 @@ bool Player::HasItemFitToSpellRequirements(SpellInfo const* spellInfo, Item cons
 
 bool Player::CanNoReagentCast(SpellInfo const* spellInfo) const
 {
+    if (RespecConfig::FreeReagents() && (spellInfo->HasEffect(SPELL_EFFECT_REMOVE_TALENT) || spellInfo->HasEffect(SPELL_EFFECT_APPLY_GLYPH)))
+        return true;
+
     // don't take reagents for spells with SPELL_ATTR5_NO_REAGENT_WHILE_PREP
     if (spellInfo->AttributesEx5 & SPELL_ATTR5_NO_REAGENT_WHILE_PREP &&
         HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PREPARATION))
