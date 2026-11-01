@@ -2174,8 +2174,11 @@ void AddSC_gmtools_areaprobe();
 void AddSC_twink_xp();
 void AddSC_rares();
 
+void AddSC_legacy_dungeons();
+
 void AddCustomScripts()
 {
+    AddSC_legacy_dungeons();
     AddSC_twink_xp();
     AddSC_rares();
 #ifdef SCRIPTS

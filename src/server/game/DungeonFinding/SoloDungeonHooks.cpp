@@ -4,10 +4,10 @@ namespace lfg::SoloDungeon
 {
     namespace { std::atomic<Hooks const*> provider{ nullptr }; }
     void Install(Hooks const* hooks) { provider.store(hooks, std::memory_order_release); }
-    bool UnlockUpperLevel(Player* player, LFGDungeonData const& dungeon)
+    bool UnlockUpperLevel(Player* player, LFGDungeonData const& dungeon, uint32 level)
     {
         auto hooks = provider.load(std::memory_order_acquire);
-        return hooks && hooks->UnlockUpperLevel && hooks->UnlockUpperLevel(player, dungeon);
+        return hooks && hooks->UnlockUpperLevel && hooks->UnlockUpperLevel(player, dungeon, level);
     }
     bool Join(Player* player, LfgDungeonSet const& dungeons)
     {

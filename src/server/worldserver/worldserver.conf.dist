@@ -6015,3 +6015,10 @@ Rares.BotsWaitForPlayer = 1
 Rares.Xp.BaseLevelFraction = 0.25
 Rares.Xp.MaxLevelFraction = 1.0
 Rares.IntroOnFirstClaim = 1
+
+# T-046: native specific five-player dungeons; original DBC cap until scaling caps exist.
+# Disable new entries; an existing saved trip still permits a return. No group/reward queue is created.
+LFG.LegacySolo.Enable = 1
+# Positive level margin; invalid/nonpositive values use 20.
+LFG.LegacySolo.LevelsOverCap = 20
+LFG.LegacySolo.IntroOnLogin = 1

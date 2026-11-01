@@ -4,9 +4,13 @@
 void RunTests()
 {
     using namespace LegacyDungeons;
+    UMP_CHECK(DungeonId(" 4 ")==4);
+    UMP_CHECK(!DungeonId("") && !DungeonId("0") && !DungeonId("-1"));
+    UMP_CHECK(!DungeonId("4 more") && !DungeonId("0x4"));
+    UMP_CHECK(!DungeonId("4294967296") && !DungeonId("16777216"));
     UMP_CHECK(OriginalCap(15,25)==25);
     UMP_CHECK(OriginalCap(70,0)==70);
-    UMP_CHECK(Margin(-1)==1 && Margin(20)==20);
+    UMP_CHECK(Margin(-1)==20 && Margin(20)==20);
     auto decision=[](unsigned level,unsigned cap,unsigned margin) { return Decide(true,false,true,true,false,level,cap,margin); };
     UMP_CHECK(decision(25,25,20)==Decision::Native);
     UMP_CHECK(decision(24,25,20)==Decision::Native);
