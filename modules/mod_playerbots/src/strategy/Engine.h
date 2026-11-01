@@ -7,7 +7,9 @@
 #define _PLAYERBOT_ENGINE_H
 
 #include <map>
+#include <memory>
 
+#include "DecisionTrace.h"
 #include "Multiplier.h"
 #include "PlayerbotAIAware.h"
 #include "Queue.h"
@@ -92,6 +94,10 @@ public:
 
     bool testMode;
 
+    // `.bot why` (T-039): per-bot decision trace, off until a GM turns it on.
+    void SetDecisionTrace(bool enabled);
+    DecisionTrace const* GetDecisionTrace() const { return decisionTrace.get(); }
+
 private:
     bool MultiplyAndPush(NextAction** actions, float forceRelevance, bool skipPrerequisites, Event event,
                          const char* pushType);
@@ -105,6 +111,7 @@ private:
 
     void LogAction(char const* format, ...);
     void LogValues();
+    void TraceQueue();
 
     ActionExecutionListeners actionExecutionListeners;
 
@@ -117,7 +124,8 @@ protected:
     float lastRelevance;
     std::string lastAction;
     uint32 strategyTypeMask;
-    bool hasTargetExclusions = false;  // AC Engine.h:119
+    bool hasTargetExclusions = false;
+    std::unique_ptr<DecisionTrace> decisionTrace;  // AC Engine.h:119
     NamedObjectFactoryList<ActionNode> actionNodeFactories;  // #72: AC Engine.h:120 (merged in Init)
 };
 

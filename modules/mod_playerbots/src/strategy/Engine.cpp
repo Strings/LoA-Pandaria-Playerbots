@@ -5,6 +5,8 @@
 
 #include "Engine.h"
 
+#include <algorithm>
+
 #include "Action.h"
 #include "BotScenario.h"
 #include "Event.h"
@@ -162,9 +164,19 @@ bool Engine::DoNextAction(Unit* unit, uint32 depth, bool minimal)
     if (!minimal)
         botAI->forceRebuff.RollBuffPendingCycle();
 
+    if (decisionTrace)
+    {
+        static char const* const stateNames[] = { "combat", "non-combat", "dead" };
+        BotState state = botAI->GetState();
+        decisionTrace->Begin(currentTime, state < BOT_STATE_MAX ? stateNames[state] : "unknown");
+    }
+
     // Update triggers and push default actions
     ProcessTriggers(minimal);
     PushDefaultActions();
+
+    if (decisionTrace)
+        TraceQueue();
 
     uint32 iterations = 0;
     uint32 iterationsPerTick = queue.Size() * (minimal ? 2 : sPlayerbotAIConfig->iterationsPerTick);
@@ -181,6 +193,8 @@ bool Engine::DoNextAction(Unit* unit, uint32 depth, bool minimal)
         if (minimal && (relevance < 100))
             continue;
 
+        BotDecision* trace = decisionTrace ? &decisionTrace->Working() : nullptr;
+
         Event event = basket->getEvent();
         ActionNode* actionNode = queue.Pop();  // NOTE: Pop() deletes basket
         Action* action = InitializeAction(actionNode);
@@ -188,6 +202,8 @@ bool Engine::DoNextAction(Unit* unit, uint32 depth, bool minimal)
         if (!action)
         {
             LogAction("A:%s - UNKNOWN", actionNode->getName().c_str());
+            if (trace)
+                trace->Steps.push_back({ actionNode->getName(), relevance, "UNKNOWN" });
         }
         else if (action->isUseful())
         {
@@ -204,6 +220,9 @@ bool Engine::DoNextAction(Unit* unit, uint32 depth, bool minimal)
                 }
             }
 
+            if (trace && relevance <= 0)
+                trace->Steps.push_back({ action->getName(), relevance, "ZEROED" });
+
             if (action->isPossible() && relevance > 0)
             {
                 if (!skipPrerequisites)
@@ -212,6 +231,8 @@ bool Engine::DoNextAction(Unit* unit, uint32 depth, bool minimal)
 
                     if (MultiplyAndPush(actionNode->getPrerequisites(), relevance + 0.002f, false, event, "prereq"))
                     {
+                        if (trace)
+                            trace->Steps.push_back({ action->getName(), relevance, "PREREQ" });
                         PushAgain(actionNode, relevance + 0.001f, event);
                         continue;
                     }
@@ -226,6 +247,12 @@ bool Engine::DoNextAction(Unit* unit, uint32 depth, bool minimal)
                 {
                     LogAction("A:%s - OK", action->getName().c_str());
                     BotScenario::OnAction(botAI->GetBot(), action->getName().c_str(), "OK");
+                    if (trace)
+                    {
+                        trace->Steps.push_back({ action->getName(), relevance, "OK" });
+                        trace->Chosen = action->getName();
+                        trace->ChosenRelevance = relevance;
+                    }
                     MultiplyAndPush(actionNode->getContinuers(), relevance, false, event, "cont");
                     lastRelevance = relevance;
                     delete actionNode;  // Safe memory management
@@ -235,6 +262,8 @@ bool Engine::DoNextAction(Unit* unit, uint32 depth, bool minimal)
                 {
                     LogAction("A:%s - FAILED", action->getName().c_str());
                     BotScenario::OnAction(botAI->GetBot(), action->getName().c_str(), "FAILED");
+                    if (trace)
+                        trace->Steps.push_back({ action->getName(), relevance, "FAILED" });
                     MultiplyAndPush(actionNode->getAlternatives(), relevance + 0.003f, false, event, "alt");
                 }
             }
@@ -242,6 +271,8 @@ bool Engine::DoNextAction(Unit* unit, uint32 depth, bool minimal)
             {
                 LogAction("A:%s - IMPOSSIBLE", action->getName().c_str());
                 BotScenario::OnAction(botAI->GetBot(), action->getName().c_str(), "IMPOSSIBLE");
+                if (trace && relevance > 0)
+                    trace->Steps.push_back({ action->getName(), relevance, "IMPOSSIBLE" });
                 MultiplyAndPush(actionNode->getAlternatives(), relevance + 0.003f, false, event, "alt");
             }
         }
@@ -249,6 +280,8 @@ bool Engine::DoNextAction(Unit* unit, uint32 depth, bool minimal)
         {
             LogAction("A:%s - USELESS", action->getName().c_str());
             BotScenario::OnAction(botAI->GetBot(), action->getName().c_str(), "USELESS");
+            if (trace)
+                trace->Steps.push_back({ action->getName(), relevance, "USELESS" });
             lastRelevance = relevance;
         }
 
@@ -264,7 +297,30 @@ bool Engine::DoNextAction(Unit* unit, uint32 depth, bool minimal)
         LogAction("No actions executed");
 
     queue.RemoveExpired();  // Clean up expired actions in the queue
+
+    if (decisionTrace)
+        decisionTrace->End();
+
     return actionExecuted;
+}
+
+void Engine::SetDecisionTrace(bool enabled)
+{
+    if (enabled && !decisionTrace)
+        decisionTrace = std::make_unique<DecisionTrace>();
+    else if (!enabled)
+        decisionTrace.reset();
+}
+
+void Engine::TraceQueue()
+{
+    BotDecision& trace = decisionTrace->Working();
+    queue.ForEach([&trace](ActionBasket* basket)
+    {
+        trace.Queue.push_back({ basket->getAction()->getName(), basket->getRelevance(), basket->getEvent().GetSource() });
+    });
+    std::stable_sort(trace.Queue.begin(), trace.Queue.end(),
+        [](DecisionCandidate const& a, DecisionCandidate const& b) { return a.Relevance > b.Relevance; });
 }
 
 ActionNode* Engine::CreateActionNode(std::string const name)
@@ -497,6 +553,8 @@ void Engine::ProcessTriggers(bool minimal)
 
             fires[trigger] = event;
             LogAction("T:%s", trigger->getName().c_str());
+            if (decisionTrace)
+                decisionTrace->Working().Triggers.push_back(trigger->getName());
         }
     }
 

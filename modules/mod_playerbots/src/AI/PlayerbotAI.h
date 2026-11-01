@@ -215,6 +215,8 @@ public:
     ChatHelper* GetChatHelper() { return &chatHelper; }
     PlayerbotSecurity* GetSecurity() { return &security; }
     BotState GetState() { return _currentState; };
+    // `.bot why` / `.bot state` (T-039) read each state's engine.
+    Engine* GetEngine(BotState state) { return state < BOT_STATE_MAX ? _engines[state] : nullptr; }
     NewRpgInfo& GetRpgInfo() { return _rpgInfo; }
     const NewRpgInfo& GetRpgInfo() const { return _rpgInfo; }
     // Running totals for the "new rpg" quest behaviour (accepted / rewarded / dropped ...).
