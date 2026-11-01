@@ -1,0 +1,73 @@
+{
+  "name": "loadouts",
+  "timeout_seconds": 120,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "2"
+  ],
+  "steps": [
+    "say .loadout",
+    "say .loadout switch Fury",
+    "say .loadout new PvP",
+    "say .loadout switch PvP",
+    "say .loadout delete PvP",
+    "say .loadout rename PvP Arena",
+    "say .loadout switch Arms",
+    "say .loadout switch Fury",
+    "say .loadout delete Arena"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "event",
+      "kind": "login",
+      "minimum": 1,
+      "maximum": 1
+    },
+    {
+      "type": "contains",
+      "text": "Loadouts of"
+    },
+    {
+      "type": "contains",
+      "text": "Switched to Fury (Fury)."
+    },
+    {
+      "type": "contains",
+      "text": "Saved your current talents, glyphs and bars as loadout"
+    },
+    {
+      "type": "contains",
+      "text": "Switched to PvP ("
+    },
+    {
+      "type": "contains",
+      "text": "One of your talent groups holds that loadout. Switch to two others first."
+    },
+    {
+      "type": "contains",
+      "text": "is now called Arena."
+    },
+    {
+      "type": "contains",
+      "text": "Switched to Arms (Arms)."
+    },
+    {
+      "type": "contains",
+      "text": "Deleted loadout"
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback (most recent call last)"
+    }
+  ]
+}
