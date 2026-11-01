@@ -116,6 +116,7 @@
  */
 
 #include "AutoBalanceLevelScaling.h"
+#include "SoloDungeonHooks.h"
 #include "Chat.h"
 #include "Config.h"
 #include "Creature.h"
@@ -330,6 +331,7 @@ namespace
         std::mutex lock;
         uint32 generation = 0;                                          // the Settings::generation it was set up with
         bool enabled = false;
+        bool legacySolo = false;
         uint32 mapId = 0;
         uint32 maxPlayers = 0;
         bool heroic = false;
@@ -928,7 +930,8 @@ namespace
     void InitInstanceState(InstanceState& state, Map* map, Settings const& s)
     {
         state.generation = s.generation;
-        state.enabled = ShouldMapBeEnabled(map, s);
+        state.legacySolo = lfg::SoloDungeon::OriginalDifficulty(map);
+        state.enabled = ShouldMapBeEnabled(map, s) && !state.legacySolo;
         state.mapId = map->GetId();
         InstanceMap* instanceMap = map->ToInstanceMap();
         state.maxPlayers = instanceMap ? instanceMap->GetMaxPlayers() : 0;
@@ -1018,7 +1021,7 @@ namespace
     // instance takes the new settings and every creature re-scales. Caller holds state.lock.
     void RefreshIfStale(InstanceState& state, Map* map)
     {
-        if (state.generation == g_generation.load(std::memory_order_relaxed))
+        if (state.generation == g_generation.load(std::memory_order_relaxed) && state.legacySolo == lfg::SoloDungeon::OriginalDifficulty(map))
             return;
 
         std::shared_ptr<Settings const> settings = GetSettings();

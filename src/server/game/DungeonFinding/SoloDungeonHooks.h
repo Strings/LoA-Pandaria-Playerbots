@@ -11,13 +11,13 @@ namespace lfg
         // Adapter owns policy/state; core retains native behavior without a provider.
         struct Hooks
         {
-            bool (*UnlockUpperLevel)(Player*, LFGDungeonData const&);
+            bool (*UnlockUpperLevel)(Player*, LFGDungeonData const&, uint32);
             bool (*Join)(Player*, LfgDungeonSet const&);
             bool (*Teleport)(Player*, bool);
             bool (*OriginalDifficulty)(Map const*);
         };
         void Install(Hooks const* hooks);
-        bool UnlockUpperLevel(Player* player, LFGDungeonData const& dungeon);
+        bool UnlockUpperLevel(Player* player, LFGDungeonData const& dungeon, uint32 level);
         bool Join(Player* player, LfgDungeonSet const& dungeons);
         bool Teleport(Player* player, bool out);
         bool OriginalDifficulty(Map const* map);

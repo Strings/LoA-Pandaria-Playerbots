@@ -5718,3 +5718,9 @@ Capture.NearbyBotRadius = 100
 
 # Brief notice explaining all-profession access and the extra-profession addon.
 Professions.IntroOnLogin = 1
+# T-046: native specific five-player dungeons; original DBC cap until scaling caps exist.
+# Disable new entries; an existing saved trip still permits a return. No group/reward queue is created.
+LFG.LegacySolo.Enable = 1
+# Positive level margin; invalid/nonpositive values use 20.
+LFG.LegacySolo.LevelsOverCap = 20
+LFG.LegacySolo.IntroOnLogin = 1

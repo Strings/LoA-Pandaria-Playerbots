@@ -536,7 +536,7 @@ void LFGMgr::InitializeLockedDungeons(Player* player, uint8 level /* = 0 */)
             lockStatus = LFG_LOCKSTATUS_INSUFFICIENT_EXPANSION;
         else if (dungeon->minlevel > level && !anyLevelDungeon)
             lockStatus = LFG_LOCKSTATUS_TOO_LOW_LEVEL;
-        else if (dungeon->maxlevel && dungeon->maxlevel < level && !anyLevelDungeon && !SoloDungeon::UnlockUpperLevel(player, *dungeon))
+        else if (dungeon->maxlevel && dungeon->maxlevel < level && !anyLevelDungeon && !SoloDungeon::UnlockUpperLevel(player, *dungeon, level))
             lockStatus = LFG_LOCKSTATUS_TOO_HIGH_LEVEL;
         else if (dungeon->seasonal && !IsSeasonActive(dungeon->id))
             lockStatus = LFG_LOCKSTATUS_NOT_IN_SEASON;
