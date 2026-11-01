@@ -2898,11 +2898,11 @@ PvPToken.ItemCount = 1
 
 #
 #    NoResetTalentsCost
-#        Description: Resetting talents doesn't cost anything.
-#        Default:     0 - (Disabled)
-#                     1 - (Enabled)
+#        Description: Resetting talents doesn't cost anything (UltimateMoP: free respec, see Respec.*).
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
 
-NoResetTalentsCost = 0
+NoResetTalentsCost = 1
 
 #
 #     Guild.AllowMultipleGuildMaster
@@ -5643,11 +5643,10 @@ GMTools.Spectate.AttachTimeoutMs = 10000
 
 
 # Free talent and glyph changes. All switches are reloadable and default to 1.
-# NoResetTalentsCost removes gold costs for talent and specialization resets.
+# NoResetTalentsCost (set above, default 1) removes gold costs for talent and specialization resets.
 # Respec.FreeReagents exempts only glyph-application/removal and talent-removal spells.
 # Respec.AutoDualSpec teaches both client talent groups to humans on login/level-up,
 # at MinDualSpecLevel (default 10, with a hard specialization floor of 10).
-NoResetTalentsCost = 1
 Respec.FreeReagents = 1
 Respec.AutoDualSpec = 1
 
@@ -5676,6 +5675,24 @@ Loadouts.MaxNamed = 10
 #                     0 - (Disabled, pages keep their pieces until enabled again)
 
 Loadouts.GearPages.Enable = 1
+
+###################################################################################################
+# REAGENT BANK (.reagent)
+#
+#    ReagentBank.Enable
+#        Description: Crafting reagents can be kept outside the bags; spells and crafting take reagents
+#                     from the bags first, then from the reagent bank.
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled, the bank keeps its contents until enabled again)
+
+ReagentBank.Enable = 1
+
+#
+#    ReagentBank.MaxStacks
+#        Description: Stacks the reagent bank holds per character.
+#        Default:     0 - (No limit)
+
+ReagentBank.MaxStacks = 0
 
 ###################################################################################################
 # IN-GAME IDEA AND BUG CAPTURE (.idea, .bug, .capture)

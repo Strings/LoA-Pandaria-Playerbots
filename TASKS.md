@@ -58,7 +58,7 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 | T-019 | Config quick wins: cross-faction play (`AllowTwoSide.*`), all flight paths, guaranteed skill-ups, no weekly currency caps, lighter death penalties. Confirm each key exists in the fork | codex | done |
 | T-041 | Script and data quick wins: guild perks for everyone, unrestricted transmog (mixed types), bigger stacks via item hotfixes, free character services NPC, shorter hearthstone cooldown | `src/server/scripts/Custom/SoloQoL/`, `sql/updates/` | codex, flash | open |
 | T-042 | 36-slot bags: expensive vendor (gold sink); hooks to plant them in rare loot later | `sql/updates/world/` | flash | open |
-| T-043 | Reagent bank in detached storage, with crafting drawing from it | `src/server/scripts/Custom/ReagentBank/` | claude | open |
+| T-043 | Reagent bank in detached storage, with crafting drawing from it | `src/server/scripts/Custom/ReagentBank/` | claude | review |
 | T-044 | Free XP on/off toggle (command now, settings panel later); no separate battleground queue for XP-off characters | `src/server/scripts/Custom/Twinks/` | codex | open |
 | T-045 | **Priority:** twink gear buffs above heirlooms via item hotfixes, per bracket and breakpoint (compile the current best non-heirloom items first) | `sql/updates/world/`, `docs/twinks.md` | codex | done |
 | T-046 | Dungeon finder for outleveled dungeons: solo teleport at 20+ levels over the dungeon's level (config key). Bot groups wait for the instance pool (Phase 5) | `src/server/game/DungeonFinding/` hooks, `src/server/scripts/Custom/` | codex | open |

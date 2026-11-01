@@ -2161,6 +2161,7 @@ void AddSC_free_respec();
 void AddSC_custom_capture();
 void AddSC_detached_storage();
 void AddSC_loadouts();
+void AddSC_reagent_bank();
 
 void AddCustomScripts()
 {
@@ -2184,6 +2185,7 @@ void AddCustomScripts()
     AddSC_custom_capture();
     AddSC_detached_storage();
     AddSC_loadouts();
+    AddSC_reagent_bank();
 
 #endif
     AddSC_Anticheat();

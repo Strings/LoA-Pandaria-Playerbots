@@ -184,6 +184,52 @@ Item* DetachedStorage::Take(Player* player, Kind kind, uint32 container, uint32 
     return item;
 }
 
+bool DetachedStorage::SetCount(Player* player, Kind kind, uint32 container, uint32 slot, uint32 count,
+    CharacterDatabaseTransaction trans, Scope scope)
+{
+    if (!count)
+        return false;
+    uint32 itemGuid = 0;
+    {
+        std::lock_guard<std::mutex> guard(_lock);
+        auto itr = _players.find(player->GetGUID().GetCounter());
+        if (itr == _players.end())
+            return false;
+        auto found = std::find_if(itr->second.begin(), itr->second.end(), [&](Entry const& e)
+        {
+            return e.OwnerScope == scope && e.StoreKind == kind && e.Container == container && e.Slot == slot;
+        });
+        if (found == itr->second.end())
+            return false;
+        found->Count = count;
+        itemGuid = found->ItemGuid;
+    }
+    trans->PAppend("UPDATE `item_instance` SET `count` = %u WHERE `guid` = %u", count, itemGuid);
+    return true;
+}
+
+bool DetachedStorage::Destroy(Player* player, Kind kind, uint32 container, uint32 slot, CharacterDatabaseTransaction trans, Scope scope)
+{
+    uint32 itemGuid = 0;
+    {
+        std::lock_guard<std::mutex> guard(_lock);
+        auto itr = _players.find(player->GetGUID().GetCounter());
+        if (itr == _players.end())
+            return false;
+        auto found = std::find_if(itr->second.begin(), itr->second.end(), [&](Entry const& e)
+        {
+            return e.OwnerScope == scope && e.StoreKind == kind && e.Container == container && e.Slot == slot;
+        });
+        if (found == itr->second.end())
+            return false;
+        itemGuid = found->ItemGuid;
+        itr->second.erase(found);
+    }
+    trans->PAppend("DELETE FROM `detached_item` WHERE `item_guid` = %u", itemGuid);
+    Item::DeleteFromDB(trans, itemGuid);
+    return true;
+}
+
 std::vector<Entry> DetachedStorage::List(Player* player, Kind kind, uint32 container, Scope scope)
 {
     std::vector<Entry> entries;

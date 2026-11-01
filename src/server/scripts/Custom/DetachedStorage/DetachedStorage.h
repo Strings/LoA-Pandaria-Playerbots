@@ -87,6 +87,13 @@ public:
     void Restore(Player* player, Item* item, Detached::Kind kind, uint32 container, uint32 slot,
         CharacterDatabaseTransaction trans, Detached::Scope scope = Detached::Scope::Character);
 
+    // Changes a stored stack's size in place, for stack merging and partial use. Count must be at least 1.
+    bool SetCount(Player* player, Detached::Kind kind, uint32 container, uint32 slot, uint32 count,
+        CharacterDatabaseTransaction trans, Detached::Scope scope = Detached::Scope::Character);
+    // Deletes a stored item for good (a reagent used up by crafting).
+    bool Destroy(Player* player, Detached::Kind kind, uint32 container, uint32 slot, CharacterDatabaseTransaction trans,
+        Detached::Scope scope = Detached::Scope::Character);
+
     std::vector<Detached::Entry> List(Player* player, Detached::Kind kind, uint32 container,
         Detached::Scope scope = Detached::Scope::Character);
     bool IsTaken(Player* player, Detached::Kind kind, uint32 container, uint32 slot,

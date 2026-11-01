@@ -12,7 +12,7 @@ any time, in any order. Agents keep this list current as systems land; tick noth
 
 ## Setup
 
-- Copy `addons/GMSuite`, `addons/Capture` and `addons/Loadouts` into the client's
+- Copy `addons/GMSuite`, `addons/Capture`, `addons/Loadouts` and `addons/ReagentBank` into the client's
   `Interface/AddOns`.
 - `/gms` opens the GM panel. Checkpoints (`hs-10`, `hs-25`, ... and twink brackets) put a character into a state in
   one click, so you can test late systems without leveling.
@@ -47,6 +47,15 @@ any time, in any order. Agents keep this list current as systems land; tick noth
   takes it back. Icons and tooltips (enchants, gems) look right.
 - [ ] Switching loadouts swaps exactly the pieces on the page and nothing else; set bonuses, two-handers vs shields
   and the Heartseed weapon behave as if you had equipped by hand. Same through the talent frame's spec switch.
+
+## Reagent bank
+
+- [ ] **Most important:** with a recipe's reagents only in the bank (none in the bags), the profession window still
+  lets you press Create and the craft works. If the client greys the button out or says "Missing reagent" without
+  asking the server, report it: the bank then needs a craft button of its own.
+- [ ] `/rb` panel: **Deposit all reagents**, click to take a stack, right-click to take all. Icons and counts look right.
+- [ ] Item tooltips show "Reagent bank: N".
+- [ ] The intro popup shows once, the first time a profession window opens.
 
 ## GM tools
 
