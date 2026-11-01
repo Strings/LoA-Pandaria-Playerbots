@@ -15,7 +15,9 @@
 - Default RelWithDebInfo worldserver build passes with no new warnings in touched files (build/T015-first-build.log).
 - All 12 CTest suites pass, including protection, tooltip flags, version monotonicity and metadata packet boundaries.
 - All six cleanup-generator unittests and Python syntax checks pass.
-- No T-015 SQL generated/applied yet; no T-015 live check or regression run against the new binary yet.
+- Generated world hotfix and character cleanup updates from 80,064 templates (71,870 eligible); SQL validator reports zero issues.
+- Verified twice on disposable world/real-character-save copies: all 151 item rows including five sentinel types match the expected flag-only change, configured entry/GUID exclusions work, unknown/quest/artifact items remain bound, and every other character table hashes identically. Both updates then applied only to Codex DBs.
+- Final build and all 12 units pass again. Live and regression checks are now running against the new binary.
 
 ## Decisions made
 - Config defaults: NoBinding.Enable=1, NoBinding.ProtectedItemIds="", NoBinding.IntroOnLogin=1. No durations introduced.
