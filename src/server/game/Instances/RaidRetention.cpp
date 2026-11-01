@@ -72,12 +72,9 @@ uint32 RaidRetention::ExpectedMask(uint32 mapId, Difficulty difficulty)
 void RaidRetention::DeleteStoredInstance(uint32 instanceId)
 {
     CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
-    for (auto statement : { CHAR_DEL_INSTANCE_BY_INSTANCE, CHAR_DEL_CHAR_INSTANCE_BY_INSTANCE, CHAR_DEL_GROUP_INSTANCE_BY_INSTANCE })
-    {
-        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(statement);
-        stmt->setUInt32(0, instanceId);
-        trans->Append(stmt);
-    }
+    trans->PAppend("DELETE FROM instance WHERE id=%u", instanceId);
+    trans->PAppend("DELETE FROM character_instance WHERE instance=%u", instanceId);
+    trans->PAppend("DELETE FROM group_instance WHERE instance=%u", instanceId);
     CharacterDatabase.DirectCommitTransaction(trans);
 }
 
@@ -115,11 +112,9 @@ void RaidRetention::SaveProgress(Map* map, InstanceScript* script, bool wingFini
     if (!deadline)
         deadline = time(NULL) + PeriodSeconds();
     CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
-    CharacterDatabasePreparedStatement* data = CharacterDatabase.GetPreparedStatement(CHAR_UPD_INSTANCE_DATA);
-    data->setUInt32(0, completed);
-    data->setString(1, script->GetSaveData());
-    data->setUInt32(2, map->GetInstanceId());
-    trans->Append(data);
+    std::string data = script->GetSaveData();
+    CharacterDatabase.EscapeString(data);
+    trans->PAppend("UPDATE instance SET completedEncounters=%u,data='%s' WHERE id=%u", completed, data.c_str(), map->GetInstanceId());
     // Keep wing completion sticky when a later script save has no LFG context.
     // The reserved partial marker leaves canonical encounter bits untouched.
     trans->PAppend("UPDATE instance SET resettime=IF(resettime NOT IN (0,%u) OR %u,%u,%u) WHERE id=%u",

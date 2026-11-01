@@ -222,6 +222,14 @@ void InstanceSave::SaveToDB()
         isLfg = ((InstanceMap*)map)->IsLFGMap();
     }
 
+    if (RaidRetention::Enabled() && GetMapEntry()->IsRaid())
+    {
+        CharacterDatabase.EscapeString(data);
+        CharacterDatabase.DirectPExecute("INSERT INTO instance(id,map,resettime,difficulty,lfg,completedEncounters,data) VALUES(%u,%u,0,%u,%u,%u,'%s')",
+            m_instanceid, uint32(GetMapId()), uint32(GetDifficulty()), uint32(isLfg), completedEncounters, data.c_str());
+        return;
+    }
+
     CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_INSTANCE_SAVE);
     stmt->setUInt32(0, m_instanceid);
     stmt->setUInt16(1, GetMapId());
@@ -230,10 +238,7 @@ void InstanceSave::SaveToDB()
     stmt->setUInt8(4, uint8(isLfg));
     stmt->setUInt32(5, completedEncounters);
     stmt->setString(6, data);
-    if (RaidRetention::Enabled() && GetMapEntry()->IsRaid())
-        CharacterDatabase.DirectExecute(stmt); // Create the row before synchronous encounter saves.
-    else
-        CharacterDatabase.Execute(stmt);
+    CharacterDatabase.Execute(stmt);
 }
 
 time_t InstanceSave::GetResetTimeForDB()
