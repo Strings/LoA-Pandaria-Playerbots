@@ -66,7 +66,7 @@ namespace
         if (!category)
             if (ItemTemplate const* item = sObjectMgr->GetItemTemplate(itemId))
                 for (auto const& effect : item->Spells)
-                    if (effect.SpellId == HearthstoneSpell)
+                    if (effect.SpellId == int32(HearthstoneSpell))
                         category = effect.SpellCategory;
         player->GetSpellHistory()->RemoveCooldown(HearthstoneSpell, true);
         if (*duration)
