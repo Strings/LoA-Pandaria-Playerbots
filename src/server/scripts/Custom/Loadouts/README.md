@@ -1,8 +1,8 @@
-# Spec loadouts (T-017)
+# Spec loadouts (T-017) and gear pages (T-018)
 
 Any number of server-side loadouts per character: one per specialization, created automatically (four for druids),
 plus named extras (`Loadouts.MaxNamed`, default 10). A loadout holds the spec, talents, glyphs, action bars and the
-parts other systems register (the Heartseed's majors today; gear pages in T-018).
+parts other systems register (the Heartseed's majors today), and a gear page.
 
 ## How it works
 
@@ -20,6 +20,19 @@ and a group that changes spec is re-attached to that spec's own loadout. A loado
 
 Out of combat, alive and outside arenas only. Bots have no loadouts.
 
+## Gear pages
+
+Each loadout has a page of equipment slots held in detached storage (`../DetachedStorage/`), so off-spec gear lives
+on its page instead of in the bags. A page holds only the pieces that differ: switching to a loadout stores the worn
+pieces in the slots its page fills (plus the off hand when a two-hander comes in, or a two-hander when an off hand
+comes in) onto the outgoing loadout's page, then equips the incoming pieces through the normal equip path, main hand
+first. Every other slot stays as it is, so a fresh loadout (empty page) keeps the current gear. A piece that can't be
+worn (level, unique-equipped) goes to the bags; if the bags are full it stays on the page as a spare (slot 100+).
+
+The swap runs after every change of the worn loadout: `.loadout switch` and the client's own spec switch alike. The
+worn loadout's page is what you have on, so pieces go on other loadouts' pages only. A loadout whose page holds
+pieces can't be deleted. Rules: `GearPageRules.h` (unit tested in `tests/loadouts/`).
+
 ## Interface
 
 - `LoadoutMgr` (`sLoadoutMgr`): `Switch`, `Create` (a copy of the active loadout), `Rename`, `Delete`, `GetLoadouts`,
@@ -27,6 +40,9 @@ Out of combat, alive and outside arenas only. Bots have no loadouts.
 - **Parts:** `sLoadoutMgr->RegisterPart({ name, Capture(player, specId) -> string, Apply(player, specId, data) })`.
   Capture runs whenever the loadout is captured; Apply runs before the spec switch, so the system's own
   `OnSpecializationChanged` handling sees the new values. `loadout_heartseed.cpp` is the example.
+- **Listeners:** `sLoadoutMgr->RegisterListener({ OnSwitched(player, fromId, toId), CanDelete(player, id) })` for
+  systems that follow the worn loadout themselves; gear pages (`loadout_gearpages.cpp`) are the one today.
+- `GearPages::Swap`, `Put`, `Take` (`GearPages.h`).
 - `LoadoutRules.h`: name rules, id allocation, default-loadout planning and id/name lookup (unit tested in
   `tests/loadouts/`).
 
@@ -41,11 +57,14 @@ Out of combat, alive and outside arenas only. Bots have no loadouts.
 | `.loadout delete <id or name>` | players | Delete a named loadout no talent group holds |
 | `.loadout save` | players | Save now |
 | `.loadout sync` | players | Send the list to the addon |
-| `.loadout inspect [player]` | GMs | Show another player's loadouts and talent groups |
+| `.loadout page [id or name]` | players | Show one gear page, or every page with pieces on it |
+| `.loadout page put <loadout> <bag> <slot> [equipment slot]` | players | Put a piece from the bags on a page (bag 0-4, slot from 1, as the client counts) |
+| `.loadout page take <loadout> <page slot>` | players | Take a piece back to the bags |
+| `.loadout inspect [player]` | GMs | Show another player's loadouts, gear pages and talent groups |
 
 ## Config
 
-`Loadouts.Enable` (1), `Loadouts.MaxNamed` (10).
+`Loadouts.Enable` (1), `Loadouts.MaxNamed` (10), `Loadouts.GearPages.Enable` (1).
 
 ## Tables (characters)
 
