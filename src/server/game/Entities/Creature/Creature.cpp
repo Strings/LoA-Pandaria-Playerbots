@@ -404,7 +404,7 @@ void Creature::RemoveCorpse(bool setSpawnTime)
     if (setSpawnTime)
     {
         m_respawnTime = time(NULL) + respawnDelay;
-        if (RaidResetPolicy::HoldBossRespawn(RaidRetention::Enabled(), GetMap()->IsRaid(), GetCreatureTemplate()->type_flags & CREATURE_TYPEFLAGS_BOSS_MOB))
+        if (RaidResetPolicy::HoldBossRespawn(RaidRetention::Enabled(), GetMap()->IsRaid(), isWorldBoss()))
             m_respawnTime = RaidResetPolicy::PartialMarker;
     }
 
@@ -1776,7 +1776,7 @@ void Creature::setDeathState(DeathState s)
         m_respawnTime = time(NULL) + (m_respawnDelayMax ? urand(m_respawnDelay, m_respawnDelayMax) : m_respawnDelay) + m_corpseDelay;
 
         // A retained raid owns boss deaths until its explicit/global reset clears respawn storage.
-        bool holdRaidBoss = RaidResetPolicy::HoldBossRespawn(RaidRetention::Enabled(), GetMap()->IsRaid(), GetCreatureTemplate()->type_flags & CREATURE_TYPEFLAGS_BOSS_MOB);
+        bool holdRaidBoss = RaidResetPolicy::HoldBossRespawn(RaidRetention::Enabled(), GetMap()->IsRaid(), isWorldBoss());
         if (holdRaidBoss)
             m_respawnTime = RaidResetPolicy::PartialMarker;
 
