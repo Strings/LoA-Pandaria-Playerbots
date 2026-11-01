@@ -915,7 +915,11 @@ void InstanceSaveManager::ResetRaidCycle(uint32 mapId, Difficulty difficulty, ti
         if (RaidResetPolicy::Preserve(completed || instance.scriptProgress, instance.finished, encounterInProgress))
         {
             if (InstanceSave* save = GetInstanceSave(instance.id))
+            {
                 save->SetResetTime(next);
+                for (Player* player : save->m_playerList)
+                    player->SendRaidInfo();
+            }
         }
         else
             ResetRaidInstance(instance.id);
