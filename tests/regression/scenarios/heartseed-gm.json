@@ -1,0 +1,93 @@
+{
+  "name": "heartseed-gm",
+  "timeout_seconds": 120,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "1"
+  ],
+  "steps": [
+    "say .heartseed revoke",
+    "say .heartseed info",
+    "say .heartseed grant",
+    "say .heartseed info",
+    "say .heartseed cap",
+    "say .heartseed rank 5",
+    "say .heartseed growth +100",
+    "say .heartseed flag set first_dungeon",
+    "say .heartseed flag clear first_dungeon",
+    "say .heartseed essence add 1",
+    "say .heartseed essence slot 1 1",
+    "say .heartseed revoke",
+    "say .heartseed info"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "event",
+      "kind": "login",
+      "minimum": 1,
+      "maximum": 1
+    },
+    {
+      "type": "contains",
+      "text": "Granted a Heartseed to"
+    },
+    {
+      "type": "contains",
+      "text": "Heartseed of"
+    },
+    {
+      "type": "contains",
+      "text": "dominant path"
+    },
+    {
+      "type": "contains",
+      "text": "Rank cap of"
+    },
+    {
+      "type": "contains",
+      "text": "Awakening flags:"
+    },
+    {
+      "type": "contains",
+      "text": "is now rank 5"
+    },
+    {
+      "type": "contains",
+      "text": "earned 100 Growth"
+    },
+    {
+      "type": "contains",
+      "text": "Story flag 1 (first_dungeon) set"
+    },
+    {
+      "type": "contains",
+      "text": "Story flag 1 (first_dungeon) cleared"
+    },
+    {
+      "type": "contains",
+      "text": "Essence 1 added for"
+    },
+    {
+      "type": "contains",
+      "text": "Essence 1 slotted for"
+    },
+    {
+      "type": "contains",
+      "text": "Removed the Heartseed of"
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback (most recent call last)"
+    }
+  ]
+}
