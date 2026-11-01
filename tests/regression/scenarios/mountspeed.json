@@ -1,0 +1,45 @@
+{
+  "name": "mountspeed",
+  "timeout_seconds": 120,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "1"
+  ],
+  "steps": [
+    "say .mountspeed"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "event",
+      "kind": "login",
+      "minimum": 1,
+      "maximum": 1
+    },
+    {
+      "type": "contains",
+      "text": "Mount speed: multiplier="
+    },
+    {
+      "type": "contains",
+      "text": "mounted="
+    },
+    {
+      "type": "contains",
+      "text": "taxi="
+    },
+    {
+      "type": "contains",
+      "text": "run="
+    },
+    {
+      "type": "contains",
+      "text": "flight="
+    }
+  ]
+}
