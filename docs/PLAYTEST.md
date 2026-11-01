@@ -5,7 +5,7 @@ any time, in any order. Agents keep this list current as systems land; tick noth
 
 ## Reporting
 
-- **In game:** stand where the problem is and type `.bug <what happened>` or `.idea <what you want>`. The ticket
+- **In game:** stand where the problem is and type `/bug <what happened>` or `/idea <what you want>` (with the Capture addon, or `.bug` / `.idea` directly). The ticket
   saves your position, target, nearby bots and what they were doing to `tickets/`. Agents pick tickets up from there.
 - **Longer notes:** write them in chat to Claude Code, or as a file in `tickets/`.
 - A short "felt slow", "ugly", "confusing" is enough; agents dig into the why.
