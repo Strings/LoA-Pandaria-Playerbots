@@ -11,7 +11,7 @@
 - Deterministic numeric-catalog cleanup generator with explicit protected entry/GUID inputs; original template bonding remains intact.
 
 ## How it was tested
-- Default RelWithDebInfo worldserver build: passes, no new warnings in touched files. All 12 CTest suites pass; six generator tests and Python syntax checks pass.
+- Default RelWithDebInfo worldserver build: passes, no new warnings in touched files. All 15 current CTest suites pass; six generator tests and Python syntax checks pass.
 - Both generated SQL files: validator reports zero issues. Catalog has 80,064 templates, 71,870 eligible.
 - Real Codex save copied to disposable characters/world DBs. All 151 item rows, including five sentinel kinds, match the expected soulbound-bit-only delta; explicit entry/GUID protection works; other character tables hash identically. Both SQL updates applied twice with identical results, then applied to Codex DBs only. Original dump retained under ignored build/.
 - Live normal pickup (not .additem's GM-unbinding shortcut): ordinary BoP 13953 unbound/tradeable, quest 2794 bound. Equip 18832 and actual headless transmog to 2244 succeeded; persisted transmogrifyId=2244 and source flags remain unbound.
@@ -27,7 +27,8 @@
 - Core changes require review. Draft PR 69 is ready; no self-merge without required approval.
 - Updates: world/2026_11_01_codex_00_no_binding_hotfix.sql; characters/2026_11_01_codex_01_no_binding_cleanup.sql. Codex applied both; main DBs must receive them after merge, with backups before the sizable cleanup.
 - Reproduce: .nobinding pickup ENTRY; .nobinding item SLOT; .nobinding bind SLOT; .nobinding refresh. Headless item-hotfix ENTRY inspects actual wire data; transmog NPC_GUID SLOT SOURCE_ENTRY SOURCE_GUID exercises the client packet. GM .additem deliberately unbinds its additions, so use pickup for binding tests.
-- Codex runtime currently runs worldserver-T015-pickup.exe on its own ports/DBs, no random bots. Main fixture guid 1 is back at the quiet staging point with GM on.
+- Latest-base integration on playerbot a273234b also passes the build, all 15 unit suites, actual tooltip/loaded-item inspection and all three regressions. Already-merged loadout/storage prerequisites were applied only to Codex DBs.
+- Codex runtime currently runs worldserver-T015-integrated.exe on its own ports/DBs, no random bots. Main fixture guid 1 is back at the quiet staging point with GM on.
 
 ## Next
 - Claude/human core review. After approved merge, back up and apply only these two SQL updates to main DBs as required by AGENTS.md.
