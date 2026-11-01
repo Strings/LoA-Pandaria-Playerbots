@@ -6,6 +6,7 @@
 #include "DBCStores.h"
 #include "Group.h"
 #include "InstanceSaveMgr.h"
+#include "InstanceScript.h"
 #include "Map.h"
 #include "Player.h"
 #include "RBAC.h"
@@ -24,7 +25,8 @@ namespace
     }
     bool Parse(char const* args, uint32& id)
     {
-        std::istringstream input(args ? args : ""); std::string extra;
+        std::istringstream input(args ? args : "");
+        std::string extra;
         return bool(input >> id) && !(input >> extra) && id;
     }
     bool Status(ChatHandler* handler, char const* args)
@@ -98,13 +100,33 @@ namespace
     bool Force(ChatHandler* handler, char const* args)
     {
         uint32 id;
-        if (!Parse(args, id))
-            return Fail(handler, "Usage: raidprogress force-reset|force-abandon <instance id>");
+        if (args && std::string(args) == "current" && handler->GetSession())
+            id = handler->GetSession()->GetPlayer()->GetInstanceId();
+        else if (!Parse(args, id))
+            return Fail(handler, "Usage: raidprogress force-reset|force-abandon <instance id|current>");
         if (!RaidRetention::Enabled())
             return Fail(handler, "Raid retention is disabled");
         if (!sInstanceSaveMgr->ResetRaidInstance(id))
             return Fail(handler, "Raid instance not found (only raid saves are accepted)");
         handler->PSendSysMessage("Forced reset/abandon of raid %u; all binds cleared", id);
+        return true;
+    }
+    bool Credit(ChatHandler* handler, char const* args)
+    {
+        uint32 entry;
+        if (!Parse(args, entry))
+            return Fail(handler, "Usage: raidprogress credit <creature entry> (current raid encounter credit)");
+        if (!RaidRetention::Enabled())
+            return Fail(handler, "Raid retention is disabled");
+        Player* player = handler->GetSession()->GetPlayer();
+        Map* map = player->GetMap();
+        if (!map->IsRaid())
+            return Fail(handler, "Enter a raid first");
+        InstanceScript* script = static_cast<InstanceMap*>(map)->GetInstanceScript();
+        if (!script)
+            return Fail(handler, "Raid has no instance script");
+        script->UpdateEncounterState(ENCOUNTER_CREDIT_KILL_CREATURE, entry, player);
+        handler->PSendSysMessage("Raid %u: credited creature %u; progress=%u", map->GetInstanceId(), entry, script->GetCompletedEncounterMask());
         return true;
     }
     class raid_retention_commandscript : public CommandScript
@@ -120,7 +142,8 @@ namespace
                 { "list", &List, rbac::RBAC_PERM_COMMAND_HELP, Console::No },
                 { "abandon", &Abandon, rbac::RBAC_PERM_COMMAND_HELP, Console::No },
                 { "force-abandon", &Force, rbac::RBAC_PERM_COMMAND_INSTANCE_UNBIND, Console::Yes },
-                { "force-reset", &Force, rbac::RBAC_PERM_COMMAND_INSTANCE_UNBIND, Console::Yes }
+                { "force-reset", &Force, rbac::RBAC_PERM_COMMAND_INSTANCE_UNBIND, Console::Yes },
+                { "credit", &Credit, rbac::RBAC_PERM_COMMAND_INSTANCE_UNBIND, Console::No }
             };
             return { { "raidprogress", children, rbac::RBAC_PERM_COMMAND_HELP, Console::Yes } };
         }

@@ -875,7 +875,12 @@ bool InstanceSaveManager::ResetRaidInstance(uint32 instanceId)
 void InstanceSaveManager::ResetRaidCycle(uint32 mapId, Difficulty difficulty, time_t resetTime)
 {
     time_t next = time_t(RaidResetPolicy::NextReset(resetTime, time(NULL), RaidRetention::PeriodSeconds()));
-    struct RaidRow { uint32 id; uint32 completed; bool finished; };
+    struct RaidRow
+    {
+        uint32 id;
+        uint32 completed;
+        bool finished;
+    };
     std::vector<RaidRow> instances;
     if (QueryResult result = CharacterDatabase.PQuery("SELECT id,completedEncounters,resettime FROM instance WHERE map=%u AND difficulty=%u", mapId, uint32(difficulty)))
         do
@@ -886,10 +891,14 @@ void InstanceSaveManager::ResetRaidCycle(uint32 mapId, Difficulty difficulty, ti
     for (auto const& instance : instances)
     {
         uint32 completed = instance.completed;
+        bool encounterInProgress = false;
         if (Map* loaded = sMapMgr->FindMap(mapId, instance.id))
             if (InstanceScript* script = static_cast<InstanceMap*>(loaded)->GetInstanceScript())
+            {
                 completed = script->GetCompletedEncounterMask();
-        if (RaidResetPolicy::Preserve(completed, instance.finished))
+                encounterInProgress = script->IsEncounterInProgress();
+            }
+        if (RaidResetPolicy::Preserve(completed, instance.finished, encounterInProgress))
         {
             if (InstanceSave* save = GetInstanceSave(instance.id))
                 save->SetResetTime(next);

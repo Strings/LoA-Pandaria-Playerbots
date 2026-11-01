@@ -11,9 +11,9 @@ namespace RaidResetPolicy
     {
         return completed && (lfgFinal || (expected && (completed & expected) == expected));
     }
-    constexpr bool Preserve(std::uint32_t completed, bool finished)
+    constexpr bool Preserve(std::uint32_t completed, bool finished, bool encounterInProgress = false)
     {
-        return completed && !finished;
+        return !finished && (completed || encounterInProgress);
     }
     constexpr bool MayAbandon(bool bound, bool grouped, bool leader, bool bot)
     {

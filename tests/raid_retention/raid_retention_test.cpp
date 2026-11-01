@@ -4,6 +4,8 @@ void RunTests()
 {
     using namespace RaidResetPolicy;
     UMP_CHECK(!Preserve(0, false));
+    UMP_CHECK(Preserve(0, false, true)); // First boss fight also defers a boundary.
+    UMP_CHECK(!Preserve(0, true, true));
     UMP_CHECK(Preserve(1, false));
     UMP_CHECK(Preserve(7, false));
     UMP_CHECK(!Preserve(7, true));

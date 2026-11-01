@@ -24,8 +24,14 @@ void RaidRetention::LoadConfig()
         TC_LOG_ERROR("server.loading", "Raid.ResetPeriodSeconds must be positive; using 172800.");
     period.store(RaidResetPolicy::Period(value), std::memory_order_relaxed);
 }
-bool RaidRetention::Enabled() { return enabled.load(std::memory_order_relaxed); }
-uint32 RaidRetention::PeriodSeconds() { return period.load(std::memory_order_relaxed); }
+bool RaidRetention::Enabled()
+{
+    return enabled.load(std::memory_order_relaxed);
+}
+uint32 RaidRetention::PeriodSeconds()
+{
+    return period.load(std::memory_order_relaxed);
+}
 void RaidRetention::LoadEncounterMasks()
 {
     std::unordered_map<uint32, uint32> next;
