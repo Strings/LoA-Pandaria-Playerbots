@@ -32,6 +32,8 @@ You are expected to finish tasks mostly on your own. Inside your task's scope, a
 - Install packages from the standard registries when a task needs them for tooling or tests.
 - Commit on your branch, rebase on `playerbot`, push your branch, open a PR, and merge a routine PR of
   your own once it is rebased, builds cleanly and passes its tests.
+- After rebasing your own branch, push it with `git push --force-with-lease`. The lease refuses to
+  overwrite commits you haven't fetched. This covers only your own `<agent>/` branches.
 - Implement items marked provisional in `docs/DESIGN.md` when your task asks for them, exactly as
   described. Note in your status fragment that they were provisional.
 
@@ -44,8 +46,8 @@ You are expected to finish tasks mostly on your own. Inside your task's scope, a
   is costly to undo.
 - **Destructive or shared actions:** deleting files or directories you didn't create, dropping or
   rewriting tables in existing databases (routine merged updates to the main databases are fine, see
-  SQL updates), schema changes to existing core tables, force-pushing,
-  rewriting history, pushing to `playerbot` other than by merging a PR, major merges (a batch of many
+  SQL updates), schema changes to existing core tables, force-pushing
+  anything but your own branch after a rebase, rewriting history, pushing to `playerbot` other than by merging a PR, major merges (a batch of many
   PRs, one that is risky to undo, or one that conflicts with another agent's work), touching another
   agent's worktree, databases or ports.
 - **Dependencies:** adding a third-party library to the build or changing toolchain versions.
