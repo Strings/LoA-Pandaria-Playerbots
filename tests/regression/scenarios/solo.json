@@ -1,0 +1,53 @@
+{
+  "name": "solo",
+  "timeout_seconds": 120,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "1"
+  ],
+  "steps": [
+    "say .solo info"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "event",
+      "kind": "login",
+      "minimum": 1,
+      "maximum": 1
+    },
+    {
+      "type": "contains",
+      "text": "Solo: weekly caps="
+    },
+    {
+      "type": "contains",
+      "text": "fishing always="
+    },
+    {
+      "type": "contains",
+      "text": "Player: all taxis="
+    },
+    {
+      "type": "contains",
+      "text": "AllFlightPaths="
+    },
+    {
+      "type": "contains",
+      "text": "SkillChance.Orange="
+    },
+    {
+      "type": "contains",
+      "text": "DurabilityLoss.InPvP="
+    },
+    {
+      "type": "contains",
+      "text": "AllowTwoSide.Trade="
+    }
+  ]
+}
