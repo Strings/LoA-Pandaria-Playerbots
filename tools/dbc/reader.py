@@ -373,8 +373,13 @@ class DbcDirectory:
     """Locale-aware loader and cache for a directory of .dbc and .db2 files."""
 
     def __init__(self, dbc_dir: Optional[Union[str, Path]] = None, locale: str = 'enUS') -> None:
-        resolved = dbc_dir or os.environ.get('MOP_DBC_DIR') or 'I:/UltimateMoP/gamedata/dbc'
-        self.dbc_dir = Path(resolved)
+        if dbc_dir:
+            resolved = Path(dbc_dir)
+        elif os.environ.get('MOP_DBC_DIR'):
+            resolved = Path(os.environ['MOP_DBC_DIR'])
+        else:
+            resolved = Path(__file__).resolve().parents[2] / 'gamedata' / 'dbc'
+        self.dbc_dir = resolved
         self.locale = locale
         self._cache: Dict[str, DbcTable] = {}
 

@@ -6,7 +6,7 @@ Dependency-free Python 3.9+ reader library for MoP 5.4.8 (build 18414) `WDBC` (`
 ## Purpose
 
 - Parses binary `WDBC` (20-byte header) and `WDB2` (32/48-byte header + extended index/string
-  lookup table when `max_index > 0`) files directly from `I:\UltimateMoP\gamedata\dbc` (and
+  lookup table when `max_index > 0`) files directly from `<repo>\gamedata\dbc` (and
   locale subdirectories like `dbc/enUS/`).
 - Supports named schemas (`TableSchema`), TrinityCore format strings (`DBCfmt.h` / `DB2fmt.h`
   syntax: `n`, `d`, `i`, `f`, `s`, `b`, `l`, `x`, `X`), or automatic raw column inference.
@@ -18,7 +18,7 @@ Dependency-free Python 3.9+ reader library for MoP 5.4.8 (build 18414) `WDBC` (`
 ```python
 from tools.dbc import DbcDirectory
 
-dbc = DbcDirectory()  # reads MOP_DBC_DIR or defaults to I:/UltimateMoP/gamedata/dbc (locale='enUS')
+dbc = DbcDirectory()  # reads MOP_DBC_DIR or defaults to <repo>/gamedata/dbc (locale='enUS')
 
 spells = dbc.load("Spell.dbc")
 fireball = spells[133]
@@ -34,7 +34,7 @@ print(ashbringer.name, ashbringer.item_level, ashbringer.quality)
 ```python
 from tools.dbc import DbcTable
 
-table = DbcTable.from_file("I:/UltimateMoP/gamedata/dbc/SpellIcon.dbc", fmt="ns")
+table = DbcTable.from_file("<repo>/gamedata/dbc/SpellIcon.dbc", fmt="ns")
 print(table[1].col_1)
 ```
 
@@ -74,7 +74,7 @@ print(table[1].col_1)
 ## Configuration
 
 - `MOP_DBC_DIR`: Path to the directory containing `.dbc` and `enUS/*.db2` files (defaults to
-  `I:/UltimateMoP/gamedata/dbc`).
+  `<repo>/gamedata/dbc`).
 
 ## Unit Tests
 
