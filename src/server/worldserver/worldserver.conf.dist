@@ -5652,6 +5652,23 @@ Respec.FreeReagents = 1
 Respec.AutoDualSpec = 1
 
 ###################################################################################################
+# SPEC LOADOUTS (T-017)
+#
+#    Loadouts.Enable
+#        Description: Server-side loadouts: one per specialization plus named extras, each with its own
+#                     talents, glyphs, action bars and Heartseed majors (.loadout, Loadouts addon).
+#        Default:     1
+
+Loadouts.Enable = 1
+
+#
+#    Loadouts.MaxNamed
+#        Description: Named loadouts a character can keep on top of the one per specialization.
+#        Default:     10
+
+Loadouts.MaxNamed = 10
+
+###################################################################################################
 # IN-GAME IDEA AND BUG CAPTURE (.idea, .bug, .capture)
 #
 #    Capture.TicketsDir

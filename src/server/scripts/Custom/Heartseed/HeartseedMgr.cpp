@@ -1601,6 +1601,18 @@ Heartseed::ChoiceResult HeartseedMgr::ChooseMajor(Player* player, uint8 tier, ui
     return Heartseed::ChoiceResult::Ok;
 }
 
+bool HeartseedMgr::SetSpecMajors(Player* player, uint16 specId, std::array<uint32, Heartseed::MaxMajorTiers> const& majors)
+{
+    return ModifyState(player, [specId, &majors](Heartseed::State& state)
+    {
+        bool any = std::any_of(majors.begin(), majors.end(), [](uint32 traitId) { return traitId != 0; });
+        if (any)
+            state.Loadouts[specId] = majors;
+        else
+            state.Loadouts.erase(specId);   // no row, so RefreshTraits still copies the last spec's choices
+    });
+}
+
 void HeartseedMgr::Refresh(Player* player)
 {
     RefreshTraits(player);

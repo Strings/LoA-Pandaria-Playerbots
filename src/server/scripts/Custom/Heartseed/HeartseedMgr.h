@@ -318,6 +318,9 @@ public:
     // Major choice for the active specialization's loadout. traitId 0 clears the tier. force skips the
     // level check (GM commands); the shrine gossip (T-023) calls it without.
     Heartseed::ChoiceResult ChooseMajor(Player* player, uint8 tier, uint32 traitId, bool force);
+    // Spec loadouts (T-017) keep majors per loadout and write them back for the spec before switching to it.
+    // No shrine or level check: the choices were made before. False when the character has no Heartseed.
+    bool SetSpecMajors(Player* player, uint16 specId, std::array<uint32, Heartseed::MaxMajorTiers> const& majors);
 
     std::vector<Heartseed::TraitInfo> GetTraits() const;
     bool GetTrait(uint32 traitId, Heartseed::TraitInfo& out) const;
