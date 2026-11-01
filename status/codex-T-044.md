@@ -25,3 +25,7 @@
 
 ## Map additions
 - src/server/scripts/Custom/Twinks/ with reusable SetExperienceEnabled adapter; tests/twink_xp.
+
+## Completed verification checkpoint
+- Current-base normal-queue production build passes (build/T044-build.log), no touched-file compiler warnings. Same-mutex current CTest build/run passes all 16 suites (build/T044-unit-queued.log).
+- Native ordinary-player permissions/self-only selected-GM control, unchanged money, repeated toggle/relog, selected-player GM force and actual quest XP off/on all PASS. Native NPC/queue controls and full regressions next.
