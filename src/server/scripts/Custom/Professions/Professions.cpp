@@ -86,7 +86,8 @@ namespace
         void OnLogin(Player* player) override
         {
             Refresh(player);
-            if (!player->GetSession()->IsBot() && sWorld->getIntConfig(CONFIG_MAX_PRIMARY_TRADE_SKILL) >= 11 &&
+            // Once a third primary is learned the player has found the feature; stop repeating it.
+            if (!player->GetSession()->IsBot() && sWorld->getIntConfig(CONFIG_MAX_PRIMARY_TRADE_SKILL) >= 11 && Known(player) < 3 &&
                 sConfigMgr->GetBoolDefault("Professions.IntroOnLogin", true))
                 player->GetSession()->SendNotification("All eleven professions are available. ProfessionBar opens extra professions beyond the spellbook's first two.");
         }
