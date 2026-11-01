@@ -14,12 +14,12 @@
 
 ## Verification so far
 - All 15 unit suites pass, including new pure policy boundaries; both Lua VM prototype tests pass.
-- SQL validator: both files pass, zero issues. Applied both twice to disposable world_codex_t041_5d7991ef populated with actual source NPC/auth rows: identical second result and every original row unchanged. Expected two templates/spawns and text/permission present. Report: ignored build/T041-sql-check.json. Codex runtime SQL has NOT been applied (T-014 must not see unregistered scripts).
-- Production C++ has NOT been built or live-tested yet. Primary checkout is held on T-014 while its build waits for the shared build mutex.
+- SQL validator: both files pass, zero issues. Applied both twice to disposable world_codex_t041_5d7991ef populated with actual source NPC/auth rows: identical second result and every original row unchanged. Expected two templates/spawns and text/permission present. Report: ignored build/T041-sql-check.json. World/auth SQL is now applied to Codex runtime DBs only; its worldserver is stopped until the matching binary is built. Main DBs unchanged.
+- Production C++ build is queued in the primary checkout (build/T041-build.log); live checks remain. T-014 completed build/live/regressions and PR 82 is ready, including the approved rebased push.
 
 ## Next / resume
-- Finish T-014 build/live checks first. Do not switch primary while its queued build is active.
-- Detach this secondary checkout, switch primary to this branch, and reconfigure the default build. Commit/push before building.
-- Apply world 2026_11_01_codex_02_solo_qol.sql and auth 2026_11_01_codex_03_solo_qol_permissions.sql twice to Codex DBs; verify repeatability, no other rows changed.
+- Wait for the current default build; do not change primary C++ inputs while queued/running. Secondary Codex checkout is on T-014 for its completed post-push recheck.
+- World/auth runtime SQL already applied; repeatability/preservation were checked in the disposable copy. Private profile uses Hearthstone 60 seconds, services respawn 2 seconds, all features/intro on; restore 300/300 defaults after checks.
+- Native headless item-hotfix/transmog packet helper reused from T-015; neutral Pandaren language fix reused from T-014. Test Hearthstone item GUID 8 in character 1 bag 0 slot 23. Fixture 13 is human, 14 neutral Pandaren; both at_login were zero before services testing.
 - Live: .soloqol status/perks/hearth/hearthreset/service; real cast and NPC gossip; guild leave/reload/config off; neutral/bot service guard; cloth-on-plate transmog; all three headless regressions. Existing fixtures and private ports are described in tools/devenv; credentials stay ignored.
 - No core-game file changes. No main SQL until approved/merged. T-013/T-011 reviews are approved without required fixes and held for human merge.
