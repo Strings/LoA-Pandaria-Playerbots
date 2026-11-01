@@ -13,6 +13,8 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 
 ## v0.1 The jewel run
 
+The first playtest starts when the quick wins are merged. T-003, T-004 and T-031 are still v0.1 but do not block that playtest.
+
 ### Foundation
 
 | ID | Task | Owns | Owner | Status |
