@@ -18,6 +18,7 @@
 #ifndef SF_WARDENCHECKMGR_H
 #define SF_WARDENCHECKMGR_H
 
+#include "Common.h"
 #include <map>
 #include "Cryptography/BigNumber.h"
 

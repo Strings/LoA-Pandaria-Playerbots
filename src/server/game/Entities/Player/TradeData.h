@@ -18,6 +18,9 @@
 #ifndef TradeData_h__
 #define TradeData_h__
 
+#include "Define.h"
+#include "ObjectGuid.h"
+
 enum TradeSlots
 {
     TRADE_SLOT_COUNT          = 7,

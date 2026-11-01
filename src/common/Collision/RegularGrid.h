@@ -24,6 +24,7 @@
 #include <G3D/Table.h>
 #include <G3D/BoundsTrait.h>
 #include <G3D/PositionTrait.h>
+#include <unordered_map>
 
 template<class Node>
 struct NodeCreator{

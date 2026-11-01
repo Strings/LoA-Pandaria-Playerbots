@@ -20,6 +20,9 @@
 
 #include "Common.h"
 #include "SharedDefines.h"
+#include <bitset>
+
+class Player;
 
 enum ItemModType
 {

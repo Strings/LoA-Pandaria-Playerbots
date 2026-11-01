@@ -18,6 +18,8 @@
 #ifndef DBCENUMS_H
 #define DBCENUMS_H
 
+#include "Define.h"
+
 #pragma pack(push, 1)
 
 struct DBCPosition2D

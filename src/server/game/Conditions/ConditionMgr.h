@@ -24,6 +24,7 @@
 #include <list>
 #include <unordered_map>
 
+class Creature;
 class Player;
 class Unit;
 class WorldObject;

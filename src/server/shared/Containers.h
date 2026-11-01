@@ -20,6 +20,7 @@
 
 #include "Define.h"
 #include "MapUtils.h"
+#include <functional>
 #include <list>
 #include <random>
 #include <unordered_map>

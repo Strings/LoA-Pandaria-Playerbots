@@ -27,6 +27,9 @@
 
 #include "Common.h"
 #include "ObjectGuid.h"
+#include <set>
+
+struct CharTitlesEntry;
 
 enum ArenaType : uint32;
 

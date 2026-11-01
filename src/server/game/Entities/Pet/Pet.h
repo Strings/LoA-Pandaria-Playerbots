@@ -18,6 +18,7 @@
 #ifndef TRINITYCORE_PET_H
 #define TRINITYCORE_PET_H
 
+#include "DatabaseEnvFwd.h"
 #include "PetDefines.h"
 #include "TemporarySummon.h"
 

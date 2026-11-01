@@ -20,6 +20,7 @@
 
 #include "Object.h"
 #include "GridDefines.h"
+#include "GridObject.h"
 #include "LootMgr.h"
 #include "DatabaseEnv.h"
 
