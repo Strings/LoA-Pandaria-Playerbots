@@ -1,0 +1,13 @@
+{
+  "name": "capture",
+  "timeout_seconds": 60,
+  "args": ["--cmd", "play", "--hold", "2"],
+  "steps": ["say .idea regression check", "say .capture list 1"],
+  "assertions": [
+    {"type": "contains", "text": "LOGIN-OK map="},
+    {"type": "contains", "text": "Captured idea"},
+    {"type": "contains", "text": "Showing 1 of"},
+    {"type": "not_contains", "text": "SESSION-TIMEOUT"},
+    {"type": "not_contains", "text": "Traceback (most recent call last)"}
+  ]
+}
