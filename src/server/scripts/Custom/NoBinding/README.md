@@ -21,7 +21,7 @@ cached tooltips can revert. The world SQL supplies the affected metadata rows.
 `NoBinding.IntroOnLogin` controls the brief human login notification.
 
 GM commands (the existing additem permission): `.nobinding status`,
-`.nobinding item SLOT`, `.nobinding bind SLOT` (exercise the real binding write),
+`.nobinding pickup ENTRY` (normal pickup, without .additem's GM unbinding pass), `.nobinding item SLOT`, `.nobinding bind SLOT` (exercise the real binding write),
 and `.nobinding refresh`. Item commands use the selected player, otherwise self;
 slots are equipment/backpack/bank positions in the main inventory container.
 Refresh also resends hotfix metadata. The cleanup generator and live steps are

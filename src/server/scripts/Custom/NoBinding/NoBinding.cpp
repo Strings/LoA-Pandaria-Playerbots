@@ -46,6 +46,18 @@ namespace
             uint32(item->IsSoulBound()), uint32(item->CanBeTraded()), NoBinding::TooltipBonding(item->GetTemplate()), NoBinding::TooltipFlags(item->GetTemplate()));
         return true;
     }
+    bool Pickup(ChatHandler* handler, char const* args)
+    {
+        uint32 entry;
+        std::string extra;
+        std::istringstream input(args ? args : "");
+        if (!(input >> entry) || (input >> extra))
+            return false;
+        // Unlike .additem, exercise normal pickup without the GM command's unbinding pass.
+        bool added = handler->GetSession()->GetPlayer()->AddItem(entry, 1);
+        handler->PSendSysMessage("NoBinding normal pickup: entry=%u; added=%u", entry, uint32(added));
+        return added;
+    }
     bool ItemInfo(ChatHandler* handler, char const* args) { return Inspect(handler, args, false); }
     bool Bind(ChatHandler* handler, char const* args) { return Inspect(handler, args, true); }
     bool Refresh(ChatHandler* handler, char const*)
@@ -68,6 +80,7 @@ namespace
             static ChatCommandTable children =
             {
                 { "status", &Status, rbac::RBAC_PERM_COMMAND_ADDITEM, Console::Yes },
+                { "pickup", &Pickup, rbac::RBAC_PERM_COMMAND_ADDITEM, Console::No },
                 { "item", &ItemInfo, rbac::RBAC_PERM_COMMAND_ADDITEM, Console::No },
                 { "bind", &Bind, rbac::RBAC_PERM_COMMAND_ADDITEM, Console::No },
                 { "refresh", &Refresh, rbac::RBAC_PERM_COMMAND_ADDITEM, Console::No }
