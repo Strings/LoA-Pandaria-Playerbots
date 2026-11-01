@@ -14,6 +14,11 @@
 - Small NPC/loader call sites, own module, pure parser suite, custom free greeting and scoped auth permission SQL. SQL validator passes both files with zero issues.
 - Reserved the next Twinks block 95000; includes pending T-041's preceding reservation from PR 85 to avoid overlap.
 
+## Verification so far
+- All 15 unit suites pass, including the new parser; no warnings in its build.
+- Both SQL files pass lint (zero issues), apply twice identically on copied real NPC/auth rows in world_codex_t044_68cd9d80, and preserve every original row. Runtime/main DBs unchanged.
+- Full production build/live/regressions remain pending behind T-014/T-041 and the shared build queue. No claim of ready.
+
 ## Next
 - Public self-only toggle/status, selected-player GM permission, config and brief login introduction.
 - Route Experience Eliminator NPCs through the free adapter when enabled; preserve paid native behavior when disabled.
