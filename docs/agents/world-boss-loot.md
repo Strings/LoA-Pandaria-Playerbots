@@ -38,7 +38,7 @@ Per the T-072 design constraints, item lists and drop chances must not be invent
   - **Raid Tier 14 Equipment (ilvl 496):** Tier 14 hands and legs for all classes (e.g., *Gauntlets of the Lost Catacomb*, *Leggings of the Shadow Gaze*, *Firebird's Gloves*, etc.).
   - **PvP Season 12 Equipment (ilvl 483):** Malevolent Gladiator belts, bracers, rings, cloaks, and necks.
 - **Where Data Could Come From:**
-  1. Upstream TrinityCore / SkyFire 5.4.8 commit `c6ada96d594914acb43ef7a094d0ebb76496ef89` (`2022_05_16_01_add loot for some world bosses.sql`) which contained an initial non-mount loot dump for Sha of Anger.
+  1. Upstream commit archive: The upstream file is present in the repository at sql/old/Merged to World DB 30_12_2023/2022_05_16_01_add loot for some world bosses.sql. However, its Sha of Anger rows consist largely of vanilla-era junk items (8480, 8500, 8502, and others) at 0.8% drop chances. This file is not applied and should not be applied.
   2. TrinityCore 5.4.8 world database dumps / sniffs.
   3. Wowhead 5.4.8 historical snapshot of Sha of Anger drop tables.
 
@@ -75,7 +75,7 @@ Per the T-072 design constraints, item lists and drop chances must not be invent
 ## 3. Recommended Next Steps
 
 1. **Extract Upstream Item Lists:**
-   Review upstream commit `c6ada96d` to evaluate whether its curated item lists for 60491, 62346, and 69161 match 5.4.8 retail drop tables.
+   Source authentic retail 5.4.8 item lists for 60491, 62346, and 69161 from verified sniffs/Wowhead (the legacy upstream file contains invalid vanilla items).
 2. **Structure via Reference Tables:**
    Rather than hundreds of flat rows in `creature_loot_template`, organize Sha of Anger, Galleon, and Oondasta drops into dedicated `reference_loot_template` pools (e.g., T14 Armor, S12 PvP, ilvl 522 Weapons/Armor), mirroring the architecture used by Nalak and the Celestials.
 3. **Quest Item Hook:**
