@@ -36,5 +36,11 @@ namespace BindingRules
     {
         return previous == UINT32_MAX ? previous : (now > previous ? now : previous + 1);
     }
+
+    constexpr std::uint32_t HotfixBatchRecords(std::uint32_t remaining)
+    {
+        // Keep each notification below even a 16-bit packet size limit.
+        return remaining < 2048 ? remaining : 2048;
+    }
 }
 #endif

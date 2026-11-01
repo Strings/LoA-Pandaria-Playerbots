@@ -149,14 +149,21 @@ uint32 NoBinding::RefreshPlayer(Player* player)
 void NoBinding::SendHotfixInfo(Player* player)
 {
     HotfixData const& hotfix = sObjectMgr->GetHotfixData();
-    WorldPacket packet(SMSG_HOTFIX_INFO);
-    packet.WriteBits(hotfix.size(), 20);
-    packet.FlushBits();
-    for (auto const& row : hotfix)
+    size_t offset = 0;
+    do
     {
-        packet << uint32(HotfixTimestamp(row.Entry, row.TableHash, uint32(row.Timestamp)));
-        packet << uint32(row.Entry);
-        packet << uint32(row.TableHash);
-    }
-    player->GetSession()->SendPacket(&packet);
+        uint32 count = BindingRules::HotfixBatchRecords(uint32(hotfix.size() - offset));
+        WorldPacket packet(SMSG_HOTFIX_INFO, count * 12 + 3);
+        packet.WriteBits(count, 20);
+        packet.FlushBits();
+        for (size_t i = offset; i < offset + count; ++i)
+        {
+            auto const& row = hotfix[i];
+            packet << uint32(HotfixTimestamp(row.Entry, row.TableHash, uint32(row.Timestamp)));
+            packet << uint32(row.Entry);
+            packet << uint32(row.TableHash);
+        }
+        player->GetSession()->SendPacket(&packet);
+        offset += count;
+    } while (offset < hotfix.size());
 }

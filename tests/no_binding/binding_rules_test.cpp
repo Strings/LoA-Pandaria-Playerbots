@@ -42,4 +42,8 @@ void RunTests()
     UMP_CHECK(NextVersion(100, 99) == 101);
     UMP_CHECK(NextVersion(100, 1000) == 1000);
     UMP_CHECK(NextVersion(UINT32_MAX, 100) == UINT32_MAX);
+    UMP_CHECK(HotfixBatchRecords(0) == 0);
+    UMP_CHECK(HotfixBatchRecords(1) == 1);
+    UMP_CHECK(HotfixBatchRecords(2048) == 2048);
+    UMP_CHECK(HotfixBatchRecords(UINT32_MAX) == 2048);
 }

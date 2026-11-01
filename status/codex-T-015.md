@@ -6,7 +6,7 @@
 
 ## What changed
 - Started the binding/hotfix audit on latest playerbot (5f3b23a7).
-- Added a pure protection policy and core adapter scaffold: quest/starter/artifact/configured/system protection, immutable config snapshot, loaded-item refresh and tooltip/cache-version helpers. Core hooks and GM/config-reload scripts are wired; pure policy tests added. SQL and actual build/live verification are next.
+- Added a pure protection policy and core adapter scaffold: quest/starter/artifact/configured/system protection, immutable config snapshot, loaded-item refresh and tooltip/cache-version helpers. Core hooks and GM/config-reload scripts are wired; pure policy tests added. Hotfix notifications are batched to keep catalog-wide updates below packet limits; version and batch boundaries have unit coverage. SQL and actual build/live verification are next.
 - Design: ordinary gear trades; quest and custom progression items remain protected. Existing soulbound flags need a scoped, repeatable cleanup; tooltips need item hotfixes; transmogrification must not rebind ordinary items.
 
 ## How it was tested
