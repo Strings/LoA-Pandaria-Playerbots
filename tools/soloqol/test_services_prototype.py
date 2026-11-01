@@ -14,7 +14,7 @@ class PrototypeTests(unittest.TestCase):
             function player:GossipClearMenu() self.menu={} end
             function player:GossipMenuAddItem(icon,label,sender,action) self.menu[#self.menu+1]=action end
             function player:GossipSendMenu(text,creature) self.text=text end
-            function player:SetAtLoginFlag(flag) self.flag=flag end
+            function player:SetAtLoginFlag(flag) self.flag=(self.flag or 0) | flag end
             function player:SaveToDB() self.saved=true end
             function player:GossipComplete() self.closed=true end
             function player:SendBroadcastMessage(text) self.message=text end
@@ -26,8 +26,9 @@ class PrototypeTests(unittest.TestCase):
         self.assertTrue(self.g.handlers[1](1, self.g.player, None))
         self.assertEqual(len(self.g.player.menu), 4)
         for action, flag in [(1, 1), (2, 8), (3, 128), (4, 64)]:
+            self.g.player.flag = 16  # Separate choices; native API adds bits and preserves unrelated flags.
             self.assertTrue(self.g.handlers[2](2, self.g.player, None, 0, action))
-            self.assertEqual(self.g.player.flag, flag)
+            self.assertEqual(self.g.player.flag, 16 | flag)
             self.assertTrue(self.g.player.saved)
             self.assertTrue(self.g.player.closed)
             self.assertEqual(self.g.player.gold, 100)

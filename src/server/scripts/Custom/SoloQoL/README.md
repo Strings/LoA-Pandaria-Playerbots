@@ -10,3 +10,5 @@
 GM `.soloqol status`, `perks` (reconcile), `hearth` (force configured cooldown), `hearthreset`, `service rename|customize|race|faction` use selected player/self. The reserved 94000 permission is linked to the GM role. `.npc add 904000`/904001 can force the service NPC for an owned test.
 
 Services were prototyped first in `tools/soloqol/services_prototype.lua`, with Lua VM tests. It is GM-only and explicitly loaded, never automatically loaded alongside production C++. Pure policies are in QoLPolicy.h. Flash's stack data is excluded.
+
+The Lua prototype exercises single choices. Production C++ also replaces prior service flags: Eluna exposes SetAtLoginFlag (adds bits), but no removal counterpart in this fork. The Lua VM mock models that additive behavior.

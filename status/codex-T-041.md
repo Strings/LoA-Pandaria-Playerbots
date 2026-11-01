@@ -14,7 +14,7 @@
 
 ## Verification so far
 - All 15 unit suites pass, including new pure policy boundaries; both Lua VM prototype tests pass.
-- SQL validator: both files pass, zero issues. SQL has NOT been applied yet (T-014's runtime must not see unregistered scripts).
+- SQL validator: both files pass, zero issues. Applied both twice to disposable world_codex_t041_5d7991ef populated with actual source NPC/auth rows: identical second result and every original row unchanged. Expected two templates/spawns and text/permission present. Report: ignored build/T041-sql-check.json. Codex runtime SQL has NOT been applied (T-014 must not see unregistered scripts).
 - Production C++ has NOT been built or live-tested yet. Primary checkout is held on T-014 while its build waits for the shared build mutex.
 
 ## Next / resume
