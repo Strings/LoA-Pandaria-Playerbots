@@ -2164,8 +2164,11 @@ void AddSC_detached_storage();
 void AddSC_loadouts();
 void AddSC_reagent_bank();
 
+void AddSC_twink_xp();
+
 void AddCustomScripts()
 {
+    AddSC_twink_xp();
 #ifdef SCRIPTS
     /* This is where custom scripts should be added. */
 //AddSC_npc_teleport();

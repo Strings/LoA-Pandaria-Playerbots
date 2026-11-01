@@ -5718,3 +5718,7 @@ Capture.NearbyBotRadius = 100
 
 # Brief notice explaining all-profession access and the extra-profession addon.
 Professions.IntroOnLogin = 1
+# T-044: free persistent XP toggle, also used by Experience Eliminator NPCs.
+# Disabling preserves the chosen flag and restores native paid NPC behavior.
+Twinks.FreeXPToggle = 1
+Twinks.IntroOnLogin = 1
