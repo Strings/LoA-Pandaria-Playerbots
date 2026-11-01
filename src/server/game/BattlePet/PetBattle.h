@@ -21,6 +21,8 @@
 #include "BattlePet.h"
 #include <G3D/Vector3.h>
 
+class Unit;
+
 enum PetBattleMisc
 {
     PET_BATTLE_MAX_TEAM_PETS    = 3,

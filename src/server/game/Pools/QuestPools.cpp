@@ -17,6 +17,7 @@
 
 #include "QuestPools.h"
 #include "Errors.h"
+#include "Random.h"
 
 /*static*/ QuestPoolMgr* QuestPoolMgr::instance()
 {

@@ -26,6 +26,7 @@
 #include "DatabaseEnvFwd.h"
 
 #include "Common.h"
+#include "Errors.h"
 #include "ObjectGuid.h"
 #include <set>
 

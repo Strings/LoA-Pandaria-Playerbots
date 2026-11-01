@@ -19,6 +19,7 @@
 #define SERVICEMGR_H
 
 #include "Common.h"
+#include "DatabaseEnvFwd.h"
 #include <atomic>
 
 class Creature;

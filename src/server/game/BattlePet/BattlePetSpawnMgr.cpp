@@ -21,6 +21,7 @@
 #include "DBCStores.h"
 #include "DB2Stores.h"
 #include "Log.h"
+#include "MapManager.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 

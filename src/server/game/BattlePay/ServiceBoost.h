@@ -18,6 +18,7 @@
 #ifndef CHARACTER_BOOST_H
 #define CHARACTER_BOOST_H
 
+#include "DatabaseEnvFwd.h"
 #include "ObjectGuid.h"
 #include <map>
 
