@@ -74,6 +74,34 @@ void LoadoutMgr::RegisterPart(Part part)
     _parts.push_back(std::move(part));
 }
 
+void LoadoutMgr::RegisterListener(Listener listener)
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    _listeners.push_back(std::move(listener));
+}
+
+uint32 LoadoutMgr::UpdateWorn(Player* player, PlayerData& data)
+{
+    Loadout* active = AttachedTo(data, player->GetActiveSpec());
+    if (!active || active->SpecId != uint16(player->GetTalentSpecialization()))
+        return 0;   // no loadout active (a talent reset): the gear stays with the last one
+    uint32 previous = data.Worn;
+    data.Worn = active->Id;
+    return previous != active->Id ? previous : 0;
+}
+
+void LoadoutMgr::NotifySwitched(Player* player, uint32 fromId, uint32 toId)
+{
+    std::vector<Listener> listeners;
+    {
+        std::lock_guard<std::mutex> guard(_lock);
+        listeners = _listeners;
+    }
+    for (Listener const& listener : listeners)
+        if (listener.OnSwitched)
+            listener.OnSwitched(player, fromId, toId);
+}
+
 std::vector<uint16> LoadoutMgr::ClassSpecs(Player* player) const
 {
     std::vector<uint16> specs;
@@ -348,6 +376,8 @@ void LoadoutMgr::EnsureDefaults(Player* player)
         return;
 
     bool first = false;
+    uint32 wornBefore = 0;
+    uint32 wornNow = 0;
     {
         std::lock_guard<std::mutex> guard(_lock);
         auto itr = _players.find(player->GetGUID().GetCounter());
@@ -378,7 +408,16 @@ void LoadoutMgr::EnsureDefaults(Player* player)
         }
 
         AttachGroups(player, data);
+        // The first time round (login) this only records what is worn; later it catches the client's own spec switch.
+        bool known = data.Worn != 0;
+        wornBefore = UpdateWorn(player, data);
+        wornNow = data.Worn;
+        if (!known)
+            wornBefore = 0;
     }
+
+    if (wornBefore && wornNow && !IsSwitching(player->GetGUID().GetCounter()))
+        NotifySwitched(player, wornBefore, wornNow);
 
     if (first)
         ChatHandler(player->GetSession()).PSendSysMessage("|cff00ccffLoadouts:|r each specialization now keeps its own talents, "
@@ -565,6 +604,20 @@ SwitchResult LoadoutMgr::Switch(Player* player, uint32 loadoutId)
     player->SetUInt32Value(PLAYER_FIELD_CURRENT_SPEC_ID, target.SpecId);
     player->SendTalentsInfoData();
 
+    uint32 worn = 0;
+    {
+        std::lock_guard<std::mutex> guard(_lock);
+        auto itr = _players.find(guid);
+        if (itr != _players.end())
+        {
+            worn = itr->second.Worn;
+            itr->second.Worn = target.Id;
+        }
+    }
+    // After the spec switch, so spec-dependent equip rules (Titan's Grip, dual wield) are the new spec's.
+    if (worn && worn != target.Id)
+        NotifySwitched(player, worn, target.Id);
+
     TC_LOG_DEBUG("scripts", "Loadouts: %s switched to loadout %u '%s' (spec %u, group %u%s)", player->GetName().c_str(), target.Id,
         target.Name.c_str(), uint32(target.SpecId), uint32(group), rewrite ? ", rewritten" : "");
     return SwitchResult::Ok;
@@ -639,6 +692,9 @@ EditResult LoadoutMgr::Delete(Player* player, uint32 loadoutId)
     // A talent group still holds it; deleting it would leave that group's talents without a loadout.
     if (found->second.Group != NoGroup)
         return EditResult::IsActive;
+    for (Listener const& listener : _listeners)
+        if (listener.CanDelete && !listener.CanDelete(player, loadoutId))
+            return EditResult::NotEmpty;
     itr->second.Deleted.push_back(loadoutId);
     itr->second.Loadouts.erase(found);
     return EditResult::Ok;

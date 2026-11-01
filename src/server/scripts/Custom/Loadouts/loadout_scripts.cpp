@@ -4,7 +4,11 @@
  */
 
 #include "LoadoutMgr.h"
+#include "GearPages.h"
+#include "GearPageRules.h"
+#include "../DetachedStorage/DetachedStorage.h"
 #include "Chat.h"
+#include "Item.h"
 #include "DBCStores.h"
 #include "Player.h"
 #include "RBAC.h"
@@ -58,6 +62,7 @@ namespace
             case Loadouts::EditResult::IsDefault:      return "A specialization's own loadout can't be deleted.";
             case Loadouts::EditResult::IsActive:       return "One of your talent groups holds that loadout. Switch to two others first.";
             case Loadouts::EditResult::NoSpecs:        return "Choose a specialization first.";
+            case Loadouts::EditResult::NotEmpty:       return "Its gear page still holds items. Take them first (.loadout page take).";
             default:                                   return "";
         }
     }
@@ -84,6 +89,46 @@ namespace
             handler->PSendSysMessage("  %u. %s - %s, %u talents, %u buttons%s", loadout.Id, loadout.Name.c_str(),
                 SpecName(loadout.SpecId).c_str(), uint32(loadout.Talents.size()), uint32(loadout.Actions.size()), flags.c_str());
         }
+    }
+
+    char const* const SlotNames[GearPages::SlotCount] = { "Head", "Neck", "Shoulders", "Shirt", "Chest", "Waist", "Legs",
+        "Feet", "Wrists", "Hands", "Finger 1", "Finger 2", "Trinket 1", "Trinket 2", "Back", "Main hand", "Off hand", "Ranged",
+        "Tabard" };
+
+    std::string SlotName(uint32 slot)
+    {
+        return slot < GearPages::SlotCount ? SlotNames[slot] : "Spare " + std::to_string(slot - GearPages::OverflowStart + 1);
+    }
+
+    // The addon's "item:..." string for a stored piece (the link without colour and name).
+    std::string ItemString(Detached::Entry const& entry)
+    {
+        std::string link = DetachedStorage::Link(entry, 0);
+        std::size_t start = link.find("item:");
+        std::size_t end = link.find("|h", start);
+        return start == std::string::npos ? "" : link.substr(start, end - start);
+    }
+
+    // Client bag numbers (0 backpack, 1-4 bags) and 1-based slots, as the addon and GetContainerItemInfo use them.
+    Item* ClientBagItem(Player* player, uint32 bag, uint32 slot)
+    {
+        if (slot < 1 || bag > 4)
+            return nullptr;
+        if (bag == 0)
+            return slot <= uint32(INVENTORY_SLOT_ITEM_END - INVENTORY_SLOT_ITEM_START)
+                ? player->GetItemByPos(INVENTORY_SLOT_BAG_0, uint8(INVENTORY_SLOT_ITEM_START + slot - 1)) : nullptr;
+        return slot <= 255 ? player->GetItemByPos(uint8(INVENTORY_SLOT_BAG_START + bag - 1), uint8(slot - 1)) : nullptr;
+    }
+
+    void SendPage(ChatHandler* handler, Player* player, Loadouts::Loadout const& loadout, bool always)
+    {
+        std::vector<Detached::Entry> entries = sDetachedStorage->List(player, Detached::Kind::GearPage, loadout.Id);
+        if (entries.empty() && !always)
+            return;
+        handler->PSendSysMessage("Gear page of %u. %s:%s", loadout.Id, loadout.Name.c_str(),
+            entries.empty() ? " empty (it wears whatever is equipped)" : "");
+        for (Detached::Entry const& entry : entries)
+            handler->PSendSysMessage("  %s: %s", SlotName(entry.Slot).c_str(), DetachedStorage::Link(entry, player->GetLevel()).c_str());
     }
 
     // Splits "<loadout> <new name>". Loadout names can have spaces, so the longest leading words that name a
@@ -151,6 +196,12 @@ public:
 
     std::vector<ChatCommand> GetCommands() const override
     {
+        static std::vector<ChatCommand> pageCommandTable =
+        {
+            { "",        &HandlePageCommand,     RBAC_PERM_COMMAND_LOADOUT, Trinity::ChatCommands::Console::No },
+            { "put",     &HandlePagePutCommand,  RBAC_PERM_COMMAND_LOADOUT, Trinity::ChatCommands::Console::No },
+            { "take",    &HandlePageTakeCommand, RBAC_PERM_COMMAND_LOADOUT, Trinity::ChatCommands::Console::No },
+        };
         static std::vector<ChatCommand> loadoutCommandTable =
         {
             { "",        &HandleListCommand,    RBAC_PERM_COMMAND_LOADOUT,    Trinity::ChatCommands::Console::No },
@@ -162,6 +213,7 @@ public:
             { "save",    &HandleSaveCommand,    RBAC_PERM_COMMAND_LOADOUT,    Trinity::ChatCommands::Console::No },
             { "sync",    &HandleSyncCommand,    RBAC_PERM_COMMAND_LOADOUT,    Trinity::ChatCommands::Console::No },
             { "inspect", &HandleInspectCommand, RBAC_PERM_COMMAND_LOADOUT_GM, Trinity::ChatCommands::Console::No },
+            { "page",    pageCommandTable,      RBAC_PERM_COMMAND_LOADOUT,    Trinity::ChatCommands::Console::No },
         };
         static std::vector<ChatCommand> commandTable =
         {
@@ -264,7 +316,8 @@ public:
         return true;
     }
 
-    // Answers the Loadouts addon: "L\t<id>\t<name>\t<spec name>\t<flags>" per loadout, then "E".
+    // Answers the Loadouts addon: "L\t<id>\t<name>\t<spec name>\t<flags>" per loadout, each followed by
+    // "G\t<id>\t<page slot>\t<item string>" per piece on its gear page, then "E".
     // Flags: a = active, g = held by the second talent group, d = a specialization's own, e = empty.
     static bool HandleSyncCommand(ChatHandler* handler, char const* /*args*/)
     {
@@ -292,8 +345,97 @@ public:
             if (!loadout.Captured)
                 flags += 'e';
             send("L\t" + std::to_string(loadout.Id) + "\t" + loadout.Name + "\t" + SpecName(loadout.SpecId) + "\t" + flags);
+            for (Detached::Entry const& entry : sDetachedStorage->List(player, Detached::Kind::GearPage, loadout.Id))
+                send("G\t" + std::to_string(loadout.Id) + "\t" + std::to_string(entry.Slot) + "\t" + ItemString(entry));
         }
         send("E");
+        return true;
+    }
+
+    // .loadout page [loadout]: one page, or every page with pieces on it.
+    static bool HandlePageCommand(ChatHandler* handler, char const* args)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+        std::string arg = args ? args : "";
+        if (!arg.empty())
+        {
+            uint32 id = sLoadoutMgr->Resolve(player, arg);
+            for (Loadouts::Loadout const& loadout : sLoadoutMgr->GetLoadouts(player))
+                if (loadout.Id == id)
+                {
+                    SendPage(handler, player, loadout, true);
+                    return true;
+                }
+            handler->SendSysMessage(EditMessage(Loadouts::EditResult::UnknownLoadout));
+            return true;
+        }
+        bool any = false;
+        for (Loadouts::Loadout const& loadout : sLoadoutMgr->GetLoadouts(player))
+        {
+            any = any || !sDetachedStorage->List(player, Detached::Kind::GearPage, loadout.Id).empty();
+            SendPage(handler, player, loadout, false);
+        }
+        if (!any)
+            handler->SendSysMessage("No gear pages hold anything yet. Put off-spec pieces on a loadout's page with "
+                ".loadout page put <loadout> <bag> <slot>, or drop them on it in the Loadouts addon (/lo).");
+        return true;
+    }
+
+    // .loadout page put <loadout> <bag> <slot> [equipment slot]: bag 0-4 and slot from 1, as the client counts them.
+    static bool HandlePagePutCommand(ChatHandler* handler, char const* args)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+        uint32 id = 0;
+        std::string rest;
+        uint32 bag = 0, bagSlot = 0, equipSlot = GearPages::NoSlot;
+        if (!SplitTarget(player, args ? args : "", id, rest) || sscanf(rest.c_str(), "%u %u %u", &bag, &bagSlot, &equipSlot) < 2)
+        {
+            handler->SendSysMessage("Usage: .loadout page put <loadout> <bag 0-4> <slot> [equipment slot 0-18]");
+            return true;
+        }
+        Item* item = ClientBagItem(player, bag, bagSlot);
+        if (!item)
+        {
+            handler->SendSysMessage("There is no item in that bag slot.");
+            return true;
+        }
+        uint8 slot = GearPages::NoSlot;
+        switch (GearPages::Put(player, id, item, uint8(std::min<uint32>(equipSlot, GearPages::NoSlot)), slot))
+        {
+            case GearPages::PutResult::Ok:
+                handler->PSendSysMessage("Put on the gear page (%s). It is equipped when you switch to that loadout.", SlotName(slot).c_str());
+                break;
+            case GearPages::PutResult::Disabled:       handler->SendSysMessage("Gear pages are turned off."); break;
+            case GearPages::PutResult::UnknownLoadout: handler->SendSysMessage(EditMessage(Loadouts::EditResult::UnknownLoadout)); break;
+            case GearPages::PutResult::WornPage:       handler->SendSysMessage("That is the loadout you are using: just equip the item."); break;
+            case GearPages::PutResult::NotEquippable:  handler->SendSysMessage("That item doesn't go in that equipment slot."); break;
+            case GearPages::PutResult::NotStorable:    handler->SendSysMessage("Timed items and bags with items in them can't go on a page."); break;
+            case GearPages::PutResult::InCombat:       handler->SendSysMessage("You can't change gear pages in combat."); break;
+        }
+        return true;
+    }
+
+    // .loadout page take <loadout> <page slot>: back into the bags.
+    static bool HandlePageTakeCommand(ChatHandler* handler, char const* args)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+        uint32 id = 0;
+        std::string rest;
+        uint32 slot = 0;
+        if (!SplitTarget(player, args ? args : "", id, rest) || sscanf(rest.c_str(), "%u", &slot) != 1)
+        {
+            handler->SendSysMessage("Usage: .loadout page take <loadout> <page slot> (0-18, or 100 and up for spares)");
+            return true;
+        }
+        switch (GearPages::Take(player, id, slot))
+        {
+            case GearPages::TakeResult::Ok:             handler->PSendSysMessage("Moved the %s piece to your bags.", SlotName(slot).c_str()); break;
+            case GearPages::TakeResult::Disabled:       handler->SendSysMessage("Gear pages are turned off."); break;
+            case GearPages::TakeResult::UnknownLoadout: handler->SendSysMessage(EditMessage(Loadouts::EditResult::UnknownLoadout)); break;
+            case GearPages::TakeResult::Empty:          handler->SendSysMessage("That page slot is empty."); break;
+            case GearPages::TakeResult::BagsFull:       handler->SendSysMessage("Your bags are full."); break;
+            case GearPages::TakeResult::InCombat:       handler->SendSysMessage("You can't change gear pages in combat."); break;
+        }
         return true;
     }
 
@@ -308,6 +450,8 @@ public:
         }
         sLoadoutMgr->CaptureActive(target);
         SendList(handler, target);
+        for (Loadouts::Loadout const& loadout : sLoadoutMgr->GetLoadouts(target))
+            SendPage(handler, target, loadout, false);
         handler->PSendSysMessage("Talent groups: %u, active group %u (spec %s).", uint32(target->GetSpecsCount()),
             uint32(target->GetActiveSpec()), SpecName(uint16(target->GetTalentSpecialization())).c_str());
         return true;
@@ -317,6 +461,7 @@ public:
 void AddSC_loadouts()
 {
     AddLoadoutHeartseedPart();
+    GearPages::Register();
     new loadout_playerscript();
     new loadout_commandscript();
 }

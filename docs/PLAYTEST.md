@@ -12,7 +12,7 @@ any time, in any order. Agents keep this list current as systems land; tick noth
 
 ## Setup
 
-- Copy `addons/GMSuite`, `addons/Capture` (and `addons/Loadouts` once T-017 merges) into the client's
+- Copy `addons/GMSuite`, `addons/Capture` and `addons/Loadouts` into the client's
   `Interface/AddOns`.
 - `/gms` opens the GM panel. Checkpoints (`hs-10`, `hs-25`, ... and twink brackets) put a character into a state in
   one click, so you can test late systems without leveling.
@@ -37,12 +37,16 @@ any time, in any order. Agents keep this list current as systems land; tick noth
 - [ ] Raid saves stay until finished or abandoned and reset every 2 days (after T-013 merges).
 - [ ] Starting kit: Apprentice Riding, a mount and four 10-slot bags on a new character (after T-011 merges).
 
-## Loadouts (after T-017 merges)
+## Loadouts and gear pages
 
 - [ ] `/lo` panel: readable, buttons work.
 - [ ] Switching keeps each loadout's talents, glyphs and action bars exactly; nothing gets scrambled.
 - [ ] Heartseed majors follow the loadout.
 - [ ] A named extra loadout (e.g. PvP) for the same spec stays separate from the default one.
+- [ ] Gear pages: **Gear** in `/lo` opens the page; dragging a piece from the bags onto a slot puts it there, clicking
+  takes it back. Icons and tooltips (enchants, gems) look right.
+- [ ] Switching loadouts swaps exactly the pieces on the page and nothing else; set bonuses, two-handers vs shields
+  and the Heartseed weapon behave as if you had equipped by hand. Same through the talent frame's spec switch.
 
 ## GM tools
 

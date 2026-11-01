@@ -5668,6 +5668,15 @@ Loadouts.Enable = 1
 
 Loadouts.MaxNamed = 10
 
+#
+#    Loadouts.GearPages.Enable
+#        Description: Each loadout keeps a page of equipment outside the bags; switching loadouts swaps
+#                     the pieces its page holds and keeps everything else worn.
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled, pages keep their pieces until enabled again)
+
+Loadouts.GearPages.Enable = 1
+
 ###################################################################################################
 # IN-GAME IDEA AND BUG CAPTURE (.idea, .bug, .capture)
 #
