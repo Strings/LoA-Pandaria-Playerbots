@@ -2164,8 +2164,11 @@ void AddSC_detached_storage();
 void AddSC_loadouts();
 void AddSC_reagent_bank();
 
+void AddSC_legacy_dungeons();
+
 void AddCustomScripts()
 {
+    AddSC_legacy_dungeons();
 #ifdef SCRIPTS
     /* This is where custom scripts should be added. */
 //AddSC_npc_teleport();
