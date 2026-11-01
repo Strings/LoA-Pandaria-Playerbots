@@ -14,10 +14,10 @@
 
 #include <string>
 
-// Loadouts block (docs/ID_RANGES.md). 92000 is linked to role 199 (Player Commands), 92001 to role 197
+// Loadouts block (docs/ID_RANGES.md). 93000 is linked to role 199 (Player Commands), 93001 to role 197
 // (Gamemaster Commands) by sql/updates/master/auth/2026_11_01_claude_01_loadout_command.sql.
-static rbac::RBACPermissions const RBAC_PERM_COMMAND_LOADOUT = static_cast<rbac::RBACPermissions>(92000);
-static rbac::RBACPermissions const RBAC_PERM_COMMAND_LOADOUT_GM = static_cast<rbac::RBACPermissions>(92001);
+static rbac::RBACPermissions const RBAC_PERM_COMMAND_LOADOUT = static_cast<rbac::RBACPermissions>(93000);
+static rbac::RBACPermissions const RBAC_PERM_COMMAND_LOADOUT_GM = static_cast<rbac::RBACPermissions>(93001);
 
 // Addon message prefix the Loadouts addon registers.
 static char const* const LOADOUT_ADDON_PREFIX = "Loadouts";
@@ -86,16 +86,21 @@ namespace
         }
     }
 
-    // Splits "<loadout> <new name>": the loadout is the first word unless the whole string names one.
+    // Splits "<loadout> <new name>". Loadout names can have spaces, so the longest leading words that name a
+    // loadout win ("PvP Arms Arena" renames "PvP Arms").
     bool SplitTarget(Player* player, std::string const& args, uint32& id, std::string& rest)
     {
-        std::size_t space = args.find(' ');
-        if (space == std::string::npos)
-            return false;
-        id = sLoadoutMgr->Resolve(player, args.substr(0, space));
-        rest = args.substr(space + 1);
-        while (!rest.empty() && rest.front() == ' ')
-            rest.erase(rest.begin());
+        id = 0;
+        for (std::size_t space = args.find(' '); space != std::string::npos; space = args.find(' ', space + 1))
+        {
+            uint32 found = sLoadoutMgr->Resolve(player, args.substr(0, space));
+            std::size_t start = args.find_first_not_of(' ', space);
+            if (found && start != std::string::npos)
+            {
+                id = found;
+                rest = args.substr(start);
+            }
+        }
         return id != 0;
     }
 }
@@ -187,10 +192,12 @@ public:
         if (result != Loadouts::SwitchResult::Ok)
         {
             handler->SendSysMessage(SwitchMessage(result));
-            return result == Loadouts::SwitchResult::AlreadyActive;
+            return true;   // handled; false would add "Incorrect syntax"
         }
         // Saved at once (talents, glyphs, bars and the loadout rows), so a crash can't split the switch.
+        // SaveToDB doesn't run the OnSave hooks (only the periodic save does), so the loadouts save themselves.
         player->SaveToDB();
+        sLoadoutMgr->SavePlayer(player);
         for (Loadouts::Loadout const& loadout : sLoadoutMgr->GetLoadouts(player))
             if (loadout.Id == id)
                 handler->PSendSysMessage("Switched to %s (%s).", loadout.Name.c_str(), SpecName(loadout.SpecId).c_str());
@@ -206,7 +213,7 @@ public:
         if (result != Loadouts::EditResult::Ok)
         {
             handler->SendSysMessage(EditMessage(result));
-            return false;
+            return true;   // handled; false would add "Incorrect syntax"
         }
         sLoadoutMgr->SavePlayer(player);
         handler->PSendSysMessage("Saved your current talents, glyphs and bars as loadout %u, %s.", newId, name.c_str());
@@ -227,7 +234,7 @@ public:
         if (result != Loadouts::EditResult::Ok)
         {
             handler->SendSysMessage(EditMessage(result));
-            return false;
+            return true;   // handled; false would add "Incorrect syntax"
         }
         sLoadoutMgr->SavePlayer(player);
         handler->PSendSysMessage("Loadout %u is now called %s.", id, name.c_str());
@@ -242,7 +249,7 @@ public:
         if (result != Loadouts::EditResult::Ok)
         {
             handler->SendSysMessage(EditMessage(result));
-            return false;
+            return true;   // handled; false would add "Incorrect syntax"
         }
         sLoadoutMgr->SavePlayer(player);
         handler->PSendSysMessage("Deleted loadout %u.", id);

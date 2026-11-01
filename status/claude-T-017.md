@@ -10,12 +10,14 @@
   `.loadout inspect` for GMs, a part interface other systems hook into, and the Heartseed majors as the first part.
 - `HeartseedMgr::SetSpecMajors` so a loadout can write its majors back for a spec.
 - `addons/Loadouts/`: `/lo` panel (switch, save as new, rename, delete).
-- Tables `character_loadout*` (characters), RBAC 92000/92001 (auth), ID block 92000 for loadouts and detached
+- Tables `character_loadout*` (characters), RBAC 93000/93001 (auth), ID block 93000 for loadouts and detached
   storage, config `Loadouts.Enable`, `Loadouts.MaxNamed`.
 
 ## How it was tested
 - Unit tests: `tests/loadouts/` (names, groups, default planning, ids, id/name lookup); 12/12 suites pass.
-- Live: see the PR for the headless steps.
+- Live (headless, Seedtest, level 59 warrior): defaults created with the intro; switch with rewrite and with a plain
+  group swap; new, rename (multi-word names), delete and its refusals; GM inspect; Heartseed majors kept per
+  loadout (two Protection loadouts with different majors). Talent groups, spec and rows checked in the DB.
 
 ## Decisions made
 - **A switch writes into the inactive talent group, then runs the normal `ActivateSpec`** (DESIGN.md says so). When
