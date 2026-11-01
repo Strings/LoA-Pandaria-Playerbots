@@ -17,7 +17,8 @@ _ENGINE_CACHE: Dict[Tuple[str, str, str], ContentSearchEngine] = {}
 
 
 def get_engine() -> ContentSearchEngine:
-    dbc_dir = os.environ.get('MOP_DBC_DIR', 'I:/UltimateMoP/gamedata/dbc').strip()
+    default_dbc = str(Path(__file__).resolve().parents[2] / 'gamedata' / 'dbc')
+    dbc_dir = os.environ.get('MOP_DBC_DIR', default_dbc).strip()
     locale = os.environ.get('MOP_DBC_LOCALE', 'enUS').strip() or 'enUS'
     world_db = os.environ.get('MOP_WORLD_DB', '').strip()
     key = (str(Path(dbc_dir).resolve()), locale, world_db)

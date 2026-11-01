@@ -1,3 +1,4 @@
+import os
 """Unit and gamedata integration tests for tools/dbc/."""
 from pathlib import Path
 import struct
@@ -124,9 +125,10 @@ class DbcReaderTests(unittest.TestCase):
             self.assertEqual(table[1].icon_path, 'Fireball')
 
     def test_all_registered_schemas_against_gamedata(self):
-        gamedata_dbc = Path('I:/UltimateMoP/gamedata/dbc')
+        env_dir = os.environ.get('MOP_DBC_DIR')
+        gamedata_dbc = Path(env_dir) if env_dir else Path(__file__).resolve().parents[2] / 'gamedata' / 'dbc'
         if not gamedata_dbc.is_dir():
-            self.skipTest('I:/UltimateMoP/gamedata/dbc not present')
+            self.skipTest(f'{gamedata_dbc} not present')
 
         dbc_dir = DbcDirectory(gamedata_dbc, locale='enUS')
         seen = set()

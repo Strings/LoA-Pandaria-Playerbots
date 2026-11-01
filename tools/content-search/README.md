@@ -73,7 +73,7 @@ python tools/content-search/server.py --cli search_display_ids --kind creature -
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `MOP_DBC_DIR` | `I:/UltimateMoP/gamedata/dbc` | Directory containing `.dbc` and `enUS/*.db2` files |
+| `MOP_DBC_DIR` | `<repo>/gamedata/dbc` | Directory containing `.dbc` and `enUS/*.db2` files |
 | `MOP_DBC_LOCALE` | `enUS` | Locale subfolder for `.db2` files |
 | `MOP_WORLD_DB` | `""` | Optional world DB name (`world_gemini`, etc.) to include `creature_template` in `search_creatures` |
 | `MOP_DB_HOST` / `MOP_DB_PORT` / `MOP_DB_USER` / `MOP_DB_PASSWORD` | `127.0.0.1` / `3306` / `ultimatemop` | Optional MySQL connection settings when `MOP_WORLD_DB` is set |

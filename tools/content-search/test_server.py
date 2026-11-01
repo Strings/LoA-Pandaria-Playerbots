@@ -18,9 +18,10 @@ import server
 
 class ContentSearchTests(unittest.TestCase):
     def setUp(self):
-        self.dbc_dir = Path('I:/UltimateMoP/gamedata/dbc')
+        env_dir = os.environ.get('MOP_DBC_DIR')
+        self.dbc_dir = Path(env_dir) if env_dir else Path(__file__).resolve().parents[2] / 'gamedata' / 'dbc'
         if not self.dbc_dir.is_dir():
-            self.skipTest('I:/UltimateMoP/gamedata/dbc not present')
+            self.skipTest(f'{self.dbc_dir} not present')
 
     def test_stdio_protocol_and_validation(self):
         requests = [
