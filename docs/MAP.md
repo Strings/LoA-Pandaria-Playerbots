@@ -15,7 +15,7 @@ something worth knowing.
 | `src/tools/` | Map, vmap and mmap extractors |
 | `modules/mod_playerbots/` | The playerbots port |
 | `sql/` | `base/` (full schemas), `updates/{world,characters,master}/`, `old/`, `archive/` |
-| `addons/` | Client addons we ship (`addons/GMSuite/`, `addons/Capture/`) |
+| `addons/` | Client addons we ship (`GMSuite/`, `Capture/`, `Loadouts/` (`/lo`), `ReagentBank/` (`/rb`)) |
 | `tickets/` | Captured in-game `/idea` and `/bug` feedback tickets |
 | `tools/` | Developer tooling (build, benchmarks, live MCP, DBC reader, content search, SQL validator, twink tuning) |
 | `tests/` | Pure logic unit test suites and regression scenarios |
@@ -35,6 +35,7 @@ something worth knowing.
 | `Instances/InstanceSaveMgr.cpp` | Instance saves and reset timing (2-day raid resets) |
 | `Loot/LootMgr.cpp`, `Handlers/LootHandler.cpp` | Loot generation and handling |
 | `Spells/Spell.cpp` | Spell casting; spell scripts hook in via `SpellScript` |
+| `Spells/ReagentSource.h` | Hook for reagents outside the bags (the reagent bank) |
 | `Time/CustomClock.h` | Controllable scaled/paused clock for custom systems' timers |
 | `World/RespecConfig.h`, `RespecConfig.cpp` | Cached dual-spec toggles, reagent rules, and cost policies |
 | `World/SoloConfig.h`, `CurrencyLimits.h` | Solo play switches, weekly currency cap math, and fishing skillups |
@@ -51,6 +52,9 @@ something worth knowing.
 | `Custom/GMTools/` | GM test suite (`Checkpoints/`, `Clock/`, `Scenario/`, `Spectate/`, `README.md` overview) |
 | `Custom/MountedSpeed/` | `.mountspeed` inspect command and configuration docs |
 | `Custom/Respec/` | `.respec` inspect, reset, learn commands |
+| `Custom/Loadouts/` | Spec loadouts and gear pages (`.loadout`) |
+| `Custom/DetachedStorage/` | Shared detached item storage (gear pages, reagent bank, twink templates) |
+| `Custom/ReagentBank/` | Reagent bank (`.reagent`) |
 | `Custom/SoloConfig/` | `.solo` inspect and test commands |
 | `Custom/Reload/` | Hot-reload registry and `.reload rng` command |
 | `Custom/Capture/` | `.idea`, `.bug`, and `.capture` feedback ticket capture commands |
@@ -93,6 +97,8 @@ something worth knowing.
 | `tests/heartseed/` | Unit tests for Heartseed growth and trait rules |
 | `tests/mounted_speed/` | Unit tests for mount speed multiplier math |
 | `tests/respec/` | Unit tests for dual-spec unlock and cost policies |
+| `tests/loadouts/` | Unit tests for loadout and gear page rules |
+| `tests/reagent_bank/` | Unit tests for reagent bank stack rules |
 | `tests/reload/` | Unit tests for deterministic seeded RNG streams |
 | `tests/regression/scenarios/` | Headless client regression scenarios (`custom-reload-rng.json`, etc.) |
 

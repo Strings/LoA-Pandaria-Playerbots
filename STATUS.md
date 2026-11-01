@@ -1,6 +1,6 @@
 # Project status
 
-Last folded: 2026-11-01 by Claude Code (35 fragments, T-001 to T-058). Agents: read this, never edit
+Last folded: 2026-11-01 by Claude Code (39 fragments, T-001 to T-058, T-017, T-018, T-043). Agents: read this, never edit
 it; write a fragment in `status/`. Claude Code folds them.
 
 ## Current milestone: v0.1 The jewel run
@@ -17,21 +17,25 @@ patch, no ML. Task list: `TASKS.md`.
 |---|---|
 | Fork, build, game data, databases | Done (T-001). Builds with Ninja and sccache through `tools\build\build.ps1`, which queues builds machine-wide |
 | Agent environments | Done: worktrees, per-agent databases and ports for Claude Code, Codex and Gemini (T-002, T-005) |
-| Fast iteration (Phase 0a) | Done except fixtures (T-007) and faster builds (T-060): test profiles, loader profiler, unit tests (CTest, 11 suites), Eluna prototypes, headless regression runner, save snapshots and migration checks, `.reload`, seeded test RNG, GM tools (`.clock`, `.scenario`, `.spectate`, `.bot why/state/...`), `/idea` and `/bug` capture |
+| Fast iteration (Phase 0a) | Done except fixtures (T-007) and faster builds (T-060): test profiles, loader profiler, unit tests (CTest, 14 suites), Eluna prototypes, headless regression runner, save snapshots and migration checks, `.reload`, seeded test RNG, GM tools (`.clock`, `.scenario`, `.spectate`, `.bot why/state/...`), `/idea` and `/bug` capture |
 | Heartseed (Phase 0b) | MVP done (T-020 to T-026, T-049): account-wide seed, stage glows, traits and majors, path-choice gossip, feeding and essences, rank cap, story flags, GM commands. All numbers are placeholders until v0.5; glow IDs await a pick in the client |
 | GM test suite | Done (T-048): checkpoints (`hs-10` and more), twink checkpoints, kits, ability tester, GMSuite addon |
 | Quick wins | Done: mount speed x2 (T-010), rare mounts 10% (T-012), free respec and dual spec from 10 (T-016), solo config defaults (T-019), twink gear +7% (T-045, generator T-050). In progress: raid resets (T-013, review), starting kit (T-011). Open: T-014, T-015, T-041 to T-044, T-046, T-047 |
-| Detached storage (loadouts, gear pages, reagent bank) | Starting (T-017, Claude Code) |
+| Loadouts and detached storage | Done: spec loadouts with `/lo` panel (T-017), gear pages per loadout (T-018), shared detached item storage, reagent bank with crafting drawing from it and `/rb` panel (T-043). Twink templates will use the same storage. Addon panels await a real-client playtest |
 | Tooling | Done: live server MCP, crash triage, SQL validator, DBC reader and content search, SQL and config audits. Open: balance sim (T-031) |
 | Telemetry (T-004), bot load baseline (T-003) | Not started |
 | Timeline decision (T-036) | Waiting on the human |
 | Game client | `mop-clean/`, 5.4.8.18414 enUS, not patched |
 
-**In progress:** Codex T-013 (PR 45) and T-011; Claude Code T-017; Flash fixing T-052 and T-053.
+**In progress:** Codex T-013 (PR 45) and T-011 (PR 61), both approved by Claude and waiting on the human's core review, then T-015 (PR 69); Flash fixing PRs 53, 54, 63 to 66 and 72, then T-065 to T-069.
 **Blocked:** nothing.
 
 ## Recent decisions (newest first)
 
+- 2026-11-01: Reagent bank (T-043) is per character (account-scope detached items still die with their owning character), usable anywhere, no stack limit by default (`ReagentBank.MaxStacks`). Any item some spell uses as a reagent counts, except quest, unique and timed items. Every spell's reagent check takes from the bags first, then the bank (`ReagentSource` core hook).
+- 2026-11-01: Gear pages (T-018) hold only the pieces that differ: a switch stores the worn pieces the incoming page replaces and leaves every other slot as worn, so nothing is ever stripped. The worn loadout's page is empty; a loadout whose page holds pieces can't be deleted; pieces that can't be worn go to the bags, or stay on the page as spares when the bags are full.
+- 2026-11-01: Detached item storage keeps an item's `item_instance` row and swaps its inventory row for a `detached_item` row (the mail path), so enchants, gems, transmog and binding survive. Gear pages, the reagent bank and twink templates each get their own kind.
+- 2026-11-01: Loadouts (T-017): a switch writes the inactive talent group and runs the normal spec activation; talent changes made in the normal UI are captured into the active loadout; a new named loadout copies the active one; Heartseed majors ride per loadout (no shrine to swap saved loadouts, a shrine still to change a major).
 - 2026-11-01: Claude Code folds status fragments into this file; agents push their branches as they go so another agent can finish a task when a session ends (AGENTS.md).
 - 2026-11-01: Raids (T-013): unfinished raid saves are kept until finished or abandoned, only the leader can abandon, resets every 2 days (config key), no migration of old saves.
 - 2026-11-01: The custom clock is separate from the core clock (the core reads the time in ~270 places). Custom timers read `CustomClock::Now()` so `.clock speed|jump` can test them; core respawns and resets keep their own GM commands.
@@ -75,6 +79,9 @@ patch, no ML. Task list: `TASKS.md`.
 
 ## Open follow-ups
 
+- Reagent bank: check in the real client whether the profession window allows Create when the reagents are only in the bank. If the client blocks it, the addon needs a craft-from-bank button (`docs/PLAYTEST.md`).
+- Loadouts and gear pages: the `/lo` panel, gear page drag and drop and gem links need a real-client look; the bags-full path (spares) is untested live.
+- `.startingkit` (T-011) reuses the reload-config RBAC permission; give it its own once T-068's command audit lands.
 - Pick the final Heartseed glows in the client (candidates in `docs/agents/heartseed-glows.md`), and a real proc spell instead of the placeholder 16614.
 - Growth from other sources (quests, rares, first dungeon clears, Sha hunters) calls `HeartseedMgr::AddGrowth`; not wired yet.
 - Green "Twink" tooltip tag needs item hotfixes or the client patch.
@@ -109,4 +116,9 @@ patch, no ML. Task list: `TASKS.md`.
 - Bots can join battlefields (`AiPlayerbot.RandomBotJoinBattlefield`, default 0).
 - The 5.4.8 client almost certainly rejects modified FrameXML without an exe patch (untested). The bundled patcher is `contrib/SkyFire Patcher/548`.
 - `src/server/scripts/Custom/` already has `PlayerStartScript.cpp` and `solocraft.cpp`; check them before writing new start-of-character or scaling code.
+- **Detached storage:** `sDetachedStorage` (`Custom/DetachedStorage/`). Stored items are loaded per character at login (not for bots). Account-scope items still have a character as owner; deleting that character deletes them. `.pdump` doesn't carry stored items.
+- **Loadout listeners:** systems that follow the worn loadout register `Loadouts::Listener` (`OnSwitched`, `CanDelete`); per-spec state registers a `Loadouts::Part`.
+- **Reagent sources:** `src/server/game/Spells/ReagentSource.h` is the one hook for reagents outside the bags; one source can be registered.
+- **Regression runs** need a generated test-profile runtime: `python tools/devenv/setup.py --agent <you> --gamedata I:/UltimateMoP/gamedata --binaries build/bin --output build/devenv --profile test --load none --db-user ultimatemop` (with `MOP_DB_PASSWORD` set), start `build/devenv/worldserver.exe -c <absolute conf path>`, then `tests/regression/run.py --runtime build/devenv`. Regression SOAP replies are complete and the none bot profile is supported (Codex fix).
+- **Config:** the core refuses to start on a duplicate key in `worldserver.conf`. Before adding a key to `.conf.dist`, grep for it.
 - BUG-003: deleting a newly added training dummy (31144) can crash in aura removal. Avoid in GM tests until fixed.
