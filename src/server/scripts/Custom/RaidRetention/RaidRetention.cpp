@@ -72,6 +72,29 @@ namespace
         handler->PSendSysMessage("Raid bind IDs: %u", count);
         return true;
     }
+    bool ListAll(ChatHandler* handler, char const* args)
+    {
+        if (args && *args)
+            return false;
+        uint32 count = 0;
+        if (QueryResult result = CharacterDatabase.Query("SELECT id,map,difficulty,resettime,"
+            "(SELECT GROUP_CONCAT(guid ORDER BY guid) FROM character_instance WHERE instance=i.id),"
+            "(SELECT GROUP_CONCAT(guid ORDER BY guid) FROM group_instance WHERE instance=i.id) FROM instance i ORDER BY id"))
+            do
+            {
+                Field* fields = result->Fetch();
+                MapEntry const* map = sMapStore.LookupEntry(fields[1].GetUInt32());
+                if (!map || !map->IsRaid())
+                    continue;
+                ++count;
+                handler->PSendSysMessage("Raid save %u: map=%u; difficulty=%u; finished=%u; script-progress=%u; players=%s; groups=%s",
+                    fields[0].GetUInt32(), fields[1].GetUInt32(), fields[2].GetUInt32(),
+                    uint32(RaidResetPolicy::Finished(fields[3].GetUInt32())), uint32(fields[3].GetUInt32() == RaidResetPolicy::PartialMarker),
+                    fields[4].GetString().c_str(), fields[5].GetString().c_str());
+            } while (result->NextRow());
+        handler->PSendSysMessage("Raid saved IDs: %u", count);
+        return true;
+    }
     bool Abandon(ChatHandler* handler, char const* args)
     {
         uint32 id;
@@ -163,6 +186,7 @@ namespace
             {
                 { "status", &Status, rbac::RBAC_PERM_COMMAND_HELP, Console::Yes },
                 { "list", &List, rbac::RBAC_PERM_COMMAND_HELP, Console::No },
+                { "list-all", &ListAll, rbac::RBAC_PERM_COMMAND_INSTANCE_LISTBINDS, Console::Yes },
                 { "abandon", &Abandon, rbac::RBAC_PERM_COMMAND_HELP, Console::No },
                 { "force-abandon", &Force, rbac::RBAC_PERM_COMMAND_INSTANCE_UNBIND, Console::Yes },
                 { "force-reset", &Force, rbac::RBAC_PERM_COMMAND_INSTANCE_UNBIND, Console::Yes },

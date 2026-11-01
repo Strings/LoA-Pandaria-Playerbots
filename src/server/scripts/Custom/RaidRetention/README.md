@@ -30,7 +30,9 @@ cannot initiate abandonment and no member-consent/vote mechanism exists, so bots
 never block a human leader. Occupied maps use the existing global-reset eviction
 and unload path; IDs are not freed while a loaded map still exists.
 
-GM `.raidprogress list` supports a selected player. `.raidprogress force-reset
+GM `.raidprogress list` supports a selected player.
+GM `.raidprogress list-all` lists every saved raid and its player/group bind
+GUIDs, including offline owners; it also works over SOAP/console. `.raidprogress force-reset
 <id>` and `.raidprogress force-abandon <id>` bypass ownership and progress, and
 allow SOAP/console with existing instance-unbind permission. They are deliberate
 aliases for removing a raid save and all bindings. Non-raid IDs are rejected.
