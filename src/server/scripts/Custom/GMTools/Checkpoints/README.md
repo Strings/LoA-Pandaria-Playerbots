@@ -24,6 +24,7 @@ being played to. The GMSuite addon (`addons/GMSuite/`) puts these commands on bu
 | `twink_gear` | | Best twink gear for the class, spec and level (see Twink gear); after `class_spells` |
 | `item` | arg1 entry, arg2 count | Adds an item |
 | `spell` | arg1 spell | Learns a spell |
+| `riding` | | Riding for the level (Apprentice always), the race's ground mount and, from 60, a faction flying mount |
 | `quest` | arg1 quest | Completes and turns in a quest; put it before `level`, which resets the experience |
 | `reputation` | arg1 faction, arg2 standing | Sets reputation (3000 friendly, 9000 honored, 21000 revered, 42000 exalted) |
 | `tele` | text `game_tele` name, or `Alliance|Horde` | Teleports |
