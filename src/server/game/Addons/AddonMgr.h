@@ -19,6 +19,7 @@
 #define SF_ADDONMGR_H
 
 #include "Define.h"
+#include <array>
 #include <string>
 #include <list>
 

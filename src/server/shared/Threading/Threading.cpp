@@ -17,6 +17,7 @@
 
 #include "Threading.h"
 #include "Errors.h"
+#include <system_error>
 #include <vector>
 
 using namespace MopCore;

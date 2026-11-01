@@ -25,7 +25,11 @@ param(
     [switch]$Tools,
     [switch]$NoPch,
     [switch]$Reconfigure,
-    [switch]$NoWait
+    [switch]$NoWait,
+    # Another build directory (relative to the checkout), e.g. to compare -NoPch without touching build\.
+    [string]$BuildDir = 'build',
+    # Keep compiling after errors, to collect them all in one pass.
+    [switch]$KeepGoing
 )
 
 # Not 'Stop': Windows PowerShell 5.1 turns any stderr line of a native tool (CMake warnings) into a
@@ -33,7 +37,7 @@ param(
 $ErrorActionPreference = 'Continue'
 
 $checkout = (Resolve-Path (Join-Path $PSScriptRoot '..\..') -ErrorAction Stop).Path
-$buildDir = Join-Path $checkout 'build'
+$buildDir = Join-Path $checkout $BuildDir
 
 function Get-EnvOrDefault([string]$name, [string]$default)
 {
@@ -134,7 +138,8 @@ if (-not $NoWait)
 $start = Get-Date
 try
 {
-    & cmake --build $buildDir --target $Target
+    $ninjaArgs = @(if ($KeepGoing) { '--', '-k', '0' })
+    & cmake --build $buildDir --target $Target @ninjaArgs
     $exit = $LASTEXITCODE
 }
 finally

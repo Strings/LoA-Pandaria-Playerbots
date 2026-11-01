@@ -26,6 +26,7 @@
 #include "DatabaseEnvFwd.h"
 
 #include "Common.h"
+#include "ObjectGuid.h"
 
 enum ArenaType : uint32;
 

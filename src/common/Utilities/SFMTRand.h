@@ -19,8 +19,12 @@
 #define SFMTRand_h__
 
 #include "Define.h"
-#include <SFMT.h>
 #include <new>
+#include <SFMT.h>
+// SFMT.h macroizes "inline" on MSVC, which the standard library headers reject when included after it.
+#ifdef inline
+#undef inline
+#endif
 
 /*
  * C++ Wrapper for SFMT
