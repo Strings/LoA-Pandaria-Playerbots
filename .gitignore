@@ -26,3 +26,8 @@ headless.local.json
 mop-clean/
 gamedata/
 !/tools/build/
+
+# captured in-game tickets (keep README.md)
+tickets/*.json
+tickets/*.md
+!tickets/README.md

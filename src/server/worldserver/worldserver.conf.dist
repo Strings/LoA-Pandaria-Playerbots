@@ -5650,3 +5650,25 @@ GMTools.Spectate.AttachTimeoutMs = 10000
 NoResetTalentsCost = 1
 Respec.FreeReagents = 1
 Respec.AutoDualSpec = 1
+
+###################################################################################################
+# IN-GAME IDEA AND BUG CAPTURE (.idea, .bug, .capture)
+#
+#    Capture.TicketsDir
+#        Description: Directory where .idea and .bug write ticket files (.json and .md).
+#                     Empty string resolves to <repo>/tickets/. Relative paths resolve against
+#                     the repository source directory (GitRevision::GetSourceDirectory).
+#        Default:     "" (<repo>/tickets/)
+
+Capture.TicketsDir = ""
+
+#
+#    Capture.NearbyBotRadius
+#        Description: Radius in yards around the capturing player within which playerbots are
+#                     included in the ticket's nearby_bots snapshot.
+#        Default:     100
+
+Capture.NearbyBotRadius = 100
+
+#
+###################################################################################################

@@ -1,0 +1,72 @@
+{
+  "name": "capture-idea",
+  "timeout_seconds": 120,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "1"
+  ],
+  "steps": [
+    "soap idea [screenshot=WoWScrnShot_103126_183015] regression capture test idea",
+    "soap bug regression capture test bug",
+    "soap capture list 5",
+    "soap capture show _idea_regression-capture-test-idea"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "event",
+      "kind": "login",
+      "minimum": 1,
+      "maximum": 1
+    },
+    {
+      "type": "contains",
+      "text": "Captured idea ["
+    },
+    {
+      "type": "contains",
+      "text": "_idea_regression-capture-test-idea.json (+ .md)"
+    },
+    {
+      "type": "contains",
+      "text": "Captured bug ["
+    },
+    {
+      "type": "contains",
+      "text": "_bug_regression-capture-test-bug.json (+ .md)"
+    },
+    {
+      "type": "contains",
+      "text": "(idea)"
+    },
+    {
+      "type": "contains",
+      "text": "regression capture test idea"
+    },
+    {
+      "type": "contains",
+      "text": "=== Ticket "
+    },
+    {
+      "type": "contains",
+      "text": "WoWScrnShot_103126_183015"
+    },
+    {
+      "type": "contains",
+      "text": "\"last_decision\":"
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback (most recent call last)"
+    }
+  ]
+}

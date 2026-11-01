@@ -1,0 +1,6 @@
+## Interface: 50400
+## Title: Capture
+## Notes: In-game /idea and /bug capture with automatic screenshot tagging for UltimateMoP (T-040).
+## Version: 0.1
+
+Capture.lua

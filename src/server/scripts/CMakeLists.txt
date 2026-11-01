@@ -127,6 +127,13 @@ if(USE_MODULES)
 		PRIVATE
 		modules)
     target_compile_definitions(scripts PRIVATE USE_MODULES)
+    if(PLAYERBOTS)
+        # Custom scripts reach bots only through the module's self-contained BotInspect API (T-039).
+        target_compile_definitions(scripts PRIVATE ENABLE_PLAYERBOTS)
+        target_include_directories(scripts PRIVATE
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/Inspect
+        )
+    endif()
 endif()
 
 if (ELUNA)
