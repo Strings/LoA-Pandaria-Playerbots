@@ -10,15 +10,19 @@ something worth knowing.
 |---|---|
 | `src/server/game/` | The core: entities, spells, maps, instances, loot, battlefields, handlers |
 | `src/server/scripts/` | Content scripts by continent, plus `Custom/`, `Commands/`, `World/`, `Spells/` |
-| `src/server/worldserver/`, `src/server/authserver/` | Server executables and `worldserver.conf.dist` |
+| `src/server/worldserver/`, `src/server/authserver/` | Server executables and `src/server/worldserver/worldserver.conf.dist` |
 | `src/server/database/`, `src/server/shared/` | DB layer and shared utilities |
 | `src/tools/` | Map, vmap and mmap extractors |
 | `modules/mod_playerbots/` | The playerbots port |
 | `sql/` | `base/` (full schemas), `updates/{world,characters,master}/`, `old/`, `archive/` |
-| `addons/` | Client addons we ship (`GMSuite/`, `Capture/`, `Loadouts/` (`/lo`), `ReagentBank/` (`/rb`)) |
+| `addons/` | Client addons we ship (`GMSuite/`, `Capture/`, `Loadouts/` (`/lo`), `ReagentBank/` (`/rb`), `ProfessionBar/` (`/pb`)) |
 | `tickets/` | Captured in-game `/idea` and `/bug` feedback tickets |
-| `tools/` | Developer tooling (build, benchmarks, live MCP, DBC reader, content search, SQL validator, twink tuning) |
+| `tools/` | Developer tooling (build, benchmarks, live MCP, DBC reader, content search, SQL validator, twink tuning, stack sizes, crash triage) |
 | `tests/` | Pure logic unit test suites and regression scenarios |
+| `docs/` | Project documentation: design reference, repo map, ID allocation ranges, playtest checklist, tuning reference, agent reports |
+| `status/` | Agent status fragments, status template, and orchestrator handoff history |
+| `lua_scripts/` | Eluna Lua engine scripts and prototypes (`heartseed/`, `examples/`) |
+| `doc/` | Upstream TrinityCore documentation (compilation guides, coding standards, database maintenance) |
 | `contrib/headless-client/` | Python 5.4.8 protocol client for automated tests (no graphics) |
 | `contrib/SkyFire Patcher/548/` | Arctium client exe patcher (pattern find and replace); the interface signature patch will go here |
 | `dep/` | Third-party libraries (StormLib for MPQ, g3dlite, Detour and Recast, and others) |
@@ -30,18 +34,18 @@ something worth knowing.
 |---|---|
 | `Accounts/AccountMgr.cpp` | Account creation, hashing, and CLI login accounts |
 | `Entities/Unit/Unit.cpp` | Movement speed, auras, combat (mount speed quick win) |
-| `Entities/Unit/MountedSpeed.h`, `MountedSpeed.cpp` | Mount speed multiplier calculation and cached rate config |
+| `Entities/Unit/MountedSpeed.h`, `Entities/Unit/MountedSpeed.cpp` | Mount speed multiplier calculation and cached rate config |
 | `Entities/Player/Player.cpp` | Player state, equipment, skills, enchant slots (jewel) |
 | `Instances/InstanceSaveMgr.cpp` | Instance saves and reset timing (2-day raid resets) |
 | `Loot/LootMgr.cpp`, `Handlers/LootHandler.cpp` | Loot generation and handling |
 | `Spells/Spell.cpp` | Spell casting; spell scripts hook in via `SpellScript` |
 | `Spells/ReagentSource.h` | Hook for reagents outside the bags (the reagent bank) |
 | `Time/CustomClock.h` | Controllable scaled/paused clock for custom systems' timers |
-| `World/RespecConfig.h`, `RespecConfig.cpp` | Cached dual-spec toggles, reagent rules, and cost policies |
-| `World/SoloConfig.h`, `CurrencyLimits.h` | Solo play switches, weekly currency cap math, and fishing skillups |
-| `src/common/Utilities/DeterministicRandom.h`, `RandomSeedState.h` | Deterministic seeded RNG streams for test profiles |
-| `LuaEngine/` | Eluna Lua engine (off by default; `Eluna.*` keys in `worldserver.conf.dist`); prototype content in `lua_scripts/` |
-| `Battlefield/` | `BattlefieldMgr`; `Zones/BattlefieldWG.cpp` (Wintergrasp), `Zones/BattlefieldTB.cpp` (Tol Barad) |
+| `World/RespecConfig.h`, `World/RespecConfig.cpp` | Cached dual-spec toggles, reagent rules, and cost policies |
+| `World/SoloConfig.h`, `World/CurrencyLimits.h` | Solo play switches, weekly currency cap math, and fishing skillups |
+| `src/common/Utilities/DeterministicRandom.h`, `src/common/Utilities/RandomSeedState.h` | Deterministic seeded RNG streams for test profiles |
+| `LuaEngine/` | Eluna Lua engine (off by default; `Eluna.*` keys in `src/server/worldserver/worldserver.conf.dist`); prototype content in `lua_scripts/` |
+| `Battlefield/` | `BattlefieldMgr`; `Battlefield/Zones/BattlefieldWG.cpp` (Wintergrasp), `Battlefield/Zones/BattlefieldTB.cpp` (Tol Barad) |
 
 ## Scripts (`src/server/scripts/`)
 
@@ -49,7 +53,7 @@ something worth knowing.
 |---|---|
 | `Custom/` | Our scripts go here. Already contains `PlayerStartScript.cpp`, `solocraft.cpp`, `npc_teleport.cpp`, `custom_items.cpp` and others; check them before writing similar code |
 | `Custom/Heartseed/` | The Heartseed living jewel system (stages, feeding, traits, essences) |
-| `Custom/GMTools/` | GM test suite (`Checkpoints/`, `Clock/`, `Scenario/`, `Spectate/`, `README.md` overview) |
+| `Custom/GMTools/` | GM test suite (`Custom/GMTools/Checkpoints/`, `Custom/GMTools/Clock/`, `Custom/GMTools/Scenarios/`, `Custom/GMTools/Spectate/`, `Custom/GMTools/README.md` overview) |
 | `Custom/MountedSpeed/` | `.mountspeed` inspect command and configuration docs |
 | `Custom/Respec/` | `.respec` inspect, reset, learn commands |
 | `Custom/Loadouts/` | Spec loadouts and gear pages (`.loadout`) |
@@ -58,8 +62,9 @@ something worth knowing.
 | `Custom/SoloConfig/` | `.solo` inspect and test commands |
 | `Custom/Reload/` | Hot-reload registry and `.reload rng` command |
 | `Custom/Capture/` | `.idea`, `.bug`, and `.capture` feedback ticket capture commands |
+| `Custom/Professions/` | All professions unlock and management commands (`.professions`) |
 | `ScriptLoader/ScriptLoader.cpp` | Script registration (shared hotspot) |
-| `Pandaria/` | MoP raids, dungeons, zones, world bosses; `Scenarios/` has 17 scenarios including `FallOfTheramoreAlliance` and `FallOfTheramoreHorde` (jewel intro candidates) |
+| `Pandaria/` | MoP raids, dungeons, zones, world bosses; `Pandaria/Scenarios/` has 17 scenarios including `FallOfTheramoreAlliance` and `FallOfTheramoreHorde` (jewel intro candidates) |
 | `EasternKingdoms/`, `Kalimdor/`, `Outland/`, `Northrend/`, `Maelstrom/` | Older content, including every Classic to Cata raid |
 | `OutdoorPvP/` | Hellfire towers (HP), Halaa (NA), Silithus (SI), Terokkar (TF), Zangarmarsh (ZM) |
 | `World/BrawlersGuild/` | Brawler's Guild (base for the Stupid Ladder) |
@@ -85,22 +90,44 @@ something worth knowing.
 
 | Path | What |
 |---|---|
-| `tools/build/` | Shared build script (`build.ps1`), machine lock, and compiler cache notes |
-| `tools/bench/` | Startup profiling and benchmarking tools (`startup_profile.py`) |
+| `tools/build/` | Shared build script (`tools/build/build.ps1`), machine lock, and compiler cache notes |
+| `tools/bench/` | Startup profiling and benchmarking tools (`tools/bench/startup_profile.py`) |
 | `tools/live-server-mcp/` | MCP server adapter for live worldserver inspection |
-| `tools/backup/` | Save safety and database snapshot tooling (`save_safety.py`) |
+| `tools/backup/` | Save safety and database snapshot tooling (`tools/backup/save_safety.py`) |
 | `tools/dbc/` | Shared MoP 5.4.8 `WDBC` and `WDB2` reader library and named schemas |
 | `tools/content-search/` | Content search MCP server and CLI for spells, visuals, weapon glows, items |
+| `tools/crash-triage/` | Automated crash triage and dump analysis tool |
+| `tools/gmtools/` | Twink candidates tool (`tools/gmtools/twink_candidates.py`) and GM tools fixtures |
+| `tools/map-check/` | Verification tool for `docs/MAP.md` coverage and path validity |
 | `tools/sql-validator/` | SQL update linter (filename, CRLF, idempotence, ID ranges, collisions, schemas) |
+| `tools/stack-sizes/` | Trade goods stack size SQL generator (`tools/stack-sizes/stack_sizes.py`) |
 | `tools/twink-tuning/` | Twink stat-buff SQL generator and bracket scaling math |
-| `tools/devenv/` | Development environment profiles and live scenarios (`solo_smoke.json`) |
+| `tools/devenv/` | Development environment profiles and live scenarios (`tools/devenv/solo_smoke.json`) |
+| `tests/framework/` | Test framework header (`tests/framework/TestMain.h`) defining the shared CTest runner entry point |
+| `tests/capture/` | Unit tests for feedback ticket capture commands |
+| `tests/common/` | Shared test fixtures, mock environment, and in-memory test databases |
+| `tests/gmtools/` | Unit tests for GM checkpoint and twink kit templates |
 | `tests/heartseed/` | Unit tests for Heartseed growth and trait rules |
-| `tests/mounted_speed/` | Unit tests for mount speed multiplier math |
-| `tests/respec/` | Unit tests for dual-spec unlock and cost policies |
 | `tests/loadouts/` | Unit tests for loadout and gear page rules |
+| `tests/mounted_speed/` | Unit tests for mount speed multiplier math |
 | `tests/reagent_bank/` | Unit tests for reagent bank stack rules |
 | `tests/reload/` | Unit tests for deterministic seeded RNG streams |
-| `tests/regression/scenarios/` | Headless client regression scenarios (`custom-reload-rng.json`, etc.) |
+| `tests/respec/` | Unit tests for dual-spec unlock and cost policies |
+| `tests/solo_config/` | Unit tests for solo configuration, currency caps, and rate math |
+| `tests/professions/` | Unit tests for profession limits, skill caps, and recipe learning |
+| `tests/regression/` | Headless client regression scenario runner (`tests/regression/run.py`, `tests/regression/scenarios/`) |
+
+## Documentation (`docs/`)
+
+| Path | What |
+|---|---|
+| `docs/DESIGN.md` | Complete design reference exported from the design document |
+| `docs/ID_RANGES.md` | Range reservations for IDs, spells, items, gameobjects, quests, RBAC permissions |
+| `docs/MAP.md` | Repository map and path directory (this document) |
+| `docs/PLAYTEST.md` | Human playtest walkthrough, checklist, and verification guide |
+| `docs/TUNING.md` | Playtest tuning keys in `src/server/worldserver/worldserver.conf.dist` and `modules/mod_playerbots/config/playerbots.conf.dist` |
+| `docs/twinks.md` | Twink brackets, stats, and gear design reference |
+| `docs/agents/` | Agent audit reports (legacy scripts, config keys, commands, SQL updates) |
 
 ## Build options (`cmake/options.cmake`)
 
