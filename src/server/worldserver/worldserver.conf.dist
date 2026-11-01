@@ -6015,3 +6015,7 @@ Rares.BotsWaitForPlayer = 1
 Rares.Xp.BaseLevelFraction = 0.25
 Rares.Xp.MaxLevelFraction = 1.0
 Rares.IntroOnFirstClaim = 1
+
+# T-047: opt-in GM tracking experiment (lua_scripts/Custom/Tracking).
+# Native masks/stacking unchanged. Forcing off by default; inspection/cleanup remain available.
+Tracking.Probe.Enable = 0
