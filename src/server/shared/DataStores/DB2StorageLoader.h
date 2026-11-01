@@ -23,6 +23,7 @@
 #include <cassert>
 #include <list>
 #include <string>
+#include <vector>
 
 class TC_SHARED_API DB2FileLoader
 {

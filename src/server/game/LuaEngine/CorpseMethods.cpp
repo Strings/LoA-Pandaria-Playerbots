@@ -4,8 +4,8 @@
 * Please see the included DOCS/LICENSE.TXT for more information
 */
 
-#include "CorpseMethods.h"
 #include "Includes.h"
+#include "CorpseMethods.h"
 
 namespace LuaCorpse
 {

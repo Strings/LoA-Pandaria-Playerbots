@@ -20,6 +20,7 @@
 
 #include "BattlePet.h"
 #include "Common.h"
+#include "DatabaseEnvFwd.h"
 #include "TemporarySummon.h"
 
 typedef std::set<BattlePet*> BattlePetSet;

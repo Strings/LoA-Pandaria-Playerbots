@@ -4,8 +4,8 @@
 * Please see the included DOCS/LICENSE.TXT for more information
 */
 
-#include "WorldObjectMethods.h"
 #include "Includes.h"
+#include "WorldObjectMethods.h"
 
 #include "Creature.h"
 #include "GameObject.h"

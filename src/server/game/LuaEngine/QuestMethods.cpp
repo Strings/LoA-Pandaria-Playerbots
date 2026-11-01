@@ -4,8 +4,8 @@
 * Please see the included DOCS/LICENSE.TXT for more information
 */
 
-#include "QuestMethods.h"
 #include "Includes.h"
+#include "QuestMethods.h"
 
 namespace LuaQuest
 {

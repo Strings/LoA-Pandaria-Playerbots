@@ -4,8 +4,8 @@
 * Please see the included DOCS/LICENSE.TXT for more information
 */
 
-#include "AuraMethods.h"
 #include "Includes.h"
+#include "AuraMethods.h"
 
 namespace LuaAura
 {

@@ -20,6 +20,7 @@
 
 #include "Define.h"
 #include <map>
+#include <unordered_map>
 
 enum GroupAIFlags
 {
@@ -32,6 +33,7 @@ enum GroupAIFlags
 
 class Creature;
 class CreatureGroup;
+class Unit;
 
 struct FormationInfo
 {

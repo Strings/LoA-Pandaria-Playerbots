@@ -4,8 +4,8 @@
 * Please see the included DOCS/LICENSE.TXT for more information
 */
 
-#include "ObjectMethods.h"
 #include "Includes.h"
+#include "ObjectMethods.h"
 
 namespace LuaObject
 {

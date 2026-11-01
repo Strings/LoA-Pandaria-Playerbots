@@ -22,6 +22,7 @@
 #include "DatabaseEnv.h"
 #include "SpellMgr.h"
 #include "DBCStores.h"
+#include "Log.h"
 
 void CharacterDatabaseCleaner::CleanDatabase()
 {

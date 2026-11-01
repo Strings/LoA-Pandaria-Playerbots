@@ -19,6 +19,7 @@
 #define SF_LFGQUEUE_H
 
 #include "LFG.h"
+#include "Timer.h"
 #include "Util.h"
 #include <random>
 #include <numeric>

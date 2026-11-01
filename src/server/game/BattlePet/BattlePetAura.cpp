@@ -17,6 +17,7 @@
 
 #include "BattlePetAura.h"
 #include "PetBattle.h"
+#include "DB2Stores.h"
 
 void BattlePetAura::OnApply()
 {

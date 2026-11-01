@@ -21,7 +21,9 @@
 #include "Common.h"
 #include "BattlePetAbilityEffect.h"
 #include "BattlePetAura.h"
+#include "ObjectGuid.h"
 
+class Creature;
 class Player;
 
 enum

@@ -4,8 +4,8 @@
 * Please see the included DOCS/LICENSE.TXT for more information
 */
 
-#include "WorldPacketMethods.h"
 #include "Includes.h"
+#include "WorldPacketMethods.h"
 
 namespace LuaPacket
 {

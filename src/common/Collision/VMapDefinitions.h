@@ -17,6 +17,7 @@
 
 #ifndef _VMAPDEFINITIONS_H
 #define _VMAPDEFINITIONS_H
+#include "Define.h"
 #include <cstring>
 #include <cstdio>
 

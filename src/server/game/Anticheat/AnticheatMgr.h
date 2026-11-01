@@ -20,6 +20,8 @@
 
 #include "Common.h"
 #include "SharedDefines.h"
+#include "MovementInfo.h"
+#include <unordered_map>
 
 class Player;
 class ChatHandler;

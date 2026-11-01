@@ -21,6 +21,7 @@
 #include "CreatureAISelector.h"
 #include "DynamicTree.h"
 #include "GameObjectModel.h"
+#include "MapManager.h"
 #include "GridNotifiersImpl.h"
 #include "Group.h"
 #include "GroupMgr.h"

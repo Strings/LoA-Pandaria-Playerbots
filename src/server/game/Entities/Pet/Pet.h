@@ -18,6 +18,7 @@
 #ifndef TRINITYCORE_PET_H
 #define TRINITYCORE_PET_H
 
+#include "DatabaseEnvFwd.h"
 #include "PetDefines.h"
 #include "TemporarySummon.h"
 
@@ -34,6 +35,7 @@ typedef std::unordered_map<uint32, PetSpell> PetSpellMap;
 typedef std::vector<uint32> AutoSpellList;
 
 class Player;
+struct DeclinedName;
 
 class TC_GAME_API Pet : public Guardian
 {

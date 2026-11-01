@@ -96,8 +96,16 @@ if( USE_SCRIPTPCH AND MSVC )
   )
 endif()
 
-add_library(scripts STATIC 
-  ${scripts_STAT_SRCS} 
+# Without the PCH every object embeds the full debug types of ScriptPCH.h, and a static library past
+# 4 GB fails (LNK1248). An object library hands the objects straight to the linker instead.
+if (USE_SCRIPTPCH)
+  set(scripts_LIBRARY_TYPE STATIC)
+else()
+  set(scripts_LIBRARY_TYPE OBJECT)
+endif()
+
+add_library(scripts ${scripts_LIBRARY_TYPE}
+  ${scripts_STAT_SRCS}
 )
 
 target_include_directories(scripts
@@ -148,5 +156,13 @@ add_dependencies(scripts revision.h)
 
 # Generate precompiled header
 if (USE_SCRIPTPCH)
-  target_precompile_headers(scripts PRIVATE ${scripts_STAT_PCH_HDR}) 
+  target_precompile_headers(scripts PRIVATE ${scripts_STAT_PCH_HDR})
+else()
+  # Most scripts get their includes only from the PCH. Force-include it instead: slower per file,
+  # but compiler caches (sccache) can store the result, which they cannot do for a PCH.
+  if (MSVC)
+    target_compile_options(scripts PRIVATE "/FI${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders/ScriptPCH.h")
+  else()
+    target_compile_options(scripts PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders/ScriptPCH.h")
+  endif()
 endif()
