@@ -1,6 +1,7 @@
 #include "QoLPolicy.h"
 #include "Chat.h"
 #include "Config.h"
+#include "CustomTransmogrification.h"
 #include "DBCStores.h"
 #include "Item.h"
 #include "ObjectAccessor.h"
@@ -119,8 +120,8 @@ namespace
             uint32(AllPerks()), known, total, uint32(sConfigMgr->GetBoolDefault("SoloQoL.CharacterServices", true)), ServiceFlags(player),
             uint32(sConfigMgr->GetBoolDefault("SoloQoL.ShortHearthstone", true)), sConfigMgr->GetIntDefault("SoloQoL.HearthstoneCooldownSeconds", 300),
             player->GetSpellHistory()->GetCooldownDelay(HearthstoneSpell, HearthstoneItem),
-            uint32(sConfigMgr->GetBoolDefault("Transmogrification.AllowMixedArmorTypes", true)),
-            uint32(sConfigMgr->GetBoolDefault("Transmogrification.AllowMixedWeaponTypes", true)));
+            uint32(sTransmogrification->GetAllowMixedArmorTypes()),
+            uint32(sTransmogrification->GetAllowMixedWeaponTypes()));
         return true;
     }
     bool Perks(ChatHandler* handler, char const*) { ReconcilePerks(Target(handler)); return Status(handler, ""); }
@@ -227,8 +228,19 @@ namespace
         void OnLogin(Player* player) override
         {
             ReconcilePerks(player);
-            if (!player->GetSession()->IsBot() && sConfigMgr->GetBoolDefault("SoloQoL.IntroOnLogin", true) && AllPerks())
-                player->GetSession()->SendNotification("Guild perks are available to everyone. City stewards offer free character services.");
+            if (!player->GetSession()->IsBot() && sConfigMgr->GetBoolDefault("SoloQoL.IntroOnLogin", true))
+            {
+                std::string intro;
+                if (AllPerks())
+                    intro = "Guild perks are available to everyone. ";
+                if (sConfigMgr->GetBoolDefault("SoloQoL.CharacterServices", true))
+                    intro += "City stewards offer free character services. ";
+                if (sConfigMgr->GetBoolDefault("SoloQoL.ShortHearthstone", true))
+                    if (auto duration = QoLPolicy::CooldownMillis(sConfigMgr->GetIntDefault("SoloQoL.HearthstoneCooldownSeconds", 300)))
+                        intro += "Hearthstone cooldown: " + std::to_string(*duration / 1000) + " seconds.";
+                if (!intro.empty())
+                    player->GetSession()->SendNotification("%s", intro.c_str());
+            }
         }
     };
     class spell_soloqol_hearthstone : public SpellScriptLoader
