@@ -273,6 +273,8 @@ public:
     void OnQuestAdded(Player* player, Quest const* quest);
     void OnQuestRewarded(Player* player, Quest const* quest);
     uint32 GetGrantQuestId() const { return _grantQuestId; }
+    uint32 GetGrantOfferDelay() const { return _grantOfferDelay; }
+    uint32 GetChoicePromptDelay() const { return _choicePromptDelay; }
 
     // Story beats (T-026): simple hooks set the flags until later quests take over. Each sets its flag once,
     // tells the player and, for an awakening flag, ranks the Heartseed up to the new cap.

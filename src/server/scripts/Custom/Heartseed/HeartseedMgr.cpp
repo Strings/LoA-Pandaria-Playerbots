@@ -4,6 +4,7 @@
 
 #include "HeartseedMgr.h"
 #include "Chat.h"
+#include "CinematicMgr.h"
 #include "Config.h"
 #include "Creature.h"
 #include "DatabaseEnv.h"
@@ -77,7 +78,11 @@ namespace
 
         bool Execute(uint64 /*time*/, uint32 /*diff*/) override
         {
-            sHeartseedMgr->OfferGrantQuest(_player);
+            // A new character's intro cinematic hides any quest window; wait until it has played.
+            if (_player->GetCinematicMgr()->IsOnCinematic())
+                _player->m_Events.AddEvent(new HeartseedOfferEvent(_player), _player->m_Events.CalculateTime(sHeartseedMgr->GetGrantOfferDelay()));
+            else
+                sHeartseedMgr->OfferGrantQuest(_player);
             return true;
         }
 
@@ -93,7 +98,9 @@ namespace
 
         bool Execute(uint64 /*time*/, uint32 /*diff*/) override
         {
-            if (sHeartseedMgr->HasUnchosenOpenTier(_player))
+            if (_player->GetCinematicMgr()->IsOnCinematic())
+                _player->m_Events.AddEvent(new HeartseedChoicePromptEvent(_player), _player->m_Events.CalculateTime(sHeartseedMgr->GetChoicePromptDelay()));
+            else if (sHeartseedMgr->HasUnchosenOpenTier(_player))
                 sHeartseedMgr->SendChoiceMenu(_player);
             return true;
         }
