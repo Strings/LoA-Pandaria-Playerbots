@@ -27,3 +27,6 @@
 ## Live finding / fix in progress
 - Baseline live status/GM hooks pass: 26/26 guild perks, configured services/mixed flags and forced/cleared cooldown.
 - A real Hearthstone item cast exposed an overly strict guard: native cooldown can be absent (test DB item cooldown is 180 ms and Hasty Hearth can erase it). Completed normal casts must set the configured final duration regardless. Fixed in 5d12fdfb; triggered casts are skipped and native GM cheat cleanup runs after the hook. Rebuilding through the normal queue.
+
+- Guild live checks PASS: guildless 26/26 perks, key off removes them, restore grants all; created and verified an owned guild, then disbanded it while online and retained 26/26 after native removal. Guild cleaned up.
+- NPC inspection found a copied spawn maximum of 300 seconds still enabled random delay despite configured minimum 2. Changed max to native sentinel 0 (fixed delay), so the config controls the whole respawn interval. Native first inspection proved minimum 2; inspect 2/0 after next restart.

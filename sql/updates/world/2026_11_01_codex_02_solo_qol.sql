@@ -13,7 +13,7 @@ SELECT 904000,`difficulty_entry_1`,`difficulty_entry_2`,`difficulty_entry_3`,`di
 INSERT INTO `creature_template_model` (`CreatureID`,`Idx`,`CreatureDisplayID`,`DisplayScale`,`Probability`,`VerifiedBuild`) SELECT 904000,`Idx`,`CreatureDisplayID`,`DisplayScale`,`Probability`,`VerifiedBuild` FROM `creature_template_model` WHERE `CreatureID`=6740;
 
 INSERT INTO `creature` (`guid`,`id`,`map`,`zoneId`,`areaId`,`spawnMask`,`phaseMask`,`phaseId`,`phaseGroup`,`modelid`,`equipment_id`,`position_x`,`position_y`,`position_z`,`orientation`,`spawntimesecs`,`spawntimesecs_max`,`wander_distance`,`currentwaypoint`,`curhealth`,`curmana`,`MovementType`,`npcflag`,`npcflag2`,`unit_flags`,`unit_flags2`,`dynamicflags`,`ScriptName`,`walk_mode`,`VerifiedBuild`)
-SELECT 904000,904000,0,`zoneId`,`areaId`,1,1,0,0,0,0,-8703.5,838.5,99.2015,0,300,300,0,0,`curhealth`,`curmana`,0,0,0,0,0,0,'',0,`VerifiedBuild` FROM `creature` WHERE `id`=6740 LIMIT 1;
+SELECT 904000,904000,0,`zoneId`,`areaId`,1,1,0,0,0,0,-8703.5,838.5,99.2015,0,300,0,0,0,`curhealth`,`curmana`,0,0,0,0,0,0,'',0,`VerifiedBuild` FROM `creature` WHERE `id`=6740 LIMIT 1;
 
 
 INSERT INTO `creature_template` (`entry`,`difficulty_entry_1`,`difficulty_entry_2`,`difficulty_entry_3`,`difficulty_entry_4`,`difficulty_entry_5`,`KillCredit1`,`KillCredit2`,`name`,`femaleName`,`subname`,`IconName`,`gossip_menu_id`,`minlevel`,`maxlevel`,`exp`,`exp_unk`,`faction`,`npcflag`,`npcflag2`,`speed_walk`,`speed_run`,`scale`,`rank`,`dmgschool`,`BaseAttackTime`,`RangeAttackTime`,`unit_class`,`unit_flags`,`unit_flags2`,`dynamicflags`,`family`,`trainer_type`,`trainer_class`,`trainer_race`,`type`,`type_flags`,`type_flags2`,`lootid`,`pickpocketloot`,`skinloot`,`resistance1`,`resistance2`,`resistance3`,`resistance4`,`resistance5`,`resistance6`,`spell1`,`spell2`,`spell3`,`spell4`,`spell5`,`spell6`,`spell7`,`spell8`,`PetSpellDataId`,`VehicleId`,`mingold`,`maxgold`,`AIName`,`MovementType`,`HoverHeight`,`Health_mod`,`Mana_mod`,`Mana_mod_extra`,`Armor_mod`,`RacialLeader`,`questItem1`,`questItem2`,`questItem3`,`questItem4`,`questItem5`,`questItem6`,`movementId`,`RegenHealth`,`VignetteID`,`TrackingQuestID`,`mechanic_immune_mask`,`flags_extra`,`ScriptName`,`VerifiedBuild`)
@@ -23,7 +23,7 @@ SELECT 904001,`difficulty_entry_1`,`difficulty_entry_2`,`difficulty_entry_3`,`di
 INSERT INTO `creature_template_model` (`CreatureID`,`Idx`,`CreatureDisplayID`,`DisplayScale`,`Probability`,`VerifiedBuild`) SELECT 904001,`Idx`,`CreatureDisplayID`,`DisplayScale`,`Probability`,`VerifiedBuild` FROM `creature_template_model` WHERE `CreatureID`=6929;
 
 INSERT INTO `creature` (`guid`,`id`,`map`,`zoneId`,`areaId`,`spawnMask`,`phaseMask`,`phaseId`,`phaseGroup`,`modelid`,`equipment_id`,`position_x`,`position_y`,`position_z`,`orientation`,`spawntimesecs`,`spawntimesecs_max`,`wander_distance`,`currentwaypoint`,`curhealth`,`curmana`,`MovementType`,`npcflag`,`npcflag2`,`unit_flags`,`unit_flags2`,`dynamicflags`,`ScriptName`,`walk_mode`,`VerifiedBuild`)
-SELECT 904001,904001,1,`zoneId`,`areaId`,1,1,0,0,0,0,1724.3,-4520,32.6442,0,300,300,0,0,`curhealth`,`curmana`,0,0,0,0,0,0,'',0,`VerifiedBuild` FROM `creature` WHERE `id`=6929 LIMIT 1;
+SELECT 904001,904001,1,`zoneId`,`areaId`,1,1,0,0,0,0,1724.3,-4520,32.6442,0,300,0,0,0,`curhealth`,`curmana`,0,0,0,0,0,0,'',0,`VerifiedBuild` FROM `creature` WHERE `id`=6929 LIMIT 1;
 
 
 DELETE FROM `npc_text` WHERE `ID`=94000;
