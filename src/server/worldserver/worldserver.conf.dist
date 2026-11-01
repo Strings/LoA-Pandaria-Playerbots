@@ -1172,9 +1172,9 @@ Guild.NewsLogRecordsCount = 250
 #    MaxPrimaryTradeSkill
 #        Description: Maximum number of primary professions a character can learn.
 #        Range:       0-10
-#        Default:     2
+#        Default:     11
 
-MaxPrimaryTradeSkill = 2
+MaxPrimaryTradeSkill = 11
 
 #
 #    MinPetitionSigns
@@ -5715,3 +5715,6 @@ Capture.NearbyBotRadius = 100
 
 #
 ###################################################################################################
+
+# Brief notice explaining all-profession access and the extra-profession addon.
+Professions.IntroOnLogin = 1
