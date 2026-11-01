@@ -111,6 +111,24 @@ namespace
             handler->PSendSysMessage("    ... %u more", uint32(decision.Steps.size() - WHY_MAX_LINES));
     }
 
+    // Engine::GetLastAction is a rolling debug trail ("|PUSH:x - 1.0 (default)|A:x - OK|..."); the newest
+    // "A:<name> - OK" entry is the last action that ran.
+    std::string LastRanAction(Engine* engine)
+    {
+        if (!engine)
+            return "";
+        std::string const trail = engine->GetLastAction();
+        size_t end = trail.rfind(" - OK");
+        while (end != std::string::npos)
+        {
+            size_t start = trail.rfind("|A:", end);
+            if (start != std::string::npos && trail.find('|', start + 1) > end)
+                return trail.substr(start + 3, end - start - 3);
+            end = end ? trail.rfind(" - OK", end - 1) : std::string::npos;
+        }
+        return "";
+    }
+
     // "why", "why <name>", "why off", "why off <name>": splits an optional leading keyword from the bot name.
     std::string TakeWord(char const* args, std::string& rest)
     {
@@ -191,7 +209,7 @@ namespace BotInspect
             if (trace->HasLast())
                 return Format("%s (%.3f, traced)", trace->Last().Chosen.c_str(), trace->Last().ChosenRelevance);
 
-        return engine->GetLastAction();
+        return LastRanAction(engine);
     }
 }
 
@@ -245,7 +263,7 @@ public:
         {
             SetTrace(botAI, true);
             handler->PSendSysMessage("Tracing %s now (last action: %s). Ask again in a moment; `.bot why off` stops it.",
-                bot->GetName().c_str(), engine ? engine->GetLastAction().c_str() : "none");
+                bot->GetName().c_str(), LastRanAction(engine).empty() ? "none recorded" : LastRanAction(engine).c_str());
             return true;
         }
 
@@ -279,7 +297,7 @@ public:
             if (!engine)
                 continue;
             handler->PSendSysMessage("  %s%s: last action %s; %s", STATE_NAMES[i], i == state ? " (current)" : "",
-                engine->GetLastAction().empty() ? "none" : engine->GetLastAction().c_str(),
+                LastRanAction(engine).empty() ? "none recorded" : LastRanAction(engine).c_str(),
                 engine->ListStrategies().c_str());
         }
         return true;

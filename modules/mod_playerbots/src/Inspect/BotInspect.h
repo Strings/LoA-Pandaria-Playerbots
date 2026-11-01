@@ -32,7 +32,8 @@ namespace BotInspect
     // False when no system owns `name` (lines then say so).
     bool Explain(std::string const& name, Player* bot, std::vector<std::string>& lines);
 
-    // Last thing the bot did, traced or not: the trace's chosen action when on, else the engine's last action.
+    // Last thing the bot did, traced or not: the trace's chosen action when on, else the newest action the
+    // engine ran (read from its debug trail).
     // For capture tickets and other tools that need a one-line answer.
     std::string LastDecisionSummary(Player* bot);
 }

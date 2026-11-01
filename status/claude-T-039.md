@@ -24,7 +24,17 @@
 
 ## How it was tested
 - Unit tests: `unit_custom_clock` and `unit_scenario_rules` are new; all 7 suites pass.
-- Live checks on the Claude server: see the PR.
+- Live, over SOAP: `.clock` speed, jump, reset and its refusals (negative, too long, zero, over the maximum);
+  `.scenario list/explain`, an unknown name, `.reload gmtools_scenario`; `.bot sections`.
+- Live, headless client with the bot alt Seedalt:
+  - `.bot why` turns tracing on, then shows real decisions. One example: seven candidates with triggers; a
+    blessing (11.0) was impossible, a suggestion (10.0) was useless, and "add all loot" (5.0) ran.
+  - `.bot state`, `.bot traits` (the "not built yet" answer) and `.bot why off` also checked.
+  - `.scenario load clock-next-day` ran both steps; a scenario missing `{target}` ran nothing.
+  - `.spectate` attached, stopped and re-attached. Removing the spectated bot ended it with "the target logged
+    out", and the server kept running.
+- Known gap: untraced bots usually show "none recorded" as their last action, because the engine only keeps its
+  debug trail some of the time. `.bot why` (tracing) is the reliable view.
 
 ## Decisions made
 - **The clock is a separate custom clock, not the core clock.** The core reads `time(nullptr)` in about 240 places
