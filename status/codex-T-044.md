@@ -1,3 +1,5 @@
+BLOCKED: May I publish this own branch with force-with-lease after rebasing? Automatic approval review rejected it; build/live verification continues on current published history.
+
 # T-044: Free experience toggle
 
 **Agent:** codex
