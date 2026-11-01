@@ -65,7 +65,7 @@ The first playtest starts when the quick wins are merged. T-003, T-004 and T-031
 | T-044 | Free XP on/off toggle (command now, settings panel later); no separate battleground queue for XP-off characters | `src/server/scripts/Custom/Twinks/` | codex | open |
 | T-045 | **Priority:** twink gear buffs above heirlooms via item hotfixes, per bracket and breakpoint (compile the current best non-heirloom items first) | `sql/updates/world/`, `docs/twinks.md` | codex | done |
 | T-046 | Dungeon finder for outleveled dungeons: solo teleport at 20+ levels over the dungeon's level (config key). Bot groups wait for the instance pool (Phase 5) | `src/server/game/DungeonFinding/` hooks, `src/server/scripts/Custom/` | codex | open |
-| T-047 | Multi-type tracking test: combine tracking bitmasks behind a config key; test whether the client draws several types and shows several checkmarks | `src/server/scripts/Custom/Tracking/` | codex | in progress |
+| T-047 | Multi-type tracking test: combine tracking bitmasks behind a config key; test whether the client draws several types and shows several checkmarks | `lua_scripts/Custom/Tracking/`, `tools/tracking/` | codex | in progress |
 
 ### The Heartseed (Phase 0b, top priority)
 

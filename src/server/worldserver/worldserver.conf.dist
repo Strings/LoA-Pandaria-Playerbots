@@ -5718,3 +5718,7 @@ Capture.NearbyBotRadius = 100
 
 # Brief notice explaining all-profession access and the extra-profession addon.
 Professions.IntroOnLogin = 1
+
+# T-047: enable only the optional Eluna GM tracking probe; native player tracking is unchanged.
+# Requires lua_scripts/Custom/Tracking under Eluna.ScriptPath. Read per probe command.
+Tracking.Probe.Enable = 0

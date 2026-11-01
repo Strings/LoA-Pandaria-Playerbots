@@ -16,3 +16,9 @@
 
 ## Map additions
 - Planned Custom/Tracking/ and tools/tracking/ diagnostic/prototype.
+
+## Lua probe checkpoint
+- Added an optional Eluna GM probe in lua_scripts/Custom/Tracking, with Tracking.Probe.Enable=0 documented in conf.dist. It reads the active config (MOP_WORLD_CONFIG override), forces only four whitelisted self auras, inspects both native masks, and allows cleanup while disabled. No core behavior, database IDs or duration added.
+- Six Lua VM tests pass: disabled/missing config, GM guard, resource-only profile, no-mutation status/invalid input, unrelated-command passthrough, cleanup after disable. Production probe remains Lua because native aura APIs suffice.
+- This is still provisional. Next: deploy to Codex-only Eluna runtime, prove actual combined bits/add/remove/key controls, then request permission for the required client visual test. Server masks alone cannot prove client rendering/checkmarks.
+- Map additions: lua_scripts/Custom/Tracking/ and tools/tracking/.
