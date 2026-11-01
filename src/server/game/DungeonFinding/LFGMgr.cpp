@@ -25,6 +25,7 @@
 #include "LFGMgr.h"
 #include "LFGAnyLevel.h"  // #702: LFG.AnyLevel.* (off by default)
 #include "LFGScripts.h"
+#include "SoloDungeonHooks.h"
 #include "LFGGroupData.h"
 #include "LFGPlayerData.h"
 #include "LFGQueue.h"
@@ -535,7 +536,7 @@ void LFGMgr::InitializeLockedDungeons(Player* player, uint8 level /* = 0 */)
             lockStatus = LFG_LOCKSTATUS_INSUFFICIENT_EXPANSION;
         else if (dungeon->minlevel > level && !anyLevelDungeon)
             lockStatus = LFG_LOCKSTATUS_TOO_LOW_LEVEL;
-        else if (dungeon->maxlevel && dungeon->maxlevel < level && !anyLevelDungeon)
+        else if (dungeon->maxlevel && dungeon->maxlevel < level && !anyLevelDungeon && !SoloDungeon::UnlockUpperLevel(player, *dungeon))
             lockStatus = LFG_LOCKSTATUS_TOO_HIGH_LEVEL;
         else if (dungeon->seasonal && !IsSeasonActive(dungeon->id))
             lockStatus = LFG_LOCKSTATUS_NOT_IN_SEASON;
@@ -592,6 +593,9 @@ void LFGMgr::JoinLfg(Player* player, LfgRoles roles, LfgDungeonSet& dungeons, co
         return;
 
     if (!roles || roles > (lfg::PLAYER_ROLE_LEADER | lfg::PLAYER_ROLE_TANK | lfg::PLAYER_ROLE_HEALER | lfg::PLAYER_ROLE_DAMAGE)) // All roles
+        return;
+
+    if (SoloDungeon::Join(player, dungeons))
         return;
 
     Group* group = player->GetGroup();
@@ -2025,6 +2029,9 @@ void LFGMgr::UpdateBoot(ObjectGuid guid, bool accept)
 */
 void LFGMgr::TeleportPlayer(Player* player, bool out, bool fromOpcode /*= false*/, bool forceChangeInstance /*= false*/)
 {
+    if (SoloDungeon::Teleport(player, out))
+        return;
+
     LFGDungeonData const* dungeon = NULL;
     Group* group = player->GetGroup();
     if (fromOpcode && group && group->GetMembersCount() == 1)
