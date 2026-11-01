@@ -1,0 +1,66 @@
+{
+  "name": "gmtools",
+  "timeout_seconds": 120,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "1"
+  ],
+  "steps": [
+    "say .clock info",
+    "say .clock speed 2",
+    "say .clock jump 1h",
+    "say .clock reset",
+    "say .scenario list",
+    "say .scenario explain clock-next-day",
+    "say .scenario load clock-next-day",
+    "say .spectate stop",
+    "say .checkpoint list",
+    "say .checkpoint explain hs-10"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "event",
+      "kind": "login",
+      "minimum": 1,
+      "maximum": 1
+    },
+    {
+      "type": "contains",
+      "text": "Clock: speed"
+    },
+    {
+      "type": "contains",
+      "text": "Clock: speed x1.00, 0 d 00:00:00 ahead of wall time."
+    },
+    {
+      "type": "contains",
+      "text": "3 scenarios:"
+    },
+    {
+      "type": "contains",
+      "text": "clock-next-day: Jump the custom clock a day ahead and show it"
+    },
+    {
+      "type": "contains",
+      "text": "Scenario clock-next-day: running 2 steps."
+    },
+    {
+      "type": "contains",
+      "text": "You are not spectating anyone."
+    },
+    {
+      "type": "contains",
+      "text": "18 checkpoints (.checkpoint explain <name>, .checkpoint apply <name>):"
+    },
+    {
+      "type": "contains",
+      "text": "hs-10: Level 10, the first major choice waiting."
+    }
+  ]
+}

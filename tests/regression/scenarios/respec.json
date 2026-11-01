@@ -1,0 +1,45 @@
+{
+  "name": "respec",
+  "timeout_seconds": 120,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "1"
+  ],
+  "steps": [
+    "say .respec info",
+    "say .respec learn 15775",
+    "say .respec reset talents",
+    "say .respec reset spec",
+    "say .respec cast 113873 0"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "event",
+      "kind": "login",
+      "minimum": 1,
+      "maximum": 1
+    },
+    {
+      "type": "contains",
+      "text": "Respec: free gold="
+    },
+    {
+      "type": "contains",
+      "text": "Respec talent 15775: learned="
+    },
+    {
+      "type": "contains",
+      "text": "Respec reset: success="
+    },
+    {
+      "type": "contains",
+      "text": "Respec requested normal cast 113873 with index 0"
+    }
+  ]
+}
