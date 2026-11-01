@@ -18,6 +18,9 @@
 #ifndef SF_NPCHANDLER_H
 #define SF_NPCHANDLER_H
 
+#include "Define.h"
+#include <string>
+
 struct QEmote
 {
     uint32 _Emote;

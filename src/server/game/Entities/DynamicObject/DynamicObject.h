@@ -18,6 +18,7 @@
 #ifndef TRINITYCORE_DYNAMICOBJECT_H
 #define TRINITYCORE_DYNAMICOBJECT_H
 
+#include "GridObject.h"
 #include "Object.h"
 
 class Unit;

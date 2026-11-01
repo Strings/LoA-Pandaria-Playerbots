@@ -18,6 +18,9 @@
 #ifndef CHARACTER_BOOST_H
 #define CHARACTER_BOOST_H
 
+#include "ObjectGuid.h"
+#include <map>
+
 enum CharBoostMisc
 {
     // Items

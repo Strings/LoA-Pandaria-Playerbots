@@ -22,6 +22,7 @@
 #include <mutex>
 #include <list>
 #include <map>
+#include <unordered_map>
 #include "DBCEnums.h"
 #include "ObjectDefines.h"
 

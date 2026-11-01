@@ -21,6 +21,7 @@
 #include "QueryResult.h"
 #include "Transaction.h"
 #include "TimeValue.h"
+#include "SharedDefines.h"
 
 class Unit;
 

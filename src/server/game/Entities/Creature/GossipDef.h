@@ -23,6 +23,7 @@
 #include "ObjectGuid.h"
 
 class WorldSession;
+class Quest;
 enum class QuestGiverStatus : uint32;
 
 #define GOSSIP_MAX_MENU_ITEMS 64                            // client supported items unknown, but provided number must be enough

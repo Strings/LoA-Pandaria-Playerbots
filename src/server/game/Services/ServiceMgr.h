@@ -21,6 +21,8 @@
 #include "Common.h"
 #include <atomic>
 
+class Player;
+
 enum RidingSpells
 {
     RIDING_APPRENTICE        = 33388,

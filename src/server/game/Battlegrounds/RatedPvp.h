@@ -29,6 +29,7 @@
 #include "ObjectGuid.h"
 #include <set>
 
+struct AchievementEntry;
 struct CharTitlesEntry;
 
 enum ArenaType : uint32;

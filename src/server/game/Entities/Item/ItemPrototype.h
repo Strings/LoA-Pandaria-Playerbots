@@ -23,6 +23,7 @@
 #include <bitset>
 
 class Player;
+struct ChrSpecializationEntry;
 
 enum ItemModType
 {
