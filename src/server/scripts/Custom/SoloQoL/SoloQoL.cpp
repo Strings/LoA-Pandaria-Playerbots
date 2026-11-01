@@ -209,8 +209,12 @@ namespace
         void OnConfigLoad(bool reload) override
         {
             if (reload)
+            {
+                // The legacy module's OnAfterConfigLoad hook is not dispatched by this core.
+                sTransmogrification->LoadConfig(true);
                 for (auto const& session : sWorld->GetAllSessions())
                     Queue(session.second->GetPlayer());
+            }
         }
     };
     class solo_qol_guild : public GuildScript

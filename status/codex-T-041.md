@@ -33,3 +33,5 @@
 
 - Live four NPC gossip choices PASS after reviving the owned fixture: flags 1/8/128/64, zero money change, disabled key rejects, neutral Pandaren rejects. Flags restored to zero.
 - Native cloth-on-plate request was correctly rejected by the old stock path despite existing mixed settings; new guarded core call site shares CustomTransmogrification validation. Its positive/negative native packet checks and final build remain pending.
+
+- Final queued build and real Hearthstone native/60/zero/negative checks PASS; guild/gossip controls repeated successfully. Fixed respawn inspection now reports Full Min 2s / Full Max 2s. Native cloth-on-plate succeeds. Its off control exposed the legacy module's undispatched OnAfterConfigLoad hook: SoloQoL now refreshes that module in its dispatched config hook. Rebuild and transmog controls remain pending.
