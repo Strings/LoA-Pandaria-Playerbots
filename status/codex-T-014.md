@@ -10,7 +10,8 @@
 
 ## How it was tested
 - Audited core slot initialization/decrement/removal and verified all eight rank spell IDs for each primary profession against spell_ranks.
-- Implementation, unit/addon tests, default build and live checks remain.
+- All 15 current CTest suites pass, including free-slot saturation and profession-ID uniqueness. Five Lua VM tests pass: higher ranks, native-slot filtering, gathering actions, secure attributes, stale-button cleanup and combat deferral.
+- Default build is queued behind another agent; live checks remain.
 
 ## Next
 - Finish module/addon, push before build, then test all eleven slots, rank handling and combat-safe addon updates. Claude approval required before a routine merge.
