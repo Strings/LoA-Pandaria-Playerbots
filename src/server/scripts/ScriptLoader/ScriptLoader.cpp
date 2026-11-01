@@ -2163,6 +2163,7 @@ void AddSC_custom_capture();
 void AddSC_detached_storage();
 void AddSC_loadouts();
 void AddSC_reagent_bank();
+void AddSC_starting_kit();
 
 void AddCustomScripts()
 {
@@ -2188,6 +2189,7 @@ void AddCustomScripts()
     AddSC_detached_storage();
     AddSC_loadouts();
     AddSC_reagent_bank();
+    AddSC_starting_kit();
 
 #endif
     AddSC_Anticheat();

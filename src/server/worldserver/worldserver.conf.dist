@@ -5718,3 +5718,8 @@ Capture.NearbyBotRadius = 100
 
 # Brief notice explaining all-profession access and the extra-profession addon.
 Professions.IntroOnLogin = 1
+# StartingKit.Mount.Enable: first human login grants Apprentice Riding and a racial ground mount.
+# StartingKit.Bags.Enable: equip ten-slot bags in empty bag slots on first human login.
+# Defaults: 1. Reload affects future first logins; playerbot sessions keep their own initialization.
+StartingKit.Mount.Enable = 1
+StartingKit.Bags.Enable = 1
