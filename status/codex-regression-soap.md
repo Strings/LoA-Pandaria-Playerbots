@@ -2,7 +2,7 @@
 
 **Agent:** codex
 **Branch:** codex/fix-regression-soap
-**Task status:** in progress
+**Task status:** review
 
 ## What changed
 - Regression runs request complete SOAP replies; interactive preview remains 500 characters.
@@ -10,7 +10,7 @@
 
 ## How it was tested
 - Python syntax checks and all three live regressions passed during T-011/T-013 validation.
-- Independent default build, baseline unit suites and final regression run remain.
+- Independent default RelWithDebInfo worldserver build passes; all 11 baseline unit suites pass; all three regressions pass against that exact binary with the none bot-load profile.
 
 ## Next
-- Finish independent checks and merge this routine tools-only fix. No core or SQL changes.
+- Routine tools-only merge authorized by the human. No core source or SQL changes.
