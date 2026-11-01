@@ -32,6 +32,7 @@ patch, no ML. Task list: `TASKS.md`.
 
 ## Recent decisions (newest first)
 
+- 2026-11-01: The first v0.1 playtest starts once the quick wins land; telemetry (T-004), the balance-sim dummy room (T-031) and the bot benchmark (T-003) stay in v0.1 but may land after it. A few hours of untracked play are worth an earlier hands-on feel.
 - 2026-11-01: Reagent bank (T-043) is per character (account-scope detached items still die with their owning character), usable anywhere, no stack limit by default (`ReagentBank.MaxStacks`). Any item some spell uses as a reagent counts, except quest, unique and timed items. Every spell's reagent check takes from the bags first, then the bank (`ReagentSource` core hook).
 - 2026-11-01: Gear pages (T-018) hold only the pieces that differ: a switch stores the worn pieces the incoming page replaces and leaves every other slot as worn, so nothing is ever stripped. The worn loadout's page is empty; a loadout whose page holds pieces can't be deleted; pieces that can't be worn go to the bags, or stay on the page as spares when the bags are full.
 - 2026-11-01: Detached item storage keeps an item's `item_instance` row and swaps its inventory row for a `detached_item` row (the mail path), so enchants, gems, transmog and binding survive. Gear pages, the reagent bank and twink templates each get their own kind.
