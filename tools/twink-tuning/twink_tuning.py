@@ -46,7 +46,6 @@ except ImportError:
 
 NAME_FILTER_REGEX = r"(^QA|Deprecated|Test |PH\]|OLD|UNUSED)"
 DEFAULT_HOTFIX_DATE = "2026-10-31 12:00:00"
-DEFAULT_OUTPUT_REL = Path("sql/updates/world/2026_10_31_gemini_00_twink_gear.sql")
 BASELINE_PATH = Path(__file__).resolve().parent / "v104_baseline.json"
 
 
@@ -421,8 +420,8 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "-o",
         "--output",
-        default=str(repo_root() / DEFAULT_OUTPUT_REL),
-        help="Output SQL path, or '-' for stdout",
+        default="-",
+        help="Output SQL path (a new dated update file, never an applied one), or '-' for stdout",
     )
     parser.add_argument(
         "--dbc-dir",
