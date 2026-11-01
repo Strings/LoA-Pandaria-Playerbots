@@ -945,7 +945,8 @@ public:
             Heartseed::TraitInfo trait;
             bool known = traitId && sHeartseedMgr->GetTrait(traitId, trait);
             send("M	" + std::to_string(Heartseed::MajorTierLevel(tier)) + "	" + (known ? trait.Name : "") + "	" +
-                (known ? GetPathName(trait.TraitPath) : ""));
+                (known ? GetPathName(trait.TraitPath) : "") + "	" + std::to_string(known ? trait.GiftSpellId : 0) + "	" +
+                (known ? trait.Description : ""));
         }
 
         for (auto const& [essenceId, held] : state.Essences)
