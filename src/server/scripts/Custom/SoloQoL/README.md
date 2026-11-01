@@ -1,7 +1,7 @@
 # Solo quality of life (T-041 script half)
 
 - `SoloQoL.GuildPerksForAll=1`: grant native guild perks regardless of guild level/membership. Leaving/joining queues reconciliation after native guild work completes, on the next world update; no poll timer. Disabling restores the native level/membership perk set on login/reload.
-- Existing Transmogrification.AllowMixedArmorTypes/AllowMixedWeaponTypes and legendary/requirement options already ship enabled. This module inspects them; it adds no duplicate transmog implementation.
+- Existing Transmogrification.AllowMixedArmorTypes/AllowMixedWeaponTypes and legendary/requirement options already ship enabled. `SoloQoL.NativeTransmogRules=1` also routes the native window through those existing rules. Disabled uses stock native compatibility. The one core call site is in ItemHandler.cpp; request interaction/ownership/slot validation precedes it. No duplicate compatibility implementation.
 - `SoloQoL.CharacterServices=1`: city stewards offer free rename, customization, race and faction service flags. Log out to complete through the normal selection screen. One pending service replaces other service flags, preserving unrelated flags. Bots, neutral Pandaren and combat are excluded.
 - `SoloQoL.ShortHearthstone=1`, `SoloQoL.HearthstoneCooldownSeconds=300`: the normal Hearthstone spell's AfterCast replaces spell/category cooldown using existing SpellHistory APIs and sends the client cooldown. Read each cast; explicit final duration avoids a flat Hasty Hearth discount underflowing short profiles. Zero clears it; negative leaves native behavior. Other spells are not rebound.
 - `SoloQoL.ServicesRespawnSeconds=300`: NPC delay read at AI spawn/reset/corpse removal. Existing pending timers are not rewritten. Core corpse decay uses the existing core config.
@@ -12,3 +12,5 @@ GM `.soloqol status`, `perks` (reconcile), `hearth` (force configured cooldown),
 Services were prototyped first in `tools/soloqol/services_prototype.lua`, with Lua VM tests. It is GM-only and explicitly loaded, never automatically loaded alongside production C++. Pure policies are in QoLPolicy.h. Flash's stack data is excluded.
 
 The Lua prototype exercises single choices. Production C++ also replaces prior service flags: Eluna exposes SetAtLoginFlag (adds bits), but no removal counterpart in this fork. The Lua VM mock models that additive behavior.
+
+The fixed NPC spawn uses native spawntimesecs_max=0, so only the configured AI delay applies. Completed normal Hearthstone casts get the final configured duration even if a native modifier erased the original cooldown; triggered casts are excluded, and core GM cheat cleanup occurs afterwards.

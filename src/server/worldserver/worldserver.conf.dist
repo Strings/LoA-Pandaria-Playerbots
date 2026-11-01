@@ -5725,3 +5725,7 @@ SoloQoL.HearthstoneCooldownSeconds = 300
 # Service NPC respawn delay, read on spawn/reset/corpse removal.
 SoloQoL.ServicesRespawnSeconds = 300
 SoloQoL.IntroOnLogin = 1
+
+# Apply existing Transmogrification.* compatibility settings to the native transmog window.
+# Disabled uses the stock native compatibility check. NPC/ownership/slot checks still apply.
+SoloQoL.NativeTransmogRules = 1

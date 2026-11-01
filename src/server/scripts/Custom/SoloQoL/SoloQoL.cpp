@@ -114,12 +114,13 @@ namespace
                 if (player->HasSpell(perk->SpellId))
                     ++known;
             }
-        handler->PSendSysMessage("SoloQoL: perks-all=%u; perks=%u/%u; services=%u; service-flags=%u; hearth-enabled=%u; hearth-seconds=%d; hearth-remaining-ms=%u; mixed-armor=%u; mixed-weapons=%u",
+        handler->PSendSysMessage("SoloQoL: perks-all=%u; perks=%u/%u; services=%u; service-flags=%u; hearth-enabled=%u; hearth-seconds=%d; hearth-remaining-ms=%u; mixed-armor=%u; mixed-weapons=%u; native-transmog=%u",
             uint32(AllPerks()), known, total, uint32(sConfigMgr->GetBoolDefault("SoloQoL.CharacterServices", true)), ServiceFlags(player),
             uint32(sConfigMgr->GetBoolDefault("SoloQoL.ShortHearthstone", true)), sConfigMgr->GetIntDefault("SoloQoL.HearthstoneCooldownSeconds", 300),
             player->GetSpellHistory()->GetCooldownDelay(HearthstoneSpell, HearthstoneItem),
             uint32(sTransmogrification->GetAllowMixedArmorTypes()),
-            uint32(sTransmogrification->GetAllowMixedWeaponTypes()));
+            uint32(sTransmogrification->GetAllowMixedWeaponTypes()),
+            uint32(sConfigMgr->GetBoolDefault("SoloQoL.NativeTransmogRules", true)));
         return true;
     }
     bool Perks(ChatHandler* handler, char const*) { ReconcilePerks(Target(handler)); return Status(handler, ""); }

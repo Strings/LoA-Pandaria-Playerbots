@@ -22,7 +22,7 @@
 - World/auth runtime SQL already applied; repeatability/preservation were checked in the disposable copy. Private profile uses Hearthstone 60 seconds, services respawn 2 seconds, all features/intro on; restore 300/300 defaults after checks.
 - Native headless item-hotfix/transmog packet helper reused from T-015; neutral Pandaren language fix reused from T-014. Test Hearthstone item GUID 8 in character 1 bag 0 slot 23. Fixture 13 is human, 14 neutral Pandaren; both at_login were zero before services testing.
 - Live: .soloqol status/perks/hearth/hearthreset/service; real cast and NPC gossip; guild leave/reload/config off; neutral/bot service guard; cloth-on-plate transmog; all three headless regressions. Existing fixtures and private ports are described in tools/devenv; credentials stay ignored.
-- No core-game file changes. No main SQL until approved/merged. T-013/T-011 reviews are approved without required fixes and held for human merge.
+- Native transmog live check found stock validation ignores the existing configurable rule module. Added one ItemHandler.cpp call site behind SoloQoL.NativeTransmogRules; PR now requires human core review/merge. No main SQL until approved/merged. T-013/T-011 reviews are approved without required fixes and held for human merge.
 
 ## Live finding / fix in progress
 - Baseline live status/GM hooks pass: 26/26 guild perks, configured services/mixed flags and forced/cleared cooldown.
@@ -30,3 +30,6 @@
 
 - Guild live checks PASS: guildless 26/26 perks, key off removes them, restore grants all; created and verified an owned guild, then disbanded it while online and retained 26/26 after native removal. Guild cleaned up.
 - NPC inspection found a copied spawn maximum of 300 seconds still enabled random delay despite configured minimum 2. Changed max to native sentinel 0 (fixed delay), so the config controls the whole respawn interval. Native first inspection proved minimum 2; inspect 2/0 after next restart.
+
+- Live four NPC gossip choices PASS after reviving the owned fixture: flags 1/8/128/64, zero money change, disabled key rejects, neutral Pandaren rejects. Flags restored to zero.
+- Native cloth-on-plate request was correctly rejected by the old stock path despite existing mixed settings; new guarded core call site shares CustomTransmogrification validation. Its positive/negative native packet checks and final build remain pending.
