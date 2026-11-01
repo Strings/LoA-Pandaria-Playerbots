@@ -1,0 +1,7 @@
+## Interface: 50400
+## Title: ReagentBank
+## Notes: UltimateMoP reagent bank: deposit and take reagents, see bank counts in tooltips. Crafting draws from the bank on the server.
+## Version: 0.1
+## SavedVariablesPerCharacter: ReagentBankSeen
+
+ReagentBank.lua

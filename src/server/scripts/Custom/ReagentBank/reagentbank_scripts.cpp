@@ -24,7 +24,7 @@ namespace
     {
         Detached::Entry entry;
         entry.ItemEntry = itemEntry;
-        return DetachedStorage::Link(entry, uint8(player->getLevel()));
+        return DetachedStorage::Link(entry, uint8(player->GetLevel()));
     }
 
     // An item id or a shift-clicked item link.
