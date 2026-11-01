@@ -1,4 +1,3 @@
-#include "Custom/Twinks/TwinkXP.h"
 /*
 * This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
 *
@@ -43,6 +42,7 @@ npc_firework            100%    NPC's summoned by rockets and rocket clusters, f
 EndContentData */
 
 #include "ScriptMgr.h"
+#include "Custom/Twinks/TwinkXP.h"
 #include "ScriptedCreature.h"
 #include "ScriptedGossip.h"
 #include "ScriptedEscortAI.h"

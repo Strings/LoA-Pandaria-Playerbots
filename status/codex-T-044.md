@@ -8,6 +8,12 @@
 - Started from latest playerbot a273234b; T-014's build is still queued, so this is independent preparation in the secondary Codex checkout.
 - Read the decided twinking design. Audited core no-XP references: XP gain observes the flag, but queue/group/handler paths do not segregate it. No queue core change is needed.
 
+## Implementation (pushed, not yet built/live-tested)
+- Public self-only `.xp on|off|status`; separate GM target permission 95001 enables force/inspect of the selected player. Uses and persists the native XP flag, with no money changes and idempotent repeated requests.
+- `Twinks.FreeXPToggle=1`, `Twinks.IntroOnLogin=1`; no new timer. Existing NPC calls the shared adapter when enabled; native paid code and text remain the disabled fallback.
+- Small NPC/loader call sites, own module, pure parser suite, custom free greeting and scoped auth permission SQL. SQL validator passes both files with zero issues.
+- Reserved the next Twinks block 95000; includes pending T-041's preceding reservation from PR 85 to avoid overlap.
+
 ## Next
 - Public self-only toggle/status, selected-player GM permission, config and brief login introduction.
 - Route Experience Eliminator NPCs through the free adapter when enabled; preserve paid native behavior when disabled.
