@@ -1,0 +1,7 @@
+## Interface: 50400
+## Title: ProfessionBar
+## Notes: Opens known professions beyond the two native primary slots.
+## Version: 0.1
+## SavedVariables: ProfessionBarDB
+Model.lua
+ProfessionBar.lua

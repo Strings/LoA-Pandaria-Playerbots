@@ -5715,3 +5715,6 @@ Capture.NearbyBotRadius = 100
 
 #
 ###################################################################################################
+
+# Brief notice explaining all-profession access and the extra-profession addon.
+Professions.IntroOnLogin = 1
