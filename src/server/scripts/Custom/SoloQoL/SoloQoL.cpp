@@ -12,6 +12,7 @@
 #include "ScriptedGossip.h"
 #include "ScriptMgr.h"
 #include "SpellHistory.h"
+#include "Spell.h"
 #include "SpellScript.h"
 #include "World.h"
 #include "WorldSession.h"
@@ -51,7 +52,7 @@ namespace
             pending.push_back(player->GetGUID());
         }
     }
-    bool ApplyHearthstone(Player* player, uint32 itemId = HearthstoneItem, bool force = false)
+    bool ApplyHearthstone(Player* player, uint32 itemId = HearthstoneItem)
     {
         if (!sConfigMgr->GetBoolDefault("SoloQoL.ShortHearthstone", true))
             return false;
@@ -60,9 +61,6 @@ namespace
             return false;
         auto const& cooldowns = player->GetSpellHistory()->GetCooldowns();
         auto current = cooldowns.find(HearthstoneSpell);
-        // Native cooldown absence also respects triggered casts and the GM no-cooldown cheat.
-        if (!force && current == cooldowns.end())
-            return false;
         uint32 category = current != cooldowns.end() ? current->second.CategoryId : 0;
         if (!category)
             if (ItemTemplate const* item = sObjectMgr->GetItemTemplate(itemId))
@@ -125,7 +123,7 @@ namespace
         return true;
     }
     bool Perks(ChatHandler* handler, char const*) { ReconcilePerks(Target(handler)); return Status(handler, ""); }
-    bool Hearth(ChatHandler* handler, char const*) { ApplyHearthstone(Target(handler), HearthstoneItem, true); return Status(handler, ""); }
+    bool Hearth(ChatHandler* handler, char const*) { ApplyHearthstone(Target(handler), HearthstoneItem); return Status(handler, ""); }
     bool ResetHearth(ChatHandler* handler, char const*) { Target(handler)->GetSpellHistory()->RemoveCooldown(HearthstoneSpell, true); return Status(handler, ""); }
     bool ForceService(ChatHandler* handler, char const* args)
     {
@@ -252,8 +250,11 @@ namespace
             PrepareSpellScript(HearthstoneScript);
             void After()
             {
-                if (Player* player = GetCaster()->ToPlayer())
-                    ApplyHearthstone(player, GetCastItem() ? GetCastItem()->GetEntry() : HearthstoneItem);
+                // Native modifiers can erase a short item cooldown before this hook.
+                // Override completed normal casts even then; core clears GM cheat cooldowns afterwards.
+                if (!GetSpell()->IsTriggered())
+                    if (Player* player = GetCaster()->ToPlayer())
+                        ApplyHearthstone(player, GetCastItem() ? GetCastItem()->GetEntry() : HearthstoneItem);
             }
             void Register() override { AfterCast += SpellCastFn(HearthstoneScript::After); }
         };

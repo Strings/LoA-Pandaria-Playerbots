@@ -1016,7 +1016,7 @@ class WorldClient:
             return None
         low = str(arg).lower()
         if low == "npc":
-            return getattr(self, "obj_guid", None)
+            return self.obj_guid("npc") or None
         if low in self.group_members:
             return self.group_members[low]
         try:
