@@ -42,6 +42,7 @@ npc_firework            100%    NPC's summoned by rockets and rocket clusters, f
 EndContentData */
 
 #include "ScriptMgr.h"
+#include "Custom/Twinks/TwinkXP.h"
 #include "ScriptedCreature.h"
 #include "ScriptedGossip.h"
 #include "ScriptedEscortAI.h"
@@ -2092,7 +2093,7 @@ public:
     {
         player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_XP_OFF, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
         player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_XP_ON, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
-        player->PlayerTalkClass->SendGossipMenu(GOSSIP_TEXT_EXP, creature->GetGUID());
+        player->PlayerTalkClass->SendGossipMenu(Twinks::FreeXPEnabled() ? 95000 : GOSSIP_TEXT_EXP, creature->GetGUID());
         return true;
     }
 
@@ -2119,7 +2120,9 @@ public:
         }
         if (doSwitch)
         {
-            if (!player->HasEnoughMoney(uint64(EXP_COST)))
+            if (Twinks::FreeXPEnabled())
+                Twinks::SetExperienceEnabled(player, noXPGain);
+            else if (!player->HasEnoughMoney(uint64(EXP_COST)))
                 player->SendBuyError(BUY_ERR_NOT_ENOUGHT_MONEY, 0, 0, 0);
             else if (noXPGain)
             {
