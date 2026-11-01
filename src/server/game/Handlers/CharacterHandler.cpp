@@ -41,6 +41,7 @@
 #include "Realm.h"
 #include "ReputationMgr.h"
 #include "ScriptMgr.h"
+#include "FirstLoginHooks.h"
 #include "SharedDefines.h"
 #include "SocialMgr.h"
 #include "SystemConfig.h"
@@ -1170,7 +1171,7 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder const& holder)
 
     if (pCurrChar->HasAtLoginFlag(AT_LOGIN_FIRST))
     {
-        sScriptMgr->OnPlayerFirstLogin(pCurrChar);
+        FirstLoginHooks::Dispatch(pCurrChar);
         pCurrChar->RemoveAtLoginFlag(AT_LOGIN_FIRST);
 
         PlayerInfo const* info = sObjectMgr->GetPlayerInfo(pCurrChar->GetRace(), pCurrChar->GetClass());

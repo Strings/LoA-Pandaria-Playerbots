@@ -814,9 +814,6 @@ public:
     // Called when a player logs in.
     virtual void OnLogin(Player* /*player*/) { }
 
-    // Called once while AT_LOGIN_FIRST is still set.
-    virtual void OnFirstLogin(Player* /*player*/) { }
-
     // Called when a player logs out.
     virtual void OnLogout(Player* /*player*/) { }
 
@@ -1249,7 +1246,6 @@ public: /* PlayerScript */
     void OnPlayerTextEmote(Player* player, uint32 textEmote, uint32 emoteNum, ObjectGuid guid);
     void OnPlayerSpellCast(Player* player, Spell* spell, bool skipCheck);
     void OnPlayerLogin(Player* player);
-    void OnPlayerFirstLogin(Player* player);
     void OnPlayerLogout(Player* player);
     void OnPlayerCreate(Player* player);
     void OnPlayerDelete(ObjectGuid guid);

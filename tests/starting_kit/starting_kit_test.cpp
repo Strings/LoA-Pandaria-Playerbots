@@ -1,8 +1,27 @@
 #include "TestMain.h"
 #include "StartingKitPolicy.h"
+#include "FirstLoginHooks.h"
+namespace
+{
+    int sequence = 0;
+    void First(Player*)
+    {
+        sequence = sequence * 10 + 1;
+    }
+    void Second(Player*)
+    {
+        sequence = sequence * 10 + 2;
+    }
+}
 void RunTests()
 {
     using StartingKit::MountForRace;
+    UMP_CHECK(!FirstLoginHooks::Register(nullptr));
+    UMP_CHECK(FirstLoginHooks::Register(&First));
+    UMP_CHECK(!FirstLoginHooks::Register(&First));
+    UMP_CHECK(FirstLoginHooks::Register(&Second));
+    FirstLoginHooks::Dispatch(nullptr);
+    UMP_CHECK(sequence == 12);
     UMP_CHECK(MountForRace(1) == 458);
     UMP_CHECK(MountForRace(2) == 6654);
     UMP_CHECK(MountForRace(3) == 6899);
