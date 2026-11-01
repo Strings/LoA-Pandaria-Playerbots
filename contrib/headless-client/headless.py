@@ -1494,6 +1494,15 @@ class WorldClient:
                 self.emit("duel_winner", fled=fled, opponent=json.dumps(opp_name), self_name=json.dumps(self_name))
             else:
                 self.emit("duel_winner", fled="?")
+        elif op == 0x103B:  # SMSG_DB_REPLY
+            if len(body) >= 16:
+                entry, version, table, size = struct.unpack_from("<IIII", body)
+                record = body[16:16 + size]
+                if table == 2442913102 and len(record) >= 400:
+                    # Fixed fields before names: 25 scalars, 4x10 stats, 4 scalars, 6x5 spells.
+                    flags = struct.unpack_from("<I", record, 8)[0]
+                    bonding = struct.unpack_from("<I", record, 396)[0]
+                    self.emit("item_sparse", entry=entry, version=version, flags=flags, bonding=bonding)
         elif op == SMSG_CAST_FAILED:
             # Spell.cpp:4401-: spellId(4) + result(4) + cast_count(1), diagnostic only - not decoding
             # the result-specific trailing payload some failure codes append.
@@ -2096,6 +2105,34 @@ class WorldClient:
         self.send_packet(CMSG_SET_PRIMARY_TALENT_TREE, struct.pack("<I", tab))
         log("sent CMSG_SET_PRIMARY_TALENT_TREE tab=%d" % tab)
         self.emit("set_spec", tab=tab)
+
+    def item_hotfix(self, entry):
+        # MiscHandler::HandleRequestHotfix: one Item-sparse record, zero GUID mask.
+        bw = BitWriter()
+        bw.bits(1, 21)
+        for _ in range(8):
+            bw.bit(False)
+        self.send_packet(0x158D, struct.pack("<I", 2442913102) + bw.flush() + struct.pack("<I", entry))
+        self.emit("item_hotfix_request", entry=entry)
+
+    def transmog(self, npc, slot, entry, source):
+        # ItemHandler::HandleTransmogrifyItems, one inventory source (modifications GUID).
+        nb, sb = int(npc).to_bytes(8, "little"), int(source).to_bytes(8, "little")
+        bw = BitWriter()
+        for index in (5, 6, 1, 2, 3, 4):
+            bw.bit(nb[index] != 0)
+        bw.bits(1, 21)
+        bw.bit(False)  # no item bonus
+        bw.bit(True)   # inventory source GUID
+        for index in (0, 7):
+            bw.bit(nb[index] != 0)
+        for index in (5, 6, 1, 3, 0, 4, 7, 2):
+            bw.bit(sb[index] != 0)
+        payload = bw.flush() + struct.pack("<II", slot, entry)
+        payload += guid_byte_seq(int(npc), (5, 0, 1, 2, 3, 4, 6, 7))
+        payload += guid_byte_seq(int(source), (2, 5, 4, 3, 6, 0, 7, 1))
+        self.send_packet(0x06D7, payload)
+        self.emit("transmog_request", slot=slot, entry=entry, source=source)
 
     def autoequip(self, bag, slot):
         """CMSG_AUTOEQUIP_ITEM (ItemHandler.cpp HandleAutoEquipItemOpcode): uint8 slot, uint8 bag, the same as
@@ -4577,6 +4614,11 @@ def run_verb(w, args_cli, line):
             log("set-spec: need <talent tab 0-3>")
             return
         w.set_spec(int(rest[0]))
+    elif verb == "item-hotfix":
+        w.item_hotfix(int(rest[0]))
+    elif verb == "transmog":
+        # transmog NPC_GUID SLOT SOURCE_ENTRY SOURCE_ITEM_GUID
+        w.transmog(w.obj_guid(rest[0]), int(rest[1]), int(rest[2]), int(rest[3]))
     elif verb == "autoequip":
         # autoequip BAG SLOT: equip an item the way a right-click does (bag 255 = backpack, slots 23-38)
         if len(rest) < 2 or not rest[0].isdigit() or not rest[1].isdigit():
