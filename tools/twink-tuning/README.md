@@ -1,6 +1,6 @@
 # Twink Buff Generator (`tools/twink-tuning/`)
 
-Regenerates the twink gear stat-buff SQL migration (`sql/updates/world/2026_10_31_gemini_00_twink_gear.sql`, replacing `2026_10_31_codex_00_twink_gear.sql`) from live read-only `item_template` data and MoP 5.4.8 DBC scaling curves (`ScalingStatDistribution.dbc`, `ScalingStatValues.dbc`, `RandPropPoints.dbc`, `gtItemSocketCostPerLevel.dbc`, `ItemDamage*.dbc`), so twink tuning can be adjusted after playtests without repeating the manual T-045 research.
+Regenerates the twink gear stat-buff SQL migration (first shipped as `sql/updates/world/2026_10_31_codex_00_twink_gear.sql`) from live read-only `item_template` data and MoP 5.4.8 DBC scaling curves (`ScalingStatDistribution.dbc`, `ScalingStatValues.dbc`, `RandPropPoints.dbc`, `gtItemSocketCostPerLevel.dbc`, `ItemDamage*.dbc`), so twink tuning can be adjusted after playtests without repeating the manual T-045 research.
 
 See `docs/twinks.md` for the candidate shortlist rules, heirloom matching logic, and per-item audit.
 
@@ -21,7 +21,7 @@ See `docs/twinks.md` for the candidate shortlist rules, heirloom matching logic,
 | `--target-pct` | `7.0` | Target stat and weapon DPS percentage above matching heirlooms (`7.0` = `1.07x` floor). |
 | `--weights` | `stamina=0.25,crit=1.25,haste=1.25,attack_power=0.5,primary=1,hit=1,expertise=1,mastery=1,spell_power=1` | Comma-separated `stat=weight` overrides for comparator ranking. |
 | `--brackets` | `19,29,39,49,59,60,69,70,78,79,80,84,85,89` | Comma-separated bracket endpoint levels. |
-| `-o`, `--output` | `sql/updates/world/2026_10_31_gemini_00_twink_gear.sql` | Output SQL file path, or `-` for stdout. |
+| `-o`, `--output` | `-` | Output SQL file path, or `-` for stdout. A retune goes into a new dated update file (`YYYY_MM_DD_<agent>_<NN>_twink_gear.sql`); never overwrite an applied one. |
 | `--dbc-dir` / `MOP_DBC_DIR` | `I:\UltimateMoP\gamedata\dbc` | Directory containing MoP 5.4.8 `.dbc` files. |
 | `--db` / `MOP_WORLD_DB` | `world_gemini` | Read-only target world database name. |
 | `--host` / `MOP_DB_HOST` | `127.0.0.1` | MySQL host. |
@@ -35,8 +35,8 @@ Reproduce the default 7% migration (`314` item updates) and diff against the T-0
 ```powershell
 $env:MOP_DB_USER = "ultimatemop"
 $env:MOP_DB_PASSWORD = "ultimatemop"
-python tools/twink-tuning/twink_tuning.py
-git diff --no-index sql/updates/world/2026_10_31_codex_00_twink_gear.sql sql/updates/world/2026_10_31_gemini_00_twink_gear.sql
+python tools/twink-tuning/twink_tuning.py -o $env:TEMP	wink_gear.sql
+git diff --no-index sql/updates/world/2026_10_31_codex_00_twink_gear.sql $env:TEMP	wink_gear.sql
 ```
 
 Preview a 5% tuning pass for classic x9 brackets to stdout:
