@@ -131,6 +131,7 @@ top to bottom. Rules:
 | T-069 | `docs/PLAYTEST.md` check: every command, config key and addon slash command the checklist names exists (grep the command tables, `.conf.dist` files and addon `.lua`). Fix wrong names in PLAYTEST.md only | `docs/PLAYTEST.md` | the PR lists each name checked and each fix | flash | review |
 | T-070 | Regression scenario for the reagent bank: one scenario covering `.reagent list`, `inspect`, `add`, `take`, and `deposit` | `tests/regression/scenarios/` | `python tests/regression/run.py` passes it against the gemini server | flash | review |
 | T-073 | Regression scenarios for remaining quick-win commands: `.mountspeed` and `.solo info` (one scenario each in `tests/regression/scenarios/`, expected messages from the code) | `tests/regression/scenarios/` | `python tests/regression/run.py` passes both against the gemini server | flash | review |
+| T-072 | World boss loot audit: Sha of Anger (60491), Galleon (62346), Oondasta (69161) and all MoP world bosses / Timeless Isle rare elites. Audit creature_loot_template and reference tables; report gaps in `docs/agents/world-boss-loot.md` | `sql/updates/world/`, `docs/agents/` | sql-validator reports 0 issues; update applies twice to world_gemini; gaps documented | flash | review |
 
 ## Suggested split
 
