@@ -1438,6 +1438,30 @@ Suggested but not yet adopted.
 - **Brawler's announcer:** an LLM ringside announcer who knows your history.
 - **Eavesdrop toy:** an in-game way to read the reasons bots log ("Left the party because the warrior kept pulling"); a debug view that doubles as a toy.
 
+**Emergent stories and champions (long-term)**
+
+- **Nomads: Westworld-style stories for conscious bots.** Not only the nemesis: any bot with a consciousness file can grow
+  its own lore. The storyteller reads patterns in the files (a feud that keeps flaring, a bot that keeps dying at the same
+  bridge, a lucky streak, a betrayal, a friendship with the player) and turns them into arcs: a title, rumors on the news
+  board and in trade chat, other bots reacting, and sometimes a quest the player can join or stumble into. Nomads are
+  bots that roam between zones and carry their stories with them, so you hear of one long before you meet them. Nothing
+  is scripted per bot; the arcs come from what happened to it.
+- **Rare personalities, legendary moments.** Traits come from wide distributions, so a tiny share of bots sit at the
+  extremes (impulsive, reckless, showboating). In the right moment (a long pull plan, a group waiting) one of them does
+  something like a Leeroy Jenkins charge with nobody scripting it. Keep the tails rare per population and per session,
+  trigger them from context rather than dice, have the other bots react in character, and let the chronicle and bot
+  memories keep it as a story.
+- **Champion bots bred from bot telemetry.** Once bots read as human, rank them by outcome per battleground and role
+  (captures, returns, wins), train the next generation on the top performers, and repeat (league-style selection).
+  Guardrails so they stay human: every generation keeps human telemetry in the mix; selection scores both win rate and
+  human-likeness (the tell metrics from Human-like bots); keep a spread of styles (aggressive carrier, patient defender,
+  chaotic) instead of one best bot.
+- **Champions in rated play.** Champions fill high ratings in solo rated battlegrounds. They are tagged (title or
+  nameplate marker), beating one pays extra and writes a chronicle entry, and a champion who beat you remembers the
+  match (nemesis-style).
+- **Choose your challenge.** A PvP queue option: include champions or not, how many per match, and a style filter.
+  Server-side config keys set the defaults and the limits.
+
 ## Tooling
 
 Developer tools and MCP servers that make the rest cheaper to build (decided). Each is a standalone, reusable module per the modularity pillar, so it can serve other projects.
