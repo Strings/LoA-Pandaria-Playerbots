@@ -1,6 +1,6 @@
 # Project status
 
-Last folded: 2026-11-01 by Claude Code (39 fragments, T-001 to T-058, T-017, T-018, T-043). Agents: read this, never edit
+Last folded: 2026-11-01 by Claude Code (49 fragments, T-001 to T-073, BUG-004). Agents: read this, never edit
 it; write a fragment in `status/`. Claude Code folds them.
 
 ## Current milestone: v0.1 The jewel run
@@ -17,18 +17,17 @@ patch, no ML. Task list: `TASKS.md`.
 |---|---|
 | Fork, build, game data, databases | Done (T-001). Builds with Ninja and sccache through `tools\build\build.ps1`, which queues builds machine-wide |
 | Agent environments | Done: worktrees, per-agent databases and ports for Claude Code, Codex and Gemini (T-002, T-005) |
-| Fast iteration (Phase 0a) | Done except fixtures (T-007) and faster builds (T-060): test profiles, loader profiler, unit tests (CTest, 14 suites), Eluna prototypes, headless regression runner, save snapshots and migration checks, `.reload`, seeded test RNG, GM tools (`.clock`, `.scenario`, `.spectate`, `.bot why/state/...`), `/idea` and `/bug` capture |
+| Fast iteration (Phase 0a) | Done except fixtures (T-007) and faster builds (T-060): test profiles, loader profiler, unit tests (CTest, 15 suites), Eluna prototypes, headless regression runner, save snapshots and migration checks, `.reload`, seeded test RNG, GM tools (`.clock`, `.scenario`, `.spectate`, `.bot why/state/...`), `/idea` and `/bug` capture (players too since BUG-004), 13 regression scenarios covering every custom command set |
 | Heartseed (Phase 0b) | MVP done (T-020 to T-026, T-049): account-wide seed, stage glows, traits and majors, path-choice gossip, feeding and essences, rank cap, story flags, GM commands. All numbers are placeholders until v0.5; glow IDs await a pick in the client |
 | GM test suite | Done (T-048): checkpoints (`hs-10` and more), twink checkpoints, kits, ability tester, GMSuite addon |
-| Quick wins | Done: mount speed x2 (T-010), rare mounts 10% (T-012), free respec and dual spec from 10 (T-016), solo config defaults (T-019), twink gear +7% (T-045, generator T-050). In progress: raid resets (T-013, review), starting kit (T-011). Open: T-014, T-015, T-041 to T-044, T-046, T-047 |
+| Quick wins | Done: mount speed x2 (T-010), rare mounts 10% including the world bosses (T-012, T-064), free respec and dual spec from 10 (T-016), solo config defaults (T-019), twink gear +7% (T-045, generator T-050), eleven primary professions with the `/profbar` addon (T-014), trade goods stack to 1000 (T-062), 36-slot bags from vendors (T-042, T-061). Approved, waiting to merge: raid resets (T-013), starting kit (T-011), no binding (T-015), solo QoL (T-041). Open: T-044, T-046, T-047 |
 | Loadouts and detached storage | Done: spec loadouts with `/lo` panel (T-017), gear pages per loadout (T-018), shared detached item storage, reagent bank with crafting drawing from it and `/rb` panel (T-043). Twink templates will use the same storage. Addon panels await a real-client playtest |
-| Tooling | Done: live server MCP, crash triage, SQL validator, DBC reader and content search, SQL and config audits. Open: balance sim (T-031) |
+| Tooling | Done: live server MCP, crash triage, SQL validator, DBC reader and content search, SQL, config, command and legacy-script audits, `tools/map-check` for `docs/MAP.md`. Open: balance sim (T-031) |
 | Telemetry (T-004), bot load baseline (T-003) | Not started |
 | Timeline decision (T-036) | Waiting on the human |
 | Game client | `mop-clean/`, 5.4.8.18414 enUS, not patched |
 
-**In progress:** Codex T-013 (PR 45) and T-011 (PR 61), both approved by Claude and waiting on the human's core review, then T-015 (PR 69); Flash fixing PRs 53, 54, 63 to 66 and 72, then T-065 to T-069.
-**Blocked:** nothing.
+**In progress:** Codex stacking PRs 61, 85, 69 and 45 for one batch merge (all approved), then T-044 (PR 86) and T-046 (PR 91); Flash on T-074 (PR 96, rebase) and the T-075 pre-playtest smoke run; Claude on the PR 82 follow-ups and T-060.**Blocked:** nothing.
 
 ## Recent decisions (newest first)
 
@@ -80,9 +79,16 @@ patch, no ML. Task list: `TASKS.md`.
 
 ## Open follow-ups
 
+- Main characters DB: apply PR 69's soulbound cleanup after it merges (the human approved; back up `item_instance` first).
+- Professions (T-014): the intro shows on every login; limit it to characters with fewer than 3 primaries. The conf comment says "Range: 0-10" with default 11.
+- Raid retention (T-013): `SetBossState` keeps a DONE boss DONE while retention is on; raid scripts that reset a boss on purpose need a look. Saves commit synchronously on the map thread.
+- No binding (T-015): about 65,000 item-sparse hotfix rows make each login send about 780 KB of hotfix info. Watch login time.
+- Sha of Anger, Galleon and Oondasta drop only their mounts; their gear needs real 5.4.8 loot data (`docs/agents/world-boss-loot.md`). Not v0.1.
+- Legacy scripts: `docs/agents/legacy-scripts.md` recommends pruning unregistered donor scripts and unhooking `solocraft.cpp` in favor of SoloConfig.
+
 - Reagent bank: check in the real client whether the profession window allows Create when the reagents are only in the bank. If the client blocks it, the addon needs a craft-from-bank button (`docs/PLAYTEST.md`).
 - Loadouts and gear pages: the `/lo` panel, gear page drag and drop and gem links need a real-client look; the bags-full path (spares) is untested live.
-- `.startingkit` (T-011) reuses the reload-config RBAC permission; give it its own once T-068's command audit lands.
+- Five systems borrow core permissions (830, 811, 509; see `docs/agents/command-audit.md`), `.startingkit` among them; give them their own IDs from their blocks.
 - Pick the final Heartseed glows in the client (candidates in `docs/agents/heartseed-glows.md`), and a real proc spell instead of the placeholder 16614.
 - Growth from other sources (quests, rares, first dungeon clears, Sha hunters) calls `HeartseedMgr::AddGrowth`; not wired yet.
 - Green "Twink" tooltip tag needs item hotfixes or the client patch.
@@ -91,7 +97,6 @@ patch, no ML. Task list: `TASKS.md`.
 - `server.commit_hash` in `/idea` tickets reads "Archive": the build doesn't pick up the git revision.
 - sccache caches nothing while the precompiled header is on (T-060).
 - Seen once: the world thread hung in `Player::~Player` when a master relogged while its bot alt was grouped with it. Watch for it.
-- Rare mount sources missing from stock loot (Sha, Galleon direct rows, Oondasta lootid 0) were not added by T-012.
 
 ## Known facts and gotchas
 
@@ -104,6 +109,7 @@ patch, no ML. Task list: `TASKS.md`.
 - **Test profile:** set `Heartseed.Grant.OfferOnLogin = 0` and `Heartseed.Choice.PromptOnLogin = 0` if the login windows get in the way.
 - **Reload:** `.reload config` reopens logs in overwrite mode, so startup lines vanish from `Server.log`. Lua reloads through `.reload config`, not `.reload eluna`.
 - **Bots:** register a `.bot` section with `BotInspect::Register` for new bot systems; register checkpoint steps for new player state (see `checkpoint_heartseed.cpp`). Telemetry (T-004) should pause around `CheckpointMgr::Apply`. `OnKillCredit` suits telemetry outcome events.
+- **MAP.md:** run `python tools/map-check/check_map.py` after adding a folder; it fails on missing or stale paths.
 - **Tickets** from `/idea` and `/bug` land in `<repo>/tickets/` (gitignored, format in `tickets/README.md`).
 - **Snapshots** (T-037): capture blocks writes while dumping; restore needs the same MySQL version and a separate instance.
 - `mop-clean/` is the 5.4.8.18414 enUS client (24 GB). Never commit it; keep it clean (extract into `gamedata/`). `_Wow.exe` and `_Wow-64.exe` skip file verification, so custom patch MPQs load with them. `WTF/Config.wtf` still points at Tauri's realmlist. The client needs the connection patch from `contrib/SkyFire Patcher/548`; patch copies, not the originals.
