@@ -28,3 +28,6 @@
 
 ## Map additions
 - Scripting/FirstLoginHooks, Custom/StartingKit and tests/starting_kit.
+
+## Review follow-up
+- Claude approved with no required logic changes. Rebased on playerbot 2c654e81 as requested; kept both append-only loader/config additions and reused the already-merged neutral Pandaren harness fix. Starting-kit module/tests are unchanged; existing policy/callback binary rerun passes. Build/native results above precede this rebase; human core merge remains held. No SQL.
