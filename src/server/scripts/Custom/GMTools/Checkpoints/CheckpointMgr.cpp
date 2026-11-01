@@ -178,18 +178,16 @@ CheckpointMgr::CheckpointMgr()
         });
 
     RegisterStep("class_spells",
-        [](ChatHandler* handler, Player* target, Step const& /*step*/, std::string& message)
+        [](ChatHandler* /*handler*/, Player* target, Step const& /*step*/, std::string& message)
         {
-            // .learn all my class only works on the GM's own character.
-            if (!handler->GetSession() || handler->GetSession()->GetPlayer() != target)
-            {
-                message = "class spells only on yourself; skipped";
-                return false;
-            }
+            // What a character who leveled normally knows: the level-up skill spells and its specialization's
+            // spells. Not .learn all my class, which also learns every talent of every tier.
+            target->UpdateSkillsForLevel();
+            target->LearnSpecializationSpells();
             message = "class spells";
-            return RunCommand(handler, ".learn all my class");
+            return true;
         },
-        [](Step const& /*step*/) { return std::string("Learn every class spell for the level (only when applied to yourself)."); });
+        [](Step const& /*step*/) { return std::string("Learn the class and specialization spells a character of this level knows."); });
 
     RegisterStep("spell",
         [](ChatHandler* /*handler*/, Player* target, Step const& step, std::string& message)

@@ -59,6 +59,7 @@ public:
         {
             { "refresh", &HandleRefreshCommand, RBAC_PERM_COMMAND_GMSUITE, Trinity::ChatCommands::Console::No },
             { "sync",    &HandleSyncCommand,    RBAC_PERM_COMMAND_GMSUITE, Trinity::ChatCommands::Console::No },
+            { "classspells", &HandleClassSpellsCommand, RBAC_PERM_COMMAND_GMSUITE, Trinity::ChatCommands::Console::No },
         };
         static std::vector<ChatCommand> commandTable =
         {
@@ -208,6 +209,18 @@ public:
                 target->SetPower(Powers(power), maxPower);
         }
         handler->PSendSysMessage("%s: cooldowns reset, health and power full.", target->GetName().c_str());
+        return true;
+    }
+
+    // The class_spells checkpoint step on its own: level-up and specialization spells, no talents.
+    static bool HandleClassSpellsCommand(ChatHandler* handler, char const* /*args*/)
+    {
+        Player* target = GetTarget(handler);
+        if (!target)
+            return false;
+        target->UpdateSkillsForLevel();
+        target->LearnSpecializationSpells();
+        handler->PSendSysMessage("%s: class and specialization spells for level %u learned.", target->GetName().c_str(), uint32(target->GetLevel()));
         return true;
     }
 
