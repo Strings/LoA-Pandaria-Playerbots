@@ -138,4 +138,5 @@ Original split:
 3. **Gemini:** tooling first, no full server builds while it settles in: T-034 (SQL validator), then
    T-030 (DBC reader and content search), then T-050 and T-033. When Argon's weekly quota runs out, Flash
    works through the Flash queue. Claude Code reviews its PRs.
-4. **Human:** T-036 (timeline), the hardware target for T-003, and PR reviews.
+4. **Human:** T-036 (timeline), the hardware target for T-003, and PR reviews. Playtest any time from `docs/PLAYTEST.md`;
+   report with `.bug` and `.idea` in game.
