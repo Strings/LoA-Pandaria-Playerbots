@@ -38,6 +38,10 @@
 #include <shared_mutex>
 #include <sstream>
 
+// From the GM tools block (docs/ID_RANGES.md). Players file ideas and bugs; only GMs read every ticket.
+static rbac::RBACPermissions const RBAC_PERM_COMMAND_CAPTURE_REPORT = static_cast<rbac::RBACPermissions>(91007);
+static rbac::RBACPermissions const RBAC_PERM_COMMAND_CAPTURE_READ = static_cast<rbac::RBACPermissions>(91008);
+
 namespace
 {
     namespace fs = std::filesystem;
@@ -480,15 +484,15 @@ public:
     {
         static std::vector<ChatCommand> captureSubTable =
         {
-            { "list", &HandleCaptureListCommand, rbac::RBAC_PERM_COMMAND_TICKET, Trinity::ChatCommands::Console::Yes },
-            { "show", &HandleCaptureShowCommand, rbac::RBAC_PERM_COMMAND_TICKET, Trinity::ChatCommands::Console::Yes },
+            { "list", &HandleCaptureListCommand, RBAC_PERM_COMMAND_CAPTURE_READ, Trinity::ChatCommands::Console::Yes },
+            { "show", &HandleCaptureShowCommand, RBAC_PERM_COMMAND_CAPTURE_READ, Trinity::ChatCommands::Console::Yes },
         };
 
         static std::vector<ChatCommand> commandTable =
         {
-            { "idea",    &HandleIdeaCommand, rbac::RBAC_PERM_COMMAND_TICKET, Trinity::ChatCommands::Console::Yes },
-            { "bug",     &HandleBugCommand,  rbac::RBAC_PERM_COMMAND_TICKET, Trinity::ChatCommands::Console::Yes },
-            { "capture", captureSubTable,    rbac::RBAC_PERM_COMMAND_TICKET, Trinity::ChatCommands::Console::Yes },
+            { "idea",    &HandleIdeaCommand, RBAC_PERM_COMMAND_CAPTURE_REPORT, Trinity::ChatCommands::Console::Yes },
+            { "bug",     &HandleBugCommand,  RBAC_PERM_COMMAND_CAPTURE_REPORT, Trinity::ChatCommands::Console::Yes },
+            { "capture", captureSubTable,    RBAC_PERM_COMMAND_CAPTURE_READ,   Trinity::ChatCommands::Console::Yes },
         };
 
         return commandTable;

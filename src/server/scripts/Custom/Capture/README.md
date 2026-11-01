@@ -6,10 +6,10 @@ In-game feedback and bug capture module (T-040). Pairs with the client addon in 
 
 | Command | Permission | Description |
 |---|---|---|
-| `.idea <text>` | `RBAC_PERM_COMMAND_TICKET` | Snapshots player, target, group, nearby bots, and active custom systems as an `idea` ticket (`<id>_idea_<slug>.json` and `.md`). |
-| `.bug <text>` | `RBAC_PERM_COMMAND_TICKET` | Same snapshot, tagged as a `bug` ticket (`<id>_bug_<slug>.json` and `.md`). |
-| `.capture list [n]` | `RBAC_PERM_COMMAND_TICKET` | Lists the newest `n` (default 10) tickets in `Capture.TicketsDir`. |
-| `.capture show <id>` | `RBAC_PERM_COMMAND_TICKET` | Prints the Markdown summary of ticket `<id>` (prefix or full filename stem) to chat/console. |
+| `.idea <text>` | 91007, players (role 199) | Snapshots player, target, group, nearby bots, and active custom systems as an `idea` ticket (`<id>_idea_<slug>.json` and `.md`). |
+| `.bug <text>` | 91007, players (role 199) | Same snapshot, tagged as a `bug` ticket (`<id>_bug_<slug>.json` and `.md`). |
+| `.capture list [n]` | 91008, GMs (role 197) | Lists the newest `n` (default 10) tickets in `Capture.TicketsDir`. |
+| `.capture show <id>` | 91008, GMs (role 197) | Prints the Markdown summary of ticket `<id>` (prefix or full filename stem) to chat/console. |
 
 The commands accept an optional `[screenshot=WoWScrnShot_MMDDYY_HHMMSS]` prefix (sent automatically by `addons/Capture` right after calling `Screenshot()`) or `--screenshot=<name>` flag and store it in the `screenshot_path` field.
 
