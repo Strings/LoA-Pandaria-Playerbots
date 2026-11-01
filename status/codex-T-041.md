@@ -1,10 +1,8 @@
-BLOCKED: Shared build queue is occupied. Automatic approval review rejected bypassing it with a two-job incremental build. May T-041 run that bounded build alongside the active full build? Approval question pending; ordinary queued build remains untouched.
-
 # T-041: Script quality-of-life changes
 
 **Agent:** codex
 **Branch:** codex/T-041-solo-qol
-**Task status:** blocked on build resource / approval; draft PR 85
+**Task status:** in progress; draft PR 85
 
 ## What changed
 - Script half only. Flash's stack data is excluded. Based on playerbot a273234b.
@@ -17,7 +15,7 @@ BLOCKED: Shared build queue is occupied. Automatic approval review rejected bypa
 ## Verification so far
 - All 15 unit suites pass, including new pure policy boundaries; both Lua VM prototype tests pass.
 - SQL validator: both files pass, zero issues. Applied both twice to disposable world_codex_t041_5d7991ef populated with actual source NPC/auth rows: identical second result and every original row unchanged. Expected two templates/spawns and text/permission present. Report: ignored build/T041-sql-check.json. World/auth SQL is now applied to Codex runtime DBs only; its worldserver is stopped until the matching binary is built. Main DBs unchanged.
-- Production C++ build is queued in the primary checkout (build/T041-build.log); live checks remain. T-014 completed build/live/regressions and PR 82 is ready, including the approved rebased push.
+- Default production build PASSED through the normal queue (build/T041-build.log); live checks now running. User chose to retain the queue; no NoWait exception or process stop occurred. T-014 completed build/live/regressions and PR 82 is ready, including the approved rebased push.
 
 ## Next / resume
 - Wait for the current default build; do not change primary C++ inputs while queued/running. Secondary Codex checkout is on T-014 for its completed post-push recheck.
