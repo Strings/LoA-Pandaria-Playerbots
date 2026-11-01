@@ -32,3 +32,6 @@
 
 ## Map additions
 - src/server/scripts/Custom/LegacyDungeons/ (planned adapter/policy).
+
+## Migration verification
+- Both SQL files pass lint, zero issues. Strict tools/backup/save_safety.py check against real characters_codex save passes: 147 pre-existing tables identical before/after, representative saved anchor retained, two applications produce identical schema/data. Report: ignored build/T046-migration-checks/characters_codex_check_83fe78972e4b/report.json. Scratch copy removed by the guard; original save read only. Canonical runtime/main SQL not applied yet.
