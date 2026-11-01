@@ -8,4 +8,4 @@
 
 Audit: Player::GiveXP checks PLAYER_FLAGS_NO_XP_GAIN. BattlegroundQueue, Group and battleground join handlers do not inspect that flag or carry an XP-lock queue dimension; players and bots already share queues. No core-game queue change or meaningless config switch is added.
 
-Pure command parsing tests are in tests/twink_xp. Before ready: apply the two scoped SQL files to owned DBs; test ordinary/GM permissions, unchanged money, relog persistence, an actual XP reward with on/off, NPC free/disabled paid behavior, and the three headless regressions. Default build and actual results remain pending in the status fragment.
+Pure command parsing tests are in tests/twink_xp. Before ready: apply the two scoped SQL files to owned DBs; test ordinary/GM permissions, unchanged money, relog persistence, an actual XP reward with on/off, NPC free/disabled paid behavior, and the current full headless regression suite. Default build and actual results remain pending in the status fragment.

@@ -1,39 +1,27 @@
-# T-044: Free experience toggle
+# T-044: Free XP toggle
 
 **Agent:** codex
 **Branch:** codex/T-044-xp-toggle
-**Task status:** in progress
+**Task status:** in progress; draft PR 86
 
 ## What changed
-- Started from latest playerbot a273234b; T-014's build is still queued, so this is independent preparation in the secondary Codex checkout.
-- Read the decided twinking design. Audited core no-XP references: XP gain observes the flag, but queue/group/handler paths do not segregate it. No queue core change is needed.
+- Public .xp on/off/status changes only the caller, for free; GM permission enables selected-player force/inspection. Parser rejects extra/invalid input. Repeated changes are no-ops, native no-XP flag persists.
+- Twinks.FreeXPToggle=1 and Twinks.IntroOnLogin=1. Existing Experience Eliminator gossip uses the same adapter; key off restores the native 10g service/text and rejects command changes while allowing inspection.
+- No XP-off queue dimension exists in queue/group/join code; no core-game queue change needed. No new duration. Module/README, config, script registration, player/GM RBAC and free greeting SQL included.
 
-## Implementation (pushed, not yet built/live-tested)
-- Public self-only `.xp on|off|status`; separate GM target permission 95001 enables force/inspect of the selected player. Uses and persists the native XP flag, with no money changes and idempotent repeated requests.
-- `Twinks.FreeXPToggle=1`, `Twinks.IntroOnLogin=1`; no new timer. Existing NPC calls the shared adapter when enabled; native paid code and text remain the disabled fallback.
-- Small NPC/loader call sites, own module, pure parser suite, custom free greeting and scoped auth permission SQL. SQL validator passes both files with zero issues.
-- Reserved the next Twinks block 95000; includes pending T-041's preceding reservation from PR 85 to avoid overlap.
+## Verification
+- Original 15 unit suites/parser passed; policy unchanged after rebase. Existing XP test binary rerun exits 0. Current-base unit compilation/testing is queued behind the same Local\UltimateMoP-build mutex as production; no overlap bypass.
+- Both SQL files lint clean, apply twice identically to copied real NPC/auth rows, preserve originals. World 04/auth 05 SQL now applied only to world_codex/auth_codex; main unchanged.
+- Rebased on playerbot 2c654e81 (merged T-014) and published cc9eb08d after explicit user approval for force-with-lease on remaining rebased Codex branches. Approval block is cleared.
+- Default production build queued through tools/build/build.ps1 -Target worldserver -Reconfigure. Log build/T044-build.log, tool session 39850. Unit log build/T044-unit-queued.log, session 47572. Do not alter C++ inputs while queued/running.
 
-## Verification so far
-- All 15 unit suites pass, including the new parser; no warnings in its build.
-- Both SQL files pass lint (zero issues), apply twice identically on copied real NPC/auth rows in world_codex_t044_68cd9d80, and preserve every original row. Runtime/main DBs unchanged.
-- Full production build/live/regressions remain pending behind T-014/T-041 and the shared build queue. No claim of ready.
+## Next / native check plan
+- After build success, copy the binary to a unique snapshot in build/devenv-solo-reload and start hidden with its own worldserver.conf. Auth stays on 3744; world/SOAP 8105/7898, only Codex DBs. World is currently stopped.
+- Ignored build/T044-live.py creates owned normal account CODEXXP and Orc Codexxp, presets level 15/quiet map-1 position while offline, and tests public self-only permissions with another player selected, money/idempotence/relog, selected-player GM force and real quest XP off/on (30983/30984). Put the visible root GM at the same quiet position before the selection check.
+- Private profile uses existing PlayerSaveInterval=2000 for observable live XP persistence; restore 60000 after checks. Profile was restored from validated Codex config after an encoding error; own ports/DBs verified. Always write as UTF-8.
+- Ignored build/T044-extra.py tests normal WSG queue acceptance/leave in each XP mode, then real Experience Eliminator 35364 gossip: enabled is free; disabled command rejects, stock NPC charges exactly 100000 copper per change. Restore key on and clear test queues.
+- T-041-owned runtime NPC/spell bindings were removed before switching; no other agent DBs/ports touched. Its PR85 is ready (build, 15 units, nine regressions).
+- Run all current headless regressions; final status/task review and mark ready. Claude approval required before routine merge. Apply these SQL files to main only after merge.
 
-## Next / exact native check plan
-- After T-041, build this branch in the primary checkout through the normal queue. Apply world 04/auth 05 SQL to Codex DBs before its server startup; no main SQL until approved/merged.
-- Use a separate normal-security owned account and level-15 Orc fixture (preset while offline). Verify `.xp off/on/status` is available through Player Commands role 199; selection of an online GM still changes/inspects self. GM target permission 95001 must force/inspect that fixture.
-- Record money before/after toggles; repeated requests must be free and idempotent. Relog and check the native 0x02000000 player flag persists.
-- Keep the normal fixture online; selected-player GM `.quest add`, `complete`, `reward` for current MoP Ragefire quests 30983/30984 exercises real GiveXP. With XP off, level/XP stay identical; with XP on, total progress increases. Use a clean owned fixture, not another player's quest history.
-- Queue/leave a normal battleground in each XP mode and inspect native queue acceptance; code audit already shows no XP-specific queue dimension.
-- Preset the owned fixture beside existing Experience Eliminator 35364 while offline, then use native gossip: enabled path changes the flag with identical money; disabled path uses native fee/text. Restore key on and clear the test queue.
-- Run all three regressions; write actual results, mark review/ready, wait for Claude approval before routine merge. No new duration.
-
-## Current recovery checkpoint
-- Published head f62615ec; publication after rebase awaits the pending user approval. No force-push/rebase performed by the rejected action.
-- Scoped world 04/auth 05 updates are now applied to world_codex/auth_codex. Main unchanged. Removed only T-041-owned runtime spawns/templates/Hearthstone binding before switching branches.
-- Normal production build is queued, tools/build/build.ps1 -Target worldserver -Reconfigure; log build/T044-build.log, owning shell PID 49096, tool session 49107. Do not change C++ inputs while queued/running. No NoWait exception used. Unit compilation deferred after automatic approval review rejected overlap.
-- Private worldserver is stopped; auth remains on 3744. Test world profile restored from validated Codex profile after a Windows encoding write failure; own DB names/8105/7898 verified, Twinks keys enabled. Always write config as UTF-8.
-- Ignored build/T044-live.py prepares a normal owned account/character and permissions/relog/real quest XP checks. build/T044-extra.py adds normal WSG queue acceptance off/on, real Experience Eliminator gossip with free/disabled-stock-10g controls. Both syntax-check. Manual equivalents are listed above, credentials remain private. Start a snapshot of the new binary with the Codex runtime after build completion.
-- After native checks: all current regressions, final status/task review and ready PR; await Claude approval before routine merge.
-
-- Publication unblocked: user explicitly approved force-with-lease for remaining rebased Codex task branches. Rebased on playerbot 2c654e81 (includes merged T-014); fresh queued build follows.
+## Map additions
+- src/server/scripts/Custom/Twinks/ with reusable SetExperienceEnabled adapter; tests/twink_xp.
