@@ -1,37 +1,31 @@
-# T-041: Script quality-of-life changes
+# T-041: Script quality of life
 
 **Agent:** codex
 **Branch:** codex/T-041-solo-qol
-**Task status:** in progress; draft PR 85
+**Task status:** in progress; final regression run, draft PR 85
 
 ## What changed
-- Script half only. Flash's stack data is excluded. Based on playerbot a273234b.
-- Guild perks reconcile on login/reload and after native join/leave work, using a dirty-player queue rather than a timer. Disabling restores native membership/level rules.
-- Existing mixed armor/weapon transmog settings already ship enabled; status reads the actual loaded transmog module values. No duplicate core implementation.
-- Free services were prototyped in Lua with two Lua VM tests, then ported to a guarded C++ gossip script. Two neutral city stewards offer rename/customize/race/faction flags. Bots, neutral Pandaren and combat are excluded. Unrelated at-login flags are preserved.
-- Hearthstone AfterCast replaces the existing spell/category cooldown through public APIs. Every cast reads the configurable final duration; zero clears it, negative retains native behavior. GM inspect/force/reset/service commands use permission 94000.
-- Reserved SoloQoL IDs and added scoped, idempotent world/auth SQL. NPC respawn delay and Hearthstone duration are config keys.
+- Script half only; Flash owns stack data. Rebased on playerbot aa0af9db.
+- All 26 native guild perks reconcile on login/config reload and after native guild join/leave, without a polling timer. Disabling restores membership/level rules.
+- Free city stewards 904000/904001 offer rename/customize/race/faction flags, preserving unrelated flags. Bots, neutral Pandaren and combat are excluded. Lua prototype preceded the C++ adapter; two VM tests cover flags/guards.
+- Hearthstone AfterCast applies the configured final cooldown through existing spell/category APIs. Zero clears, negative retains native behavior. Normal casts work even if Hasty Hearth erased the native cooldown; triggered casts are excluded. Durations/respawn are config keys, default 300 seconds.
+- Existing transmog module rules are reused. One ItemHandler.cpp eligibility call site, behind SoloQoL.NativeTransmogRules, makes the native window honor them after existing interaction/ownership/slot checks. The module's legacy config hook is undispatched by this core, so SoloQoL refreshes it during config reload.
+- GM .soloqol status/perks/hearth/hearthreset/service, permission 94000. Login introduction, README, scoped world/auth SQL and ID reservation included.
 
-## Verification so far
-- All 15 unit suites pass, including new pure policy boundaries; both Lua VM prototype tests pass.
-- SQL validator: both files pass, zero issues. Applied both twice to disposable world_codex_t041_5d7991ef populated with actual source NPC/auth rows: identical second result and every original row unchanged. Expected two templates/spawns and text/permission present. Report: ignored build/T041-sql-check.json. World/auth SQL is now applied to Codex runtime DBs only; its worldserver is stopped until the matching binary is built. Main DBs unchanged.
-- Default production build PASSED through the normal queue (build/T041-build.log); live checks now running. User chose to retain the queue; no NoWait exception or process stop occurred. T-014 completed build/live/regressions and PR 82 is ready, including the approved rebased push.
+## Verification
+- Default normal-queue production build passes (build/T041-build-refresh.log); no new compiler warnings in touched files. No queue bypass used.
+- Current-branch 15 CTest suites pass (Release), both Lua VM tests and tools/devenv/test_solo.py pass.
+- Both SQL files lint clean. Applied twice to real-source-row copies with identical second result and originals preserved. Corrected fixed respawn SQL rechecked on world_codex_t041_d9948725. Applied to world_codex/auth_codex only; main unchanged.
+- Native Hearthstone item cast: configured 60 seconds, feature disabled, zero, negative/native retention and GM force/reset pass.
+- Guildless 26/26, off/on, owned guild create/disband and reconciliation pass. Test guild removed.
+- All four real NPC gossip choices set expected flags 1/8/128/64 without charging money; disabled/neutral guards pass, flags restored. Bot/combat guards covered by policy tests. Restarted NPC inspection reports configured Full Min 2s / Full Max 2s (spawn max sentinel 0).
+- Native cloth-on-plate and mace-on-sword requests succeed with mixed settings on and are rejected with each setting off; stored appearance checked and cleared. NativeTransmogRules=0 retains stock rejection. Actual loaded settings inspected.
+- Runtime durations restored to shipped 300/300; mixed settings and core bridge restored on. Native game GUI was not launched.
 
-## Next / resume
-- Wait for the current default build; do not change primary C++ inputs while queued/running. Secondary Codex checkout is on T-014 for its completed post-push recheck.
-- World/auth runtime SQL already applied; repeatability/preservation were checked in the disposable copy. Private profile uses Hearthstone 60 seconds, services respawn 2 seconds, all features/intro on; restore 300/300 defaults after checks.
-- Native headless item-hotfix/transmog packet helper reused from T-015; neutral Pandaren language fix reused from T-014. Test Hearthstone item GUID 8 in character 1 bag 0 slot 23. Fixture 13 is human, 14 neutral Pandaren; both at_login were zero before services testing.
-- Live: .soloqol status/perks/hearth/hearthreset/service; real cast and NPC gossip; guild leave/reload/config off; neutral/bot service guard; cloth-on-plate transmog; all three headless regressions. Existing fixtures and private ports are described in tools/devenv; credentials stay ignored.
-- Native transmog live check found stock validation ignores the existing configurable rule module. Added one ItemHandler.cpp call site behind SoloQoL.NativeTransmogRules; PR now requires human core review/merge. No main SQL until approved/merged. T-013/T-011 reviews are approved without required fixes and held for human merge.
+## Next / handoff
+- Full current headless regression suite running; finish report, set task review and mark PR ready.
+- This PR touches core: Claude review plus human merge required. Do not self-merge. Apply scoped SQL to main only after merge.
+- T-013/PR45 and T-011/PR61 have Claude approval with no required fixes, held for human merge. T-014/PR82 and T-015/PR69 are ready. Next verification is T-044/PR86, then T-046/PR91.
 
-## Live finding / fix in progress
-- Baseline live status/GM hooks pass: 26/26 guild perks, configured services/mixed flags and forced/cleared cooldown.
-- A real Hearthstone item cast exposed an overly strict guard: native cooldown can be absent (test DB item cooldown is 180 ms and Hasty Hearth can erase it). Completed normal casts must set the configured final duration regardless. Fixed in 5d12fdfb; triggered casts are skipped and native GM cheat cleanup runs after the hook. Rebuilding through the normal queue.
-
-- Guild live checks PASS: guildless 26/26 perks, key off removes them, restore grants all; created and verified an owned guild, then disbanded it while online and retained 26/26 after native removal. Guild cleaned up.
-- NPC inspection found a copied spawn maximum of 300 seconds still enabled random delay despite configured minimum 2. Changed max to native sentinel 0 (fixed delay), so the config controls the whole respawn interval. Native first inspection proved minimum 2; inspect 2/0 after next restart.
-
-- Live four NPC gossip choices PASS after reviving the owned fixture: flags 1/8/128/64, zero money change, disabled key rejects, neutral Pandaren rejects. Flags restored to zero.
-- Native cloth-on-plate request was correctly rejected by the old stock path despite existing mixed settings; new guarded core call site shares CustomTransmogrification validation. Its positive/negative native packet checks and final build remain pending.
-
-- Final queued build and real Hearthstone native/60/zero/negative checks PASS; guild/gossip controls repeated successfully. Fixed respawn inspection now reports Full Min 2s / Full Max 2s. Native cloth-on-plate succeeds. Its off control exposed the legacy module's undispatched OnAfterConfigLoad hook: SoloQoL now refreshes that module in its dispatched config hook. Rebuild and transmog controls remain pending.
+## Map additions
+- src/server/scripts/Custom/SoloQoL/ and tools/soloqol/; native item-hotfix/transmog helpers in contrib/headless-client/headless.py.
