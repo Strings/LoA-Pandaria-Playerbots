@@ -1,7 +1,7 @@
 # Project status
 
-Last folded: 2026-10-31 (design complete, handoff 001). Agents: read this, never edit it; write a
-fragment in `status/`.
+Last folded: 2026-11-01 by Claude Code (35 fragments, T-001 to T-058). Agents: read this, never edit
+it; write a fragment in `status/`. Claude Code folds them.
 
 ## Current milestone: v0.1 The jewel run
 
@@ -9,24 +9,46 @@ fragment in `status/`.
 
 **Scope:** Phase 0 (foundation and all quick wins), Phase 0a (fast iteration, GM tools, save safety,
 capture), Phase 0b (Heartseed MVP), plus the timeline decision. No bot behavior work, no client
-patch, no ML. Task list: `TASKS.md`. First session: `HANDOFF.md`.
+patch, no ML. Task list: `TASKS.md`.
 
 ## State
 
 | Area | State |
 |---|---|
-| Fork, build, game data, databases | Not started (T-001, Claude Code) |
-| Agent environments (worktrees, per-agent DBs and ports) | Not started |
-| Game client | In place: `mop-clean/`, 5.4.8.18414 enUS, not patched |
-| Quick wins | Not started |
-| Heartseed (top priority) | Designed; not started |
-| Heartseed intro scenario | Designed; waits on the timeline decision and the Horde figure |
+| Fork, build, game data, databases | Done (T-001). Builds with Ninja and sccache through `tools\build\build.ps1`, which queues builds machine-wide |
+| Agent environments | Done: worktrees, per-agent databases and ports for Claude Code, Codex and Gemini (T-002, T-005) |
+| Fast iteration (Phase 0a) | Done except fixtures (T-007) and faster builds (T-060): test profiles, loader profiler, unit tests (CTest, 11 suites), Eluna prototypes, headless regression runner, save snapshots and migration checks, `.reload`, seeded test RNG, GM tools (`.clock`, `.scenario`, `.spectate`, `.bot why/state/...`), `/idea` and `/bug` capture |
+| Heartseed (Phase 0b) | MVP done (T-020 to T-026, T-049): account-wide seed, stage glows, traits and majors, path-choice gossip, feeding and essences, rank cap, story flags, GM commands. All numbers are placeholders until v0.5; glow IDs await a pick in the client |
+| GM test suite | Done (T-048): checkpoints (`hs-10` and more), twink checkpoints, kits, ability tester, GMSuite addon |
+| Quick wins | Done: mount speed x2 (T-010), rare mounts 10% (T-012), free respec and dual spec from 10 (T-016), solo config defaults (T-019), twink gear +7% (T-045, generator T-050). In progress: raid resets (T-013, review), starting kit (T-011). Open: T-014, T-015, T-041 to T-044, T-046, T-047 |
+| Detached storage (loadouts, gear pages, reagent bank) | Starting (T-017, Claude Code) |
+| Tooling | Done: live server MCP, crash triage, SQL validator, DBC reader and content search, SQL and config audits. Open: balance sim (T-031) |
+| Telemetry (T-004), bot load baseline (T-003) | Not started |
+| Timeline decision (T-036) | Waiting on the human |
+| Game client | `mop-clean/`, 5.4.8.18414 enUS, not patched |
 
-**In progress:** nothing yet.
-**Blocked:** nothing yet.
+**In progress:** Codex T-013 (PR 45) and T-011; Claude Code T-017; Flash fixing T-052 and T-053.
+**Blocked:** nothing.
 
 ## Recent decisions (newest first)
 
+- 2026-11-01: Claude Code folds status fragments into this file; agents push their branches as they go so another agent can finish a task when a session ends (AGENTS.md).
+- 2026-11-01: Raids (T-013): unfinished raid saves are kept until finished or abandoned, only the leader can abandon, resets every 2 days (config key), no migration of old saves.
+- 2026-11-01: The custom clock is separate from the core clock (the core reads the time in ~270 places). Custom timers read `CustomClock::Now()` so `.clock speed|jump` can test them; core respawns and resets keep their own GM commands.
+- 2026-11-01: `.bot why` shows the playerbots engine's relevance values, the bots' real utility today. Tracing is per bot and opt-in. Later utility systems should feed relevance so the trace keeps explaining them.
+- 2026-11-01: GM scenarios are plain command lists (any system's GM commands, no code); a scenario cannot start another.
+- 2026-10-31: Twink checkpoints pick gear at apply time with an outlier filter (115% of the best leveled item level within ten levels), instead of hand-kept kits per class.
+- 2026-10-31: Checkpoints confirm before applying (level-downs can't be undone) and leave lower tiers' majors alone.
+- 2026-10-31: Heartseed is account-wide: a migrated account keeps its furthest character's rank and Growth; Growth spends up to the cap of whichever character earns it; weapon appearances stay per character until Collections.
+- 2026-10-31: Twink gear is +7% over matching heirlooms, weighted toward damage (stamina .25, crit and haste 1.25). A stat-budget heuristic, not simulated DPS.
+- 2026-10-31: Heartseed feeding (the human's call): prompt on upgrade; twink weapons carry a Twink flag and feed only when deleted, with a one-time tutorial; every fed or deleted weapon's appearance is recorded for later transmog.
+- 2026-10-31: Heartseed path choice: the first major is chosen anywhere, changes only at a shrine (the four temples and the Celestial Court). Before Pandaria a chosen major can't change. `.seed` reopens the window.
+- 2026-10-31: Heartseed minors fill in on paths with at least one major (path 0 minors always); the core bonus is 5% of weapon damage; the proc deals damage directly (casts dropped procs on range and facing).
+- 2026-10-31: Heartseed glow lives only in the visible item field (no enchant effects, nothing travels with a traded weapon). Story flags are rows with a time, for the chronicle. Bots skip Heartseed loading.
+- 2026-10-31: Heartseed granting quest is self-given at any level (works in every starting zone and for existing characters). The Theramore scenario later changes how it is delivered, not the quest.
+- 2026-10-31: Any final encounter counts as a first dungeon clear. World bosses now give normal kill credit (KillRewarder fix).
+- 2026-10-31: Mount speed multiplies the bonus above base movement, matching the decided riding percentages.
+- 2026-10-31: MySQL user `ultimatemop` for every database set; databases from the v1.0.4 dump.
 - 2026-10-31: Build for the end state: systems are built in final shape; stopgaps the long-term plan would break are not built unless the fix is easy. Accepted interim states are listed in DESIGN.md (Heartseed pacing tuned in v0.5, one storyteller director, outleveled queue solo-only until bot pools).
 - 2026-10-31: Milestones regrouped: Phase 5 (bot pools) in v0.2; call board, skill and plays (5b) in v0.5; side fun (11b) in v1.0; Sha of Grief in Beyond.
 - 2026-10-31: v0.1 quick wins: all professions, no item binding, free respecs from level 10, spec loadouts with gear pages, cross-faction play, all flight paths, guaranteed skill-ups, no weekly currency caps, lighter death penalties, guild perks for everyone, unrestricted transmog, bigger stacks, free character services, shorter hearthstone, starting 10-slot bags, reagent bank, XP toggle with a single battleground queue, twink gear buffs (priority), outleveled dungeon queue.
@@ -51,17 +73,40 @@ patch, no ML. Task list: `TASKS.md`. First session: `HANDOFF.md`.
 - 2026-10-30: Up to 8 players; friends level normally, no level normalization.
 - 2026-10-30: Broken is the reward: no power budget, the corruption dial is the counterweight.
 
+## Open follow-ups
+
+- Pick the final Heartseed glows in the client (candidates in `docs/agents/heartseed-glows.md`), and a real proc spell instead of the placeholder 16614.
+- Growth from other sources (quests, rares, first dungeon clears, Sha hunters) calls `HeartseedMgr::AddGrowth`; not wired yet.
+- Green "Twink" tooltip tag needs item hotfixes or the client patch.
+- Appearance collection from fed and deleted weapons (Collections).
+- Twink brackets need a playtest; proc and socket value is ignored when picking gear.
+- `server.commit_hash` in `/idea` tickets reads "Archive": the build doesn't pick up the git revision.
+- sccache caches nothing while the precompiled header is on (T-060).
+- Seen once: the world thread hung in `Player::~Player` when a master relogged while its bot alt was grouped with it. Watch for it.
+- Rare mount sources missing from stock loot (Sha, Galleon direct rows, Oondasta lootid 0) were not added by T-012.
+
 ## Known facts and gotchas
 
+- **Build:** `tools\build\build.ps1 -Target worldserver` from your worktree; add `-Reconfigure` after adding source files, or you get link errors. Builds wait on a machine-wide lock; two overlapping builds on this machine (6 cores, 32 GB) run about six times slower. Binaries land in `build\bin\`; copy `.conf.dist` files from `src/`.
+- **Rebuild cost:** editing `ScriptMgr.h`, `Player.h`, `Unit.h`, `World.h`, `Engine.h` or `PlayerbotAI.h` recompiles hundreds of files for every agent. Prefer a side table or a small new header.
+- **Runtime:** `legacy.dll` from the OpenSSL bin folder must sit next to `worldserver.exe`, or the first world connection crashes in `ARC4::ARC4`.
+- **SQL:** `Updates.EnableDatabases = 0`; apply updates by hand. The server reads `spell_dbc` only at startup. Run `tools/sql-validator` on new SQL before a PR (run its tests from its own folder). `core.autocrlf=true` with no `.gitattributes` for `*.sql`, so working-tree SQL has CRLF.
+- **Twink SQL:** `tools/twink-tuning` writes to stdout by default; a retune goes into a new dated update, never over an applied one.
+- **Headless client:** SOAP verbs need `MOP_SOAP_USER`/`MOP_SOAP_PASSWORD`; `target npc` doesn't resolve, pass the raw guid. Self-given quests use the character's own guid. `.die` gives no kill credit (use `.damage <health>`). `.go x y z map` takes coordinates directly. Path choice is two `gossip-select` steps.
+- **Test profile:** set `Heartseed.Grant.OfferOnLogin = 0` and `Heartseed.Choice.PromptOnLogin = 0` if the login windows get in the way.
+- **Reload:** `.reload config` reopens logs in overwrite mode, so startup lines vanish from `Server.log`. Lua reloads through `.reload config`, not `.reload eluna`.
+- **Bots:** register a `.bot` section with `BotInspect::Register` for new bot systems; register checkpoint steps for new player state (see `checkpoint_heartseed.cpp`). Telemetry (T-004) should pause around `CheckpointMgr::Apply`. `OnKillCredit` suits telemetry outcome events.
+- **Tickets** from `/idea` and `/bug` land in `<repo>/tickets/` (gitignored, format in `tickets/README.md`).
+- **Snapshots** (T-037): capture blocks writes while dumping; restore needs the same MySQL version and a separate instance.
 - `mop-clean/` is the 5.4.8.18414 enUS client (24 GB). Never commit it; keep it clean (extract into `gamedata/`). `_Wow.exe` and `_Wow-64.exe` skip file verification, so custom patch MPQs load with them. `WTF/Config.wtf` still points at Tauri's realmlist. The client needs the connection patch from `contrib/SkyFire Patcher/548`; patch copies, not the originals.
 - The MoP legendary cloak questline (Wrathion, quests 31454 to 33104) is scripted in `src/server/scripts/Pandaria/zone_the_veiled_stair.cpp`; chapter 2 runs through Krasarang (Lion's Landing and Domination Point).
-- Eluna (Lua) is compiled in but off (`Eluna.Enabled = 0`); Lua scripts reload at runtime. There is no C++ script hot-reload and no unit test framework yet.
 - The 25-quest log cap is a client limit (fixed 750-field update block); don't try to raise it. A server-side backlog is the provisional workaround.
+- Eluna (Lua) is compiled in and off in the shipped config (`Eluna.Enabled = 0`); the T-009 test profiles turn it on.
 - The core already has the battle pet system (`src/server/game/BattlePet/`) and vignettes (`src/server/game/Vignette/`).
-- Default branch is `playerbot`.
-- `Updates.EnableDatabases = 0` is the shipped default; apply SQL updates by hand to your own DBs.
+- Default branch is `playerbot`. Use `--repo Strings/LoA-Pandaria-Playerbots` with `gh`.
 - All 43 MoP raid bosses and every Classic to Cata raid boss are scripted. There are no bot raid strategies; bot dungeon strategies exist for all nine MoP dungeons.
 - Wintergrasp is on by default; Tol Barad is ported but off (`TolBarad.Enable = 0`) and its SQL is marked draft.
 - Bots can join battlefields (`AiPlayerbot.RandomBotJoinBattlefield`, default 0).
 - The 5.4.8 client almost certainly rejects modified FrameXML without an exe patch (untested). The bundled patcher is `contrib/SkyFire Patcher/548`.
 - `src/server/scripts/Custom/` already has `PlayerStartScript.cpp` and `solocraft.cpp`; check them before writing new start-of-character or scaling code.
+- BUG-003: deleting a newly added training dummy (31144) can crash in aura removal. Avoid in GM tests until fixed.
