@@ -131,6 +131,7 @@ top to bottom. Rules:
 | T-069 | `docs/PLAYTEST.md` check: every command, config key and addon slash command the checklist names exists (grep the command tables, `.conf.dist` files and addon `.lua`). Fix wrong names in PLAYTEST.md only | `docs/PLAYTEST.md` | the PR lists each name checked and each fix | flash | review |
 | T-070 | Regression scenario for the reagent bank: one scenario covering `.reagent list`, `inspect`, `add`, `take`, and `deposit` | `tests/regression/scenarios/` | `python tests/regression/run.py` passes it against the gemini server | flash | review |
 | T-073 | Regression scenarios for remaining quick-win commands: `.mountspeed` and `.solo info` (one scenario each in `tests/regression/scenarios/`, expected messages from the code) | `tests/regression/scenarios/` | `python tests/regression/run.py` passes both against the gemini server | flash | review |
+| T-071 | `docs/MAP.md` coverage check: ensure every major path in the repo exists in MAP.md and all paths in MAP.md exist on disk | `docs/MAP.md`, `tools/map-check/` | verification script passes with 0 missing paths | flash | review |
 
 ## Suggested split
 
