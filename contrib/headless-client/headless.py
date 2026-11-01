@@ -261,6 +261,7 @@ HORDE_RACES = {2, 5, 6, 8, 9, 10, 26}     # orc, undead, tauren, troll, goblin, 
 RACE_LANGUAGE = {race: LANG_ORCISH for race in HORDE_RACES}
 for _r in (1, 3, 4, 7, 11, 22, 25):        # human, dwarf, night elf, gnome, draenei, worgen, pandaren(a)
     RACE_LANGUAGE[_r] = LANG_COMMON
+RACE_LANGUAGE[24] = 42  # Neutral Pandaren know Pandaren, not Common before faction choice.
 
 # Battleground objective world states. These are what the client's scoreboard reads, so
 # watching them is end-to-end proof that an objective actually changed hands - no server-side
