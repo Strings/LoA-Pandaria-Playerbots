@@ -154,7 +154,7 @@ namespace
         sLFGMgr->InitializeLockedDungeons(player);
         auto const& locks = sLFGMgr->GetLockedDungeons(player->GetGUID());
         auto lock = locks.find(data->Entry());
-        if (lock != locks.end() && lock->second != lfg::LFG_LOCKSTATUS_TOO_HIGH_LEVEL && !(force && lock->second == lfg::LFG_LOCKSTATUS_TOO_LOW_LEVEL))
+        if (lock != locks.end() && lock->second.lockStatus != lfg::LFG_LOCKSTATUS_TOO_HIGH_LEVEL && !(force && lock->second.lockStatus == lfg::LFG_LOCKSTATUS_TOO_LOW_LEVEL))
         {
             Tell(player, "This dungeon is locked. Check its Dungeon Finder requirements.");
             return false;

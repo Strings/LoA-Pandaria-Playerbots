@@ -37,3 +37,5 @@
 - Both SQL files pass lint, zero issues. Strict tools/backup/save_safety.py check against real characters_codex save passes: 147 pre-existing tables identical before/after, representative saved anchor retained, two applications produce identical schema/data. Report: ignored build/T046-migration-checks/characters_codex_check_83fe78972e4b/report.json. Scratch copy removed by the guard; original save read only. Canonical runtime/main SQL not applied yet.
 
 - Rebased the prepared draft on playerbot 2c654e81 while T-044 waits in the normal queue. No main SQL; T-044 build/live still precede this branch. User approved guarded rebased publication for remaining Codex branches.
+
+- First production compile found the core stores lock details in LfgLockStatusType rather than the enum directly; corrected comparisons to its lockStatus field. Rebuild follows through the normal queue.
