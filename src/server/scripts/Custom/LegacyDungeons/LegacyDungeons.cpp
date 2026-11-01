@@ -102,7 +102,7 @@ namespace
     }
     void ProbeStorage()
     {
-        storageReady = bool(CharacterDatabase.Query("SHOW TABLES LIKE 'character_legacy_trip'"));
+        storageReady = bool(CharacterDatabase.Query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='character_legacy_trip' LIMIT 1"));
         if (Enabled() && !storageReady)
             TC_LOG_ERROR("server.loading", "Legacy solo dungeons: apply the character_legacy_trip update before enabling travel");
     }
@@ -145,7 +145,8 @@ namespace
             return false;
         }
         uint32 queue = sLFGMgr->GetActiveQueueId(player->GetGUID());
-        if (queue && sLFGMgr->GetState(player->GetGUID(), queue) != lfg::LFG_STATE_NONE)
+        auto state = queue ? sLFGMgr->GetState(player->GetGUID(), queue) : lfg::LFG_STATE_NONE;
+        if (state != lfg::LFG_STATE_NONE && state != lfg::LFG_STATE_FINISHED_DUNGEON)
         {
             Tell(player, "Leave your Dungeon Finder queue before using solo travel.");
             return false;
@@ -188,7 +189,10 @@ namespace
         if (!Safe(player, false))
             return false;
         // Keep the anchor until the worldport arrives; failed/interrupted transfers remain recoverable.
-        return player->TeleportTo(trip->map, trip->x, trip->y, trip->z, trip->o);
+        if (player->TeleportTo(trip->map, trip->x, trip->y, trip->z, trip->o))
+            return true;
+        Tell(player, "Your return point is unavailable. Ask a GM.");
+        return false;
     }
     bool Unlock(Player* player, lfg::LFGDungeonData const& data, uint32 level)
     {
