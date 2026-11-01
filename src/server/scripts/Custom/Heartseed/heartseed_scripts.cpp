@@ -11,6 +11,7 @@
 #include "Player.h"
 #include "RBAC.h"
 #include "ScriptMgr.h"
+#include "WorldPacket.h"
 #include "WorldSession.h"
 
 #include <algorithm>
@@ -23,6 +24,9 @@
 static rbac::RBACPermissions const RBAC_PERM_COMMAND_HEARTSEED = static_cast<rbac::RBACPermissions>(90000);
 // Player command '.seed'; linked to role 199 (Player Commands) by sql/updates/master/auth/2026_10_31_claude_11_seed_command.sql
 static rbac::RBACPermissions const RBAC_PERM_COMMAND_SEED = static_cast<rbac::RBACPermissions>(90001);
+
+// Addon message prefix the Heartseed addon registers (.seed sync).
+static char const* const HEARTSEED_ADDON_PREFIX = "Heartseed";
 
 static char const* GetPathName(Heartseed::Path path)
 {
@@ -247,10 +251,15 @@ public:
             { "reload", &HandleReloadCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "shrines", &HandleShrinesCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
         };
+        static std::vector<ChatCommand> seedCommandTable =
+        {
+            { "sync", &HandleSeedSyncCommand, RBAC_PERM_COMMAND_SEED, Trinity::ChatCommands::Console::No },
+            { "",     &HandleSeedCommand,     RBAC_PERM_COMMAND_SEED, Trinity::ChatCommands::Console::No },
+        };
         static std::vector<ChatCommand> commandTable =
         {
             { "heartseed", heartseedCommandTable, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
-            { "seed",      &HandleSeedCommand,    RBAC_PERM_COMMAND_SEED,      Trinity::ChatCommands::Console::No },
+            { "seed",      seedCommandTable,      RBAC_PERM_COMMAND_SEED,      Trinity::ChatCommands::Console::No },
         };
         return commandTable;
     }
@@ -891,6 +900,59 @@ public:
             return false;
         }
         sHeartseedMgr->SendChoiceMenu(player);
+        return true;
+    }
+
+    // Answers the Heartseed addon (/hs) with addon messages, tab separated: "N" when the character has no
+    // Heartseed, else "S" <rank> <account rank> <cap> <growth> <growth for next rank> <stage name> <dominant path>
+    // <weapons fed> <open essence slots> <shrine here or empty>, then "M" <level> <trait name or empty> <path>
+    // per major tier of the current spec, "X" <name> <times collected> <slot or 0> per essence, then "E".
+    static bool HandleSeedSyncCommand(ChatHandler* handler, char const* /*args*/)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+        auto send = [player](std::string message)
+        {
+            if (message.size() > 250)
+                message.resize(250);
+            WorldPacket data;
+            ChatHandler::BuildChatPacket(data, CHAT_MSG_WHISPER, LANG_ADDON, player, player, message, 0, "", DEFAULT_LOCALE, HEARTSEED_ADDON_PREFIX);
+            player->SendDirectMessage(&data);
+        };
+
+        Heartseed::State state;
+        if (!sHeartseedMgr->GetState(player, state))
+        {
+            send("N");
+            send("E");
+            return true;
+        }
+
+        Heartseed::ShrineInfo shrine;
+        std::string shrineName = sHeartseedMgr->GetShrineAt(player, shrine) ? shrine.Name : "";
+        uint8 stage = sHeartseedMgr->GetStage(player);
+        send("S	" + std::to_string(sHeartseedMgr->GetEffectiveRank(player)) + "	" + std::to_string(state.Rank) + "	" +
+            std::to_string(sHeartseedMgr->GetRankCap(player)) + "	" + std::to_string(state.Growth) + "	" +
+            std::to_string(sHeartseedMgr->GetGrowthForNextRank(state.Rank)) + "	" + sHeartseedMgr->GetStageName(stage) + "	" +
+            GetPathName(sHeartseedMgr->GetDominantPath(player)) + "	" + std::to_string(state.FedWeapons) + "	" +
+            std::to_string(Heartseed::EssenceSlotsForLevel(player->GetLevel())) + "	" + shrineName);
+
+        auto loadout = state.Loadouts.find(uint16(player->GetTalentSpecialization()));
+        for (uint8 tier = 0; tier < Heartseed::MaxMajorTiers; ++tier)
+        {
+            uint32 traitId = loadout != state.Loadouts.end() ? loadout->second[tier] : 0;
+            Heartseed::TraitInfo trait;
+            bool known = traitId && sHeartseedMgr->GetTrait(traitId, trait);
+            send("M	" + std::to_string(Heartseed::MajorTierLevel(tier)) + "	" + (known ? trait.Name : "") + "	" +
+                (known ? GetPathName(trait.TraitPath) : ""));
+        }
+
+        for (auto const& [essenceId, held] : state.Essences)
+        {
+            Heartseed::EssenceInfo essence;
+            send("X	" + (sHeartseedMgr->GetEssence(essenceId, essence) ? essence.Name : std::to_string(essenceId)) + "	" +
+                std::to_string(held.first) + "	" + std::to_string(held.second));
+        }
+        send("E");
         return true;
     }
 

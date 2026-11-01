@@ -1,0 +1,5 @@
+<Bindings>
+    <Binding name="HEARTSEED_TOGGLE" header="HEARTSEED">
+        HeartseedPanel_Toggle()
+    </Binding>
+</Bindings>
