@@ -76,9 +76,9 @@ def world_sql(version):
 INSERT INTO `hotfix_data` (`entry`,`type`,`hotfixDate`)
 SELECT i.`entry`,{ITEM_SPARSE_HASH},'{version}'
 FROM `item_template` i
-LEFT JOIN `hotfix_data` h ON h.`entry`=i.`entry` AND h.`type`={ITEM_SPARSE_HASH}
-  AND h.`hotfixDate`='{version}'
-WHERE (i.`bonding`<>0 OR (i.`flags` & {ACCOUNT_BOUND})<>0) AND h.`entry` IS NULL;
+WHERE (i.`bonding`<>0 OR (i.`flags` & {ACCOUNT_BOUND})<>0)
+  AND NOT EXISTS (SELECT 1 FROM `hotfix_data` h WHERE h.`entry`=i.`entry`
+    AND h.`type`={ITEM_SPARSE_HASH} AND h.`hotfixDate`='{version}');
 '''
 
 

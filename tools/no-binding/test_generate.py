@@ -61,7 +61,7 @@ class GenerationTests(unittest.TestCase):
 
     def test_hotfix_update_retains_other_updates(self):
         sql = generator.world_sql('2026-11-01 00:00:00')
-        self.assertIn('h.`entry` IS NULL', sql)
+        self.assertIn('AND NOT EXISTS', sql)
         self.assertIn('2442913102', sql)
         self.assertNotIn('DELETE', sql)
         self.assertNotIn('UPDATE `item_template`', sql)
