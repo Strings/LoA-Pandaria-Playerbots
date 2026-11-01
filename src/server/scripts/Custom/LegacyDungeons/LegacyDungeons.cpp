@@ -214,7 +214,8 @@ namespace
     }
     bool Teleport(Player* player, bool out)
     {
-        if (!Find(player))
+        auto trip = Find(player);
+        if (!trip || player->GetMapId() != trip->destination)
             return false;
         if (out)
             Out(player);
@@ -224,6 +225,8 @@ namespace
     }
     bool OriginalDifficulty(Map const* map)
     {
+        if (!map)
+            return false;
         std::lock_guard<std::mutex> guard(tripMutex);
         if (trips.empty())
             return false;
@@ -315,6 +318,15 @@ namespace
         {
             std::lock_guard<std::mutex> guard(tripMutex);
             trips.erase(player->GetGUID().GetCounter());
+        }
+        void OnDelete(ObjectGuid guid) override
+        {
+            {
+                std::lock_guard<std::mutex> guard(tripMutex);
+                trips.erase(guid.GetCounter());
+            }
+            if (storageReady)
+                CharacterDatabase.DirectPExecute("DELETE FROM character_legacy_trip WHERE guid=%u", guid.GetCounter());
         }
         void OnMapChanged(Player* player) override { Arrived(player); }
         void OnLevelChanged(Player* player, uint8 oldLevel) override
