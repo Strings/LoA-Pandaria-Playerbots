@@ -22,3 +22,5 @@
 - Six Lua VM tests pass: disabled/missing config, GM guard, resource-only profile, no-mutation status/invalid input, unrelated-command passthrough, cleanup after disable. Production probe remains Lua because native aura APIs suffice.
 - This is still provisional. Next: deploy to Codex-only Eluna runtime, prove actual combined bits/add/remove/key controls, then request permission for the required client visual test. Server masks alone cannot prove client rendering/checkmarks.
 - Map additions: lua_scripts/Custom/Tracking/ and tools/tracking/.
+
+- Native wiring correction: this fork has chat event 18, not modern Eluna command event 42. Probe now uses plain GM chat like the existing gm_probe example and reload config; API/registration VM assertion added. Initial native attempt made no aura changes.

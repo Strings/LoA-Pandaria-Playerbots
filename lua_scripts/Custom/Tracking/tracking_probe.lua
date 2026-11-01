@@ -30,7 +30,7 @@ local function status(player)
         player:GetUInt32Value(resourceField), table.concat(active, ",")))
 end
 
-function Probe.Command(_, player, command)
+function Probe.Chat(_, player, command)
     command = command:gsub("^%.", "")
     if command:match("^(%S+)") ~= "trackingprobe" then return end
     if not player or player:GetGMRank() < 2 then
@@ -40,7 +40,7 @@ function Probe.Command(_, player, command)
     local action = command == "trackingprobe" and "status" or
         command:match("^trackingprobe%s+(%a+)%s*$")
     if action ~= "status" and action ~= "clear" and not profiles[action] then
-        player:SendBroadcastMessage("Use .trackingprobe status|resources|creatures|all|clear on a test fixture.")
+        player:SendBroadcastMessage("Say trackingprobe status|resources|creatures|all|clear on a test fixture.")
         return false
     end
     if profiles[action] and not Probe.Enabled() then
@@ -59,5 +59,5 @@ function Probe.Command(_, player, command)
     return false
 end
 
-RegisterPlayerEvent(42, Probe.Command)
+RegisterPlayerEvent(18, Probe.Chat)
 return Probe

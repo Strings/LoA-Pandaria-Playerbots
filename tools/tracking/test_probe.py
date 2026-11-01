@@ -31,7 +31,10 @@ class ProbeTests(unittest.TestCase):
         self.player = self.lua.globals().player
 
     def command(self, text):
-        return self.probe.Command(42, self.player, text)
+        return self.probe.Chat(18, self.player, text)
+
+    def test_registered_native_chat_event(self):
+        self.assertEqual(self.lua.globals().registered, 18)
 
     def test_disabled_and_missing_config_fail_closed(self):
         for value in ('Tracking.Probe.Enable = 0', 'Tracking.Probe.Enable = invalid', None):
