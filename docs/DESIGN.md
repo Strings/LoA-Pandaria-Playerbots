@@ -1440,12 +1440,20 @@ Suggested but not yet adopted.
 
 **Emergent stories and champions (long-term)**
 
-- **Nomads: Westworld-style stories for conscious bots.** Not only the nemesis: any bot with a consciousness file can grow
-  its own lore. The storyteller reads patterns in the files (a feud that keeps flaring, a bot that keeps dying at the same
-  bridge, a lucky streak, a betrayal, a friendship with the player) and turns them into arcs: a title, rumors on the news
-  board and in trade chat, other bots reacting, and sometimes a quest the player can join or stumble into. Nomads are
-  bots that roam between zones and carry their stories with them, so you hear of one long before you meet them. Nothing
-  is scripted per bot; the arcs come from what happened to it.
+- **Nomads: storyline bots (Westworld-style).** Lore-flavored conscious bots, each carrying an authored storyline,
+  that play it out emergently around the player. Example: a wanderer who is secretly Garrosh Hellscream's brother, hunted
+  for that legacy.
+  - **The spine is authored, the scenes are not.** The storyteller holds the storyline's beats and builds each one from
+    its tools: spawns and mobs, affixes, places picked with the population grammar, generated dialogue. Same story,
+    never quite the same playthrough.
+  - **First contact is a chance meeting.** While you wander, the nomad turns up near you and something happens around
+    him (an ambush by those hunting him, say). He speaks to you in a line marked as important in chat or as a quest
+    prompt: "Would you like to begin this storyline?"
+  - **You become the center of it.** Accepting makes you the storyline's anchor. Later, while you play, the nomad
+    reappears somewhere else as if living his own life ("Hello, Champion!"), with a little dialogue and the next beat.
+  - **It cashes out into bigger content:** a scenario, a dungeon or a raid encounter that ends the arc.
+  - Lighter variant: any bot with a consciousness file can pick up small arcs from what happened to it (a feud that
+    keeps flaring, a bot that keeps dying at the same bridge), told through rumors and the news board.
 - **Rare personalities, legendary moments.** Traits come from wide distributions, so a tiny share of bots sit at the
   extremes (impulsive, reckless, showboating). In the right moment (a long pull plan, a group waiting) one of them does
   something like a Leeroy Jenkins charge with nobody scripting it. Keep the tails rare per population and per session,
