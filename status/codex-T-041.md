@@ -23,3 +23,7 @@
 - Native headless item-hotfix/transmog packet helper reused from T-015; neutral Pandaren language fix reused from T-014. Test Hearthstone item GUID 8 in character 1 bag 0 slot 23. Fixture 13 is human, 14 neutral Pandaren; both at_login were zero before services testing.
 - Live: .soloqol status/perks/hearth/hearthreset/service; real cast and NPC gossip; guild leave/reload/config off; neutral/bot service guard; cloth-on-plate transmog; all three headless regressions. Existing fixtures and private ports are described in tools/devenv; credentials stay ignored.
 - No core-game file changes. No main SQL until approved/merged. T-013/T-011 reviews are approved without required fixes and held for human merge.
+
+## Live finding / fix in progress
+- Baseline live status/GM hooks pass: 26/26 guild perks, configured services/mixed flags and forced/cleared cooldown.
+- A real Hearthstone item cast exposed an overly strict guard: native cooldown can be absent (test DB item cooldown is 180 ms and Hasty Hearth can erase it). Completed normal casts must set the configured final duration regardless. Fixed in 5d12fdfb; triggered casts are skipped and native GM cheat cleanup runs after the hook. Rebuilding through the normal queue.
