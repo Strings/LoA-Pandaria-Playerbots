@@ -170,7 +170,12 @@ namespace
         {
             if (state != "not-started" && state != "in-progress" && state != "done")
                 return Fail(handler, "State must be not-started, in-progress or done");
-            changed = script->SetBossState(index, state == "done" ? DONE : state == "in-progress" ? IN_PROGRESS : NOT_STARTED);
+            EncounterState previous = script->GetBossState(index);
+            script->SetBossState(index, state == "done" ? DONE : state == "in-progress" ? IN_PROGRESS : NOT_STARTED);
+            changed = previous != script->GetBossState(index);
+            // Unloaded boss AI can leave TO_BE_DECIDED; the core's loading branch does not save it.
+            if (changed)
+                script->SaveToDB();
         }
         handler->PSendSysMessage("Raid %u boss %u: state=%u; changed=%u; encounters=%u", map->GetInstanceId(), index, uint32(script->GetBossState(index)), uint32(changed), script->GetEncounterCount());
         return true;
