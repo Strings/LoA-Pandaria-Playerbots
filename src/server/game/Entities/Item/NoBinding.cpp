@@ -65,7 +65,7 @@ void NoBinding::Load()
             next->ProtectedEntries.insert(entry);
     }
     auto previous = std::atomic_load(&settings);
-    next->Version = std::max(uint32(time(nullptr)), previous->Version + 1);
+    next->Version = BindingRules::NextVersion(previous->Version, uint32(time(nullptr)));
     std::atomic_store(&settings, std::shared_ptr<Settings const>(next));
 }
 

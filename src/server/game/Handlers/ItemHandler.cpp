@@ -15,6 +15,7 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "NoBinding.h"
 #include "Common.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
@@ -2274,7 +2275,7 @@ void WorldSession::SendItemSparseDb2Reply(uint32 entry, ByteBuffer& buffer)
 
     buffer << uint32(entry);
     buffer << uint32(proto->Quality);
-    buffer << uint32(proto->Flags);
+    buffer << uint32(NoBinding::TooltipFlags(proto));
     buffer << uint32(proto->Flags2);
     buffer << uint32(proto->Flags3);
     buffer << float(proto->Unk430_1);
@@ -2333,7 +2334,7 @@ void WorldSession::SendItemSparseDb2Reply(uint32 entry, ByteBuffer& buffer)
     for (uint32 x = 0; x < MAX_ITEM_PROTO_SPELLS; ++x)
         buffer << int32(proto->Spells[x].SpellCategoryCooldown);
 
-    buffer << uint32(proto->Bonding);
+    buffer << uint32(NoBinding::TooltipBonding(proto));
 
     // item name
     std::string name = proto->Name1;

@@ -15,6 +15,7 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "NoBinding.h"
 #include <mutex>
 #include "AccountMgr.h"
 #include "RBAC.h"
@@ -2430,7 +2431,7 @@ void WorldSession::HandleRequestHotfix(WorldPacket& recvPacket)
 
         WorldPacket data(SMSG_DB_REPLY);
         data << uint32(requestedEntries[i]);
-        data << uint32(time(NULL));
+        data << uint32(NoBinding::HotfixTimestamp(requestedEntries[i], type, uint32(time(NULL))));
         data << uint32(type);
         data << uint32(db2Buffer.size());
         data.append(db2Buffer);

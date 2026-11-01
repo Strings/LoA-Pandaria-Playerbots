@@ -31,5 +31,10 @@ namespace BindingRules
     {
         return suppress ? flags & ~std::uint32_t(0x08000000) : flags;
     }
+
+    constexpr std::uint32_t NextVersion(std::uint32_t previous, std::uint32_t now)
+    {
+        return previous == UINT32_MAX ? previous : (now > previous ? now : previous + 1);
+    }
 }
 #endif

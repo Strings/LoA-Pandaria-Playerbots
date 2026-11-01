@@ -15,6 +15,7 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "NoBinding.h"
 #include "AccountMgr.h"
 #include "ArenaTeam.h"
 #include "Battleground.h"
@@ -1041,7 +1042,7 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder const& holder)
 
     for (uint32 i = 0; i < hotfix.size(); ++i)
     {
-        data << uint32(hotfix[i].Timestamp);
+        data << uint32(NoBinding::HotfixTimestamp(hotfix[i].Entry, hotfix[i].TableHash, uint32(hotfix[i].Timestamp)));
         data << uint32(hotfix[i].Entry);
         data << uint32(hotfix[i].TableHash);
     }

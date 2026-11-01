@@ -2155,6 +2155,7 @@ void AddSC_custom_reload();
 void AddSC_mounted_speed();
 void AddSC_solo_config();
 void AddSC_professions();
+void AddSC_no_binding();
 void AddSC_gmtools_clock();
 void AddSC_gmtools_scenarios();
 void AddSC_gmtools_spectate();
@@ -2180,6 +2181,7 @@ void AddCustomScripts()
     AddSC_mounted_speed();
     AddSC_solo_config();
     AddSC_professions();
+    AddSC_no_binding();
     AddSC_gmtools_clock();
     AddSC_gmtools_scenarios();
     AddSC_gmtools_spectate();
