@@ -43,3 +43,5 @@
 - Production build now passes cleanly. All 16 current unit suites pass; fixed an unsigned test literal to remove MSVC optional-comparison warnings, and rechecking through the same shared mutex. Scoped character 06/auth 07 SQL is applied only to Codex runtime DBs. Matching private server is starting.
 
 - Warning-free current units: all 16 pass. Native entry/return, saved original difficulty/anchor and unscaled visit PASS with AutoBalance explicitly enabled. Ordinary-player native DF entry/out creates no group and clears anchor. Exact threshold, GM force, live margin reload and return after disabling new entries PASS. Restart persistence and queue guard next.
+
+- Saved visit and original return difficulty survive a full worldserver restart; native return clears the anchor afterward. Ordinary-player battleground queue blocks entry, queue cleaned. Original private AutoBalance.Global=0 restored; entry key/margin restored to 1/20. Full current regressions now running. Native client GUI/list filtering remains untested; backend native join/return packets and ordinary-player access are verified.
