@@ -119,3 +119,5 @@ with a generated test/none or test/local runtime and dedicated MOP_ACCOUNT /
 MOP_PASSWORD credentials. See `tests/regression/README.md` for scenario JSON,
 assertions, redacted logs, JSON/JUnit reports and timeout behavior. The runner
 selects the runtime ports and exits nonzero when an expected outcome is absent.
+
+Regression runs set `MOP_SOAP_FULL_OUTPUT=1` so assertions can inspect complete SOAP replies. Interactive runs keep the usual 500-character preview.
