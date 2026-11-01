@@ -2154,6 +2154,7 @@ void AddSC_gmtools_checkpoints();
 void AddSC_custom_reload();
 void AddSC_mounted_speed();
 void AddSC_solo_config();
+void AddSC_solo_qol();
 void AddSC_gmtools_clock();
 void AddSC_gmtools_scenarios();
 void AddSC_gmtools_spectate();
@@ -2178,6 +2179,7 @@ void AddCustomScripts()
     AddSC_custom_reload();
     AddSC_mounted_speed();
     AddSC_solo_config();
+    AddSC_solo_qol();
     AddSC_gmtools_clock();
     AddSC_gmtools_scenarios();
     AddSC_gmtools_spectate();

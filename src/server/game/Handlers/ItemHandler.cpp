@@ -22,6 +22,8 @@
 #include "Log.h"
 #include "Chat.h"
 #include "ObjectMgr.h"
+#include "Config.h"
+#include "CustomTransmogrification.h"
 #include "Player.h"
 #include "Item.h"
 #include "UpdateData.h"
@@ -1952,9 +1954,15 @@ void WorldSession::HandleTransmogrifyItems(WorldPacket& recvData)
         }
         else
         {
-            if (!sObjectMgr->CanTransmogrifyItemWithItem(itemTransmogrified->GetTemplate(), itemTransmogrifier ? itemTransmogrifier->GetTemplate() : sObjectMgr->GetItemTemplate(vsItem->ItemEntry)))
+            ItemTemplate const* source = itemTransmogrifier ? itemTransmogrifier->GetTemplate() :
+                vsItem ? sObjectMgr->GetItemTemplate(vsItem->ItemEntry) : nullptr;
+            // Use the same configured compatibility rules as the custom transmog script.
+            bool allowed = source && (sConfigMgr->GetBoolDefault("SoloQoL.NativeTransmogRules", true) ?
+                sTransmogrification->CanTransmogrifyItemWithItem(player, itemTransmogrified->GetTemplate(), source) :
+                sObjectMgr->CanTransmogrifyItemWithItem(itemTransmogrified->GetTemplate(), source));
+            if (!allowed)
             {
-                TC_LOG_DEBUG("network", "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) failed CanTransmogrifyItemWithItem (%u with %u).", player->GetGUID().GetCounter(), player->GetName().c_str(), itemTransmogrified->GetEntry(), itemTransmogrifier->GetEntry());
+                TC_LOG_DEBUG("network", "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) failed CanTransmogrifyItemWithItem (%u with %u).", player->GetGUID().GetCounter(), player->GetName().c_str(), itemTransmogrified->GetEntry(), newEntries[i]);
                 return;
             }
 
