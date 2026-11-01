@@ -22,8 +22,7 @@
 #include "Transaction.h"
 #include "TimeValue.h"
 #include "SharedDefines.h"
-
-class Unit;
+#include "Unit.h"
 
 class SpellHistory
 {

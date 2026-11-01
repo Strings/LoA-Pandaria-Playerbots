@@ -29,7 +29,10 @@ param(
     # Another build directory (relative to the checkout), e.g. to compare -NoPch without touching build\.
     [string]$BuildDir = 'build',
     # Keep compiling after errors, to collect them all in one pass.
-    [switch]$KeepGoing
+    [switch]$KeepGoing,
+    # lld: link with LLVM's lld-link (scoop install llvm) instead of MSVC's link.exe.
+    [ValidateSet('link', 'lld')]
+    [string]$Linker = 'link'
 )
 
 # Not 'Stop': Windows PowerShell 5.1 turns any stderr line of a native tool (CMake warnings) into a
@@ -87,7 +90,21 @@ if ($env:SCCACHE_BASEDIRS -ne $basedirs -or $env:SCCACHE_CACHE_SIZE -ne $cacheSi
 }
 sccache --start-server 2>$null | Out-Null
 
+$linkerPath = $null
+if ($Linker -eq 'lld')
+{
+    $lld = Get-Command lld-link.exe -ErrorAction SilentlyContinue
+    $linkerPath = if ($lld) { $lld.Source } else { Join-Path $env:USERPROFILE 'scoop\apps\llvm\current\bin\lld-link.exe' }
+    if (-not (Test-Path $linkerPath)) { throw 'lld-link.exe not found (scoop install llvm)' }
+}
+
 $cache = Join-Path $buildDir 'CMakeCache.txt'
+# Switching linkers needs a configure; CMake keeps the linker in its cache.
+if ((Test-Path $cache) -and -not $Reconfigure)
+{
+    $cachedLld = Select-String -Path $cache -Pattern '^CMAKE_LINKER:FILEPATH=.*lld-link' -Quiet
+    if ($cachedLld -ne ($Linker -eq 'lld')) { $Reconfigure = $true }
+}
 if ($Reconfigure -or -not (Test-Path $cache) -or -not (Select-String -Path $cache -Pattern '^CMAKE_GENERATOR:INTERNAL=Ninja$' -Quiet))
 {
     if ((Test-Path $cache) -and -not (Select-String -Path $cache -Pattern '^CMAKE_GENERATOR:INTERNAL=Ninja$' -Quiet))
@@ -101,6 +118,7 @@ if ($Reconfigure -or -not (Test-Path $cache) -or -not (Select-String -Path $cach
     $configureArgs = @(
         '-S', $checkout, '-B', $buildDir, '-G', 'Ninja',
         "-DCMAKE_BUILD_TYPE=$Config",
+        "-DCMAKE_LINKER=$(if ($linkerPath) { $linkerPath } else { (Get-Command link.exe).Source })".Replace('\', '/'),
         '-DCMAKE_C_COMPILER=cl', '-DCMAKE_CXX_COMPILER=cl',
         '-DCMAKE_C_COMPILER_LAUNCHER=sccache', '-DCMAKE_CXX_COMPILER_LAUNCHER=sccache',
         # sccache cannot cache objects that share one PDB (/Zi); embed the debug info instead (/Z7).

@@ -4,8 +4,8 @@
 * Please see the included DOCS/LICENSE.TXT for more information
 */
 
-#include "GuildMethods.h"
 #include "Includes.h"
+#include "GuildMethods.h"
 
 namespace LuaGuild
 {

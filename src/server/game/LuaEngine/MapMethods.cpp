@@ -4,8 +4,8 @@
 * Please see the included DOCS/LICENSE.TXT for more information
 */
 
-#include "MapMethods.h"
 #include "Includes.h"
+#include "MapMethods.h"
 
 namespace LuaMap
 {

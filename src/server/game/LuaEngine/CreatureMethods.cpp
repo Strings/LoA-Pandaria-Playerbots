@@ -4,8 +4,8 @@
 * Please see the included DOCS/LICENSE.TXT for more information
 */
 
-#include "CreatureMethods.h"
 #include "Includes.h"
+#include "CreatureMethods.h"
 
 namespace LuaCreature
 {

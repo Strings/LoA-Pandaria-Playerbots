@@ -18,6 +18,7 @@
 #ifndef SF_PLAYER_DUMP_H
 #define SF_PLAYER_DUMP_H
 
+#include "DatabaseEnvFwd.h"
 #include "Define.h"
 #include "ObjectGuid.h"
 #include <string>

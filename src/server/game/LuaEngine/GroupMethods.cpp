@@ -4,8 +4,8 @@
 * Please see the included DOCS/LICENSE.TXT for more information
 */
 
-#include "GroupMethods.h"
 #include "Includes.h"
+#include "GroupMethods.h"
 
 namespace LuaGroup
 {

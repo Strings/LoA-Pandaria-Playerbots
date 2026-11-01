@@ -21,6 +21,7 @@
 #include "Common.h"
 #include <atomic>
 
+class Creature;
 class Player;
 
 enum RidingSpells
