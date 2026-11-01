@@ -66,6 +66,11 @@ of the task that doesn't depend on the answer.
 - Branch names: `<agent>/<task-id>-<slug>`, e.g. `claude/T-020-jewel-table`.
 - Small, focused commits with imperative messages: `Jewel: add character_jewel table`. Prefix with
   the area (`Jewel:`, `Bots:`, `Travel:`, `Tools:`, `Docs:`).
+- **Push as you go.** Sessions end without warning when a token or time limit runs out. Commit and push
+  your branch after every logical step, before every long build, and at least every 30 minutes of work;
+  `WIP:` commits are fine on your own branch. Open the PR as a draft after the first push. Keep the PR
+  description's checklist current (done, next, how to test), so another agent can finish from the branch
+  alone. Leave nothing important only in your working copy.
 - Before opening a PR: rebase on `playerbot`, build cleanly, run the relevant tests, add your
   status fragment, and update your task's line in `TASKS.md`.
 - Another agent reviews your PR when asked; Claude Code reviews Gemini's PRs before they merge while
@@ -78,7 +83,7 @@ These files are edited by everyone. Keep edits minimal and append-only where pos
 
 - `src/server/scripts/ScriptLoader/ScriptLoader.cpp`, the `CMakeLists.txt` files,
   `src/server/worldserver/worldserver.conf.dist`, `modules/mod_playerbots/config/playerbots.conf.dist`.
-- `STATUS.md` is never edited by agents directly. Write a fragment instead (see Status).
+- `STATUS.md` is edited only by Claude Code's fold. Everyone else writes a fragment (see Status fragments).
 
 ## SQL updates
 
@@ -182,8 +187,8 @@ These come from decided rules in `docs/DESIGN.md` and apply everywhere.
 ## Status fragments
 
 Every PR adds `status/<agent>-<task-id>.md` from `status/_TEMPLATE.md`: what changed, what's next,
-anything the other agents must know, and any decision you made. The human folds fragments into
-`STATUS.md` after merging and deletes them. Never edit `STATUS.md` yourself.
+anything the other agents must know, and any decision you made. Claude Code, as orchestrator, folds
+fragments into `STATUS.md` from time to time and deletes them. Everyone else: never edit `STATUS.md`.
 
 ## Build it modular
 

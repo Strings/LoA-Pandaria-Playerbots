@@ -30,10 +30,10 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 |---|---|---|---|---|
 | T-005 | Test profile config: bots off or minimal, smaller logs, grid preloading off, short timers; bot load profiles (none, local, scale) | `tools/devenv/` | codex | done |
 | T-006 | Startup profiling script that ranks the server's loader timings from the log; report the top costs in a fragment | `tools/bench/` | codex | done |
-| T-007 | Fixture characters (levels 1, 30, 60, 85, 90 with gear), pre-generated bot snapshot, file-copy database restore | `tools/devenv/`, `sql/fixtures/` | | open |
+| T-007 | Fixture characters (levels 1, 30, 60, 85, 90 with gear), pre-generated bot snapshot, file-copy database restore | `tools/devenv/`, `sql/fixtures/` | codex | open |
 | T-008 | Unit test framework in CMake behind an option, with one example test; document how to add tests | `tests/`, `CMakeLists.txt` | codex | done |
 | BUG-001 | Guard unknown phase groups in Creature::Create so .npc add cannot dereference null | `src/server/game/Entities/Creature/Creature.cpp` | codex | done |
-| BUG-003 | Investigate aura-removal crash after deleting a newly added training dummy (entry 31144) | `src/server/game/Spells/Auras/` | | open |
+| BUG-003 | Investigate aura-removal crash after deleting a newly added training dummy (entry 31144) | `src/server/game/Spells/Auras/` | codex | open |
 | BUG-002 | Accept quoted source columns in migration checks while rejecting client SOURCE directives | `tools/backup/` | codex | done |
 | T-009 | Enable Eluna in the dev and test profiles; `lua_scripts/` layout and a README for prototypes | `lua_scripts/`, `tools/devenv/` | codex | done |
 | T-035 | Headless-client regression suite runner with assertions; one example scenario | `tests/regression/`, `contrib/headless-client/` | codex | done |
@@ -47,22 +47,22 @@ T-034) come before most feature tasks, except the Heartseed track, which is the 
 | ID | Task | Owns | Owner | Status |
 |---|---|---|---|---|
 | T-010 | Double mounted movement speed via a config multiplier (default 2.0) in the core speed update; check ghost wolf and travel forms are untouched for now | codex | done |
-| T-011 | Apprentice Riding and a basic faction-appropriate mount at character creation; four 10-slot bags in the bag slots | `sql/updates/world/`, `src/server/scripts/Custom/PlayerStartScript.cpp` | | open |
+| T-011 | Apprentice Riding and a basic faction-appropriate mount at character creation; four 10-slot bags in the bag slots | `sql/updates/world/`, `src/server/scripts/Custom/PlayerStartScript.cpp` | codex | in progress |
 | T-012 | Raise rare mount drops to 10%: list every rare-drop mount item and update loot tables | `sql/updates/world/` | codex | done |
-| T-013 | Raid resets every 2 days instead of weekly; keep in-progress instances until finished or abandoned | `src/server/game/Instances/` | | open |
-| T-014 | All professions: raise `MaxPrimaryTradeSkill` (confirm the key exists); addon button bar for professions past the second | config, `addons/ProfessionBar/` | | open |
-| T-015 | No item binding: config-keyed hook that skips binding, keeping quest items and custom progression items bound; one-time soulbound-flag cleanup SQL; tooltip fix via item hotfixes. Check the transmog interaction | `src/server/scripts/Custom/NoBinding/`, `sql/updates/` | | open |
+| T-013 | Raid resets every 2 days instead of weekly; keep in-progress instances until finished or abandoned | `src/server/game/Instances/` | codex | review |
+| T-014 | All professions: raise `MaxPrimaryTradeSkill` (confirm the key exists); addon button bar for professions past the second | config, `addons/ProfessionBar/` | codex | open |
+| T-015 | No item binding: config-keyed hook that skips binding, keeping quest items and custom progression items bound; one-time soulbound-flag cleanup SQL; tooltip fix via item hotfixes. Check the transmog interaction | `src/server/scripts/Custom/NoBinding/`, `sql/updates/` | codex | open |
 | T-016 | Free talent and glyph changes (no gold, no reagents); spec switching from level 10 | `src/server/scripts/Custom/Respec/` | codex | done |
-| T-017 | Server-side spec loadouts (spec, talents, glyphs, action bars, Heartseed paths), one per spec by default plus named extras; addon picker | `src/server/scripts/Custom/Loadouts/`, `addons/Loadouts/` | | open |
-| T-018 | Gear pages per loadout: detached storage, page swap through the normal equip path, addon page panel | `src/server/scripts/Custom/Loadouts/`, `addons/Loadouts/` | | open |
+| T-017 | Server-side spec loadouts (spec, talents, glyphs, action bars, Heartseed paths), one per spec by default plus named extras; addon picker | `src/server/scripts/Custom/Loadouts/`, `addons/Loadouts/` | claude | in progress |
+| T-018 | Gear pages per loadout: detached storage, page swap through the normal equip path, addon page panel | `src/server/scripts/Custom/Loadouts/`, `addons/Loadouts/` | claude | open |
 | T-019 | Config quick wins: cross-faction play (`AllowTwoSide.*`), all flight paths, guaranteed skill-ups, no weekly currency caps, lighter death penalties. Confirm each key exists in the fork | codex | done |
-| T-041 | Script and data quick wins: guild perks for everyone, unrestricted transmog (mixed types), bigger stacks via item hotfixes, free character services NPC, shorter hearthstone cooldown | `src/server/scripts/Custom/SoloQoL/`, `sql/updates/` | | open |
-| T-042 | 36-slot bags: expensive vendor (gold sink); hooks to plant them in rare loot later | `sql/updates/world/` | | open |
-| T-043 | Reagent bank in detached storage, with crafting drawing from it | `src/server/scripts/Custom/ReagentBank/` | | open |
-| T-044 | Free XP on/off toggle (command now, settings panel later); no separate battleground queue for XP-off characters | `src/server/scripts/Custom/Twinks/` | | open |
+| T-041 | Script and data quick wins: guild perks for everyone, unrestricted transmog (mixed types), bigger stacks via item hotfixes, free character services NPC, shorter hearthstone cooldown | `src/server/scripts/Custom/SoloQoL/`, `sql/updates/` | codex, flash | open |
+| T-042 | 36-slot bags: expensive vendor (gold sink); hooks to plant them in rare loot later | `sql/updates/world/` | flash | open |
+| T-043 | Reagent bank in detached storage, with crafting drawing from it | `src/server/scripts/Custom/ReagentBank/` | claude | open |
+| T-044 | Free XP on/off toggle (command now, settings panel later); no separate battleground queue for XP-off characters | `src/server/scripts/Custom/Twinks/` | codex | open |
 | T-045 | **Priority:** twink gear buffs above heirlooms via item hotfixes, per bracket and breakpoint (compile the current best non-heirloom items first) | `sql/updates/world/`, `docs/twinks.md` | codex | done |
-| T-046 | Dungeon finder for outleveled dungeons: solo teleport at 20+ levels over the dungeon's level (config key). Bot groups wait for the instance pool (Phase 5) | `src/server/game/DungeonFinding/` hooks, `src/server/scripts/Custom/` | | open |
-| T-047 | Multi-type tracking test: combine tracking bitmasks behind a config key; test whether the client draws several types and shows several checkmarks | `src/server/scripts/Custom/Tracking/` | | open |
+| T-046 | Dungeon finder for outleveled dungeons: solo teleport at 20+ levels over the dungeon's level (config key). Bot groups wait for the instance pool (Phase 5) | `src/server/game/DungeonFinding/` hooks, `src/server/scripts/Custom/` | codex | open |
+| T-047 | Multi-type tracking test: combine tracking bitmasks behind a config key; test whether the client draws several types and shows several checkmarks | `src/server/scripts/Custom/Tracking/` | codex | open |
 
 ### The Heartseed (Phase 0b, top priority)
 
@@ -110,16 +110,25 @@ top to bottom. Rules:
 
 | ID | Task | Owns | Check | Owner | Status |
 |---|---|---|---|---|---|
-| T-051 | Default data path from the repo, not `I:/`: `tools/dbc/reader.py`, `tools/content-search/server.py` and both tests resolve `<repo>/gamedata/dbc` from `__file__` when `MOP_DBC_DIR` is unset | `tools/dbc/`, `tools/content-search/` | both unittest suites pass; no `I:/` left (grep) | flash | open |
-| T-052 | SQL validator reads Spell.dbc through `tools/dbc` instead of its own `load_wdbc_first_uint32_ids`; same results | `tools/sql-validator/` | validator unittests pass; validator output on `sql/updates/world` unchanged (diff before and after) | flash | open |
-| T-053 | Run the SQL validator over every agent update in `sql/updates/` and write the findings to `docs/agents/sql-audit.md` (file, finding, suggested fix). Report only: never edit an update that has been applied | `docs/agents/sql-audit.md` | the report lists every file checked | flash | open |
+| T-051 | Default data path from the repo, not `I:/`: `tools/dbc/reader.py`, `tools/content-search/server.py` and both tests resolve `<repo>/gamedata/dbc` from `__file__` when `MOP_DBC_DIR` is unset | `tools/dbc/`, `tools/content-search/` | both unittest suites pass; no `I:/` left (grep) | flash | done |
+| T-052 | SQL validator reads Spell.dbc through `tools/dbc` instead of its own `load_wdbc_first_uint32_ids`; same results | `tools/sql-validator/` | validator unittests pass; validator output on `sql/updates/world` unchanged (diff before and after) | flash | review: changes requested |
+| T-053 | Run the SQL validator over every agent update in `sql/updates/` and write the findings to `docs/agents/sql-audit.md` (file, finding, suggested fix). Report only: never edit an update that has been applied | `docs/agents/sql-audit.md` | the report lists every file checked | flash | review: changes requested |
 | T-054 | Regression scenario for the Heartseed GM commands (`.heartseed grant`, `info`, `cap`, `rank`, `growth +N`, `flag set/clear`, `essence add/slot`, `revoke`), expecting the messages in `status/claude-T-049.md` and the Heartseed README | `tests/regression/scenarios/` | `python tests/regression/run.py` passes it against the gemini server | flash | open |
 | T-055 | Regression scenario for checkpoints: `.checkpoint list`, `.checkpoint explain hs-10`, `.checkpoint apply hs-10` on a fresh character, then `.heartseed info` shows level 10 and the seed | `tests/regression/scenarios/` | as T-054 | flash | open |
-| T-056 | Bring `docs/MAP.md` up to date from the "Map additions" of every status fragment in `status/` | `docs/MAP.md` | every path listed in a fragment's Map additions appears in MAP.md and exists | flash | open |
-| T-057 | Config key audit: every key read by `sConfigMgr` under `src/server/scripts/Custom/` is documented in `worldserver.conf.dist`. Write missing keys to `docs/agents/config-audit.md`; do not edit the `.conf.dist` | `docs/agents/config-audit.md` | the report lists each key with its file and line | flash | open |
-| T-058 | Heartseed glow candidates: with `tools/content-search`, list weapon-glow enchants that fit each path (Xuen: lightning or white tiger; Chi-Ji: red or gold fire; Niuzao: earth or stone; Yu'lon: jade or green water) per stage, with enchant ids and models, in `docs/agents/heartseed-glows.md`. Data only; Claude picks | `docs/agents/heartseed-glows.md` | 3 to 6 candidates per path, each id found by the tool | flash | open |
+| T-056 | Bring `docs/MAP.md` up to date from the "Map additions" of every status fragment in `status/` | `docs/MAP.md` | every path listed in a fragment's Map additions appears in MAP.md and exists | flash | done |
+| T-057 | Config key audit: every key read by `sConfigMgr` under `src/server/scripts/Custom/` is documented in `worldserver.conf.dist`. Write missing keys to `docs/agents/config-audit.md`; do not edit the `.conf.dist` | `docs/agents/config-audit.md` | the report lists each key with its file and line | flash | done |
+| T-058 | Heartseed glow candidates: with `tools/content-search`, list weapon-glow enchants that fit each path (Xuen: lightning or white tiger; Chi-Ji: red or gold fire; Niuzao: earth or stone; Yu'lon: jade or green water) per stage, with enchant ids and models, in `docs/agents/heartseed-glows.md`. Data only; Claude picks | `docs/agents/heartseed-glows.md` | 3 to 6 candidates per path, each id found by the tool | flash | done |
+| T-061 | T-042, data half: custom 36-slot bag items in the item range of `docs/ID_RANGES.md`, with the item hotfix rows the client needs (follow `sql/updates/world/2026_10_31_codex_00_twink_gear.sql`), sold by one vendor in Stormwind and one in Orgrimmar for 5,000 gold each (gold sink, DESIGN.md "36-slot bags"). Planting them in rare loot comes later | `sql/updates/world/` | sql-validator reports 0 issues on the new file; it applies twice to `world_gemini` with the same result; `.additem <entry>` gives a 36-slot bag | flash | open |
+| T-062 | T-041, data half: bigger material stacks. A small generator in `tools/stack-sizes/` writes one SQL update that raises `stackable` on trade goods (item class 7) that already stack, to a size set by a flag (default 1000), plus the matching item hotfix rows | `tools/stack-sizes/`, `sql/updates/world/` | generator unittests pass; sql-validator 0 issues; the update applies twice to `world_gemini` with the same result | flash | open |
 
 ## Suggested split
+
+Current (2026-11-01): Claude Code does detached storage (T-017, T-018, T-043). Codex finishes T-013 and
+T-011, then T-015, T-014, the script half of T-041, T-044, T-046, T-047, T-007 and BUG-003. Flash fixes
+T-052 and T-053, then T-054, T-055, T-061 and T-062. The human: T-036 and the T-003 hardware.
+
+Original split:
+
 
 1. **Claude Code:** T-001 first (it blocks everything). Then the Heartseed track (T-020 to T-026),
    picking up T-030 and T-031 when the jewel needs visuals and tuning, and T-048 (GM test suite) before
