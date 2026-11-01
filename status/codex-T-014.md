@@ -12,7 +12,7 @@
 - Live test found the headless client used Common for neutral Pandaren; added their native language 42. This small test-helper fix lets their commands reach normal parsing.
 
 ## Verification
-- Rebased/current on origin/playerbot a273234b. Default RelWithDebInfo worldserver build passes; no new warnings in touched files.
+- Rebased/current on origin/playerbot da84b706 (base advance is documentation only). Default RelWithDebInfo worldserver build passes; no new warnings in touched files.
 - All 15 CTest suites pass. Five Lua VM addon tests cover higher ranks/native-slot filtering, gathering actions, secure attributes/stale cleanup and combat deferral. No GUI client was launched.
 - Native headless check on Codex ports/DBs, neutral Pandaren fixture 14: one existing profession at cap 2/free 1; online reload to 11/free 10; learnall twice gives eleven/free 0, persisted across relog; lowering cap to 2 retains all eleven/free 0; restored cap 11. Database count confirms eleven. Existing rank unchanged.
 - All three regression scenarios pass: capture-idea, custom-reload-rng, login. Logs: ignored build/T014-*.log and build/regression/T014/20261101T162358Z-4176baad.
