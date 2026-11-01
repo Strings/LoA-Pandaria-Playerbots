@@ -1,0 +1,6 @@
+## Interface: 50400
+## Title: Loadouts
+## Notes: UltimateMoP spec loadouts: switch, save, rename and delete. The server does the work; this panel sends .loadout commands.
+## Version: 0.1
+
+Loadouts.lua

@@ -2159,6 +2159,7 @@ void AddSC_gmtools_scenarios();
 void AddSC_gmtools_spectate();
 void AddSC_free_respec();
 void AddSC_custom_capture();
+void AddSC_loadouts();
 
 void AddCustomScripts()
 {
@@ -2180,6 +2181,7 @@ void AddCustomScripts()
     AddSC_gmtools_spectate();
     AddSC_free_respec();
     AddSC_custom_capture();
+    AddSC_loadouts();
 
 #endif
     AddSC_Anticheat();
