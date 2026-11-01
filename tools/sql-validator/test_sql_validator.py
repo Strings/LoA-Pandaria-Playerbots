@@ -116,12 +116,12 @@ class SqlValidatorTests(unittest.TestCase):
     def test_id_ranges_and_cross_agent_collisions(self):
         with tempfile.TemporaryDirectory(dir=self.temp_root) as tmp:
             root = Path(tmp)
-            # Heartseed file using GM tools quest ID (91000), unallocated Next system spell (312000), and stock quest (500)
+            # Heartseed file using GM tools quest ID (91000), unallocated Next system spell (314000), and stock quest (500)
             bad_range_sql = (
                 "DELETE FROM `quest_template` WHERE `ID` IN (500, 91000);\n"
                 "INSERT INTO `quest_template` (`ID`) VALUES (500), (91000);\n"
-                "DELETE FROM `spell_dbc` WHERE `Id` = 312000;\n"
-                "INSERT INTO `spell_dbc` (`Id`) VALUES (312000);\n"
+                "DELETE FROM `spell_dbc` WHERE `Id` = 314000;\n"
+                "INSERT INTO `spell_dbc` (`Id`) VALUES (314000);\n"
             ).encode('utf-8')
             f_range = self._write_sql(root, '2026_10_31_claude_00_heartseed_bad_ids.sql', bad_range_sql)
             range_issues = v.validate_files([f_range])
