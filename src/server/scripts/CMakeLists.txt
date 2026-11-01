@@ -127,6 +127,32 @@ if(USE_MODULES)
 		PRIVATE
 		modules)
     target_compile_definitions(scripts PRIVATE USE_MODULES)
+    if(PLAYERBOTS)
+        target_compile_definitions(scripts PRIVATE ENABLE_PLAYERBOTS)
+        target_include_directories(scripts PRIVATE
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/AI
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/Factory
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/Manager
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/Mgr
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/Mgr/Item
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/Mgr/Move
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/Mgr/Spell
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/Mgr/Text
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/Scenario
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/strategy
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/strategy/actions
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/strategy/bg
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/strategy/Dead
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/strategy/generic
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/strategy/RPG
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/strategy/temporary
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/strategy/triggers
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/strategy/value
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/Travel
+            ${CMAKE_SOURCE_DIR}/modules/mod_playerbots/src/Utils
+        )
+    endif()
 endif()
 
 if (ELUNA)
