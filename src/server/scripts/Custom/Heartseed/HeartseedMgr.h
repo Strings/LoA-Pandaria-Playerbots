@@ -98,6 +98,7 @@ namespace Heartseed
 
         // Runtime only, never saved: what RefreshTraits last applied to the character.
         std::map<uint32, int32> AppliedAuras;         // spell id -> effect 0 amount, core aura included
+        std::set<uint32> TaughtGifts;                 // Gift spells RefreshTraits taught the character
         uint16 LastSpecId = 0;                        // spec whose loadout was last applied
         bool HasLastSpec = false;
         uint32 LastProcTime = 0;                      // getMSTime() of the last core proc
@@ -187,7 +188,11 @@ namespace Heartseed
         TraitKind Kind = TraitKind::Minor;
         uint8 Tier = 0;                               // majors: major tier index
         uint8 MinRank = 1;                            // minors: rank that fills it in
-        uint32 SpellId = 0;                           // passive aura applied while the trait is active
+        uint32 SpellId = 0;                           // passive aura applied while the trait is active; 0 = none
+        uint32 GiftSpellId = 0;                       // Celestial Gift: active spell taught while the trait is active
+        uint32 GiftCooldown = 0;                      // Gift cooldown in ms, applied when longer than the spell's own
+        int32 GiftBaseAmount = 0;                     // Gift power (damage per hit for scaled gifts) at item level 0
+        float GiftAmountPerItemLevel = 0.0f;
         int32 BaseAmount = 0;                         // effect 0 amount at item level 0
         float AmountPerItemLevel = 0.0f;              // added per main-hand item level
         std::string Name;
@@ -330,6 +335,10 @@ public:
     // Brings the character's trait auras and core weapon bonus in line with its state, spec, level and
     // main-hand weapon. Cheap when nothing changed.
     void RefreshTraits(Player* player);
+    // The active Celestial Gift trait that taught spellId to the character; false when none did. Spell scripts
+    // use it for the Gift cooldown and power.
+    bool GetActiveGift(Player const* player, uint32 spellId, Heartseed::TraitInfo& out) const;
+    int32 GetGiftAmount(Player const* player, Heartseed::TraitInfo const& gift) const;
     // Traits plus glow; called after any state change.
     void Refresh(Player* player);
 
@@ -358,6 +367,8 @@ private:
     uint32 CountAwakenings(Heartseed::State const& state) const;
     std::array<uint8, Heartseed::MaxPaths> MajorsPerPath(Heartseed::State const& state, uint16 specId) const;
     static void RemoveAuras(Player* player, std::map<uint32, int32> const& auras);
+    // Teaches the wanted Gift spells and unlearns the others, unless the character has them from its own talents.
+    void SyncGifts(Player* player, std::set<uint32> const& wanted, bool announce);
     float GetFeedQualityPct(uint32 quality) const;
     void SendRankUp(Player* player, uint8 oldRank, uint8 newRank);
 
