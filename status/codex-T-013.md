@@ -4,20 +4,27 @@
 **Branch:** codex/T-013-raid-resets
 **Task status:** in progress
 
-## Approved scope
-- Preserve partially cleared raids across empty periods and restarts.
-- Finished raids reset on a configurable two-day period.
-- Explicit abandonment belongs to the raid leader, or the solo owner of the bind. Bots never block abandonment.
-- Add GM bind listing, force-abandon and force-reset commands.
-- Keep core behavior behind a config key and as small as possible. The human confirms there are no existing raid saves on any database; no migration is required.
+## What changed
+- Config-gated raid retention, a two-day configurable reset period, solo-owner/raid-leader abandonment and GM inspection/force-reset/force-abandon.
+- Existing resettime field carries partial/finished metadata; synchronous progress writes preserve it across restart. No schema migration or new table.
+- Narrow fixes: GroupMgr restores all group binds under MySQL strict grouping; Terrace restores its legacy array into core boss states and keeps its saved string; Creature holds defeated raid bosses until reset. Cleared raid encounters cannot downgrade themselves while retention is enabled.
 
-## Audit
-Startup cleanup and global resets currently delete saves/binds by map/difficulty without progress checks. Both paths must honor persistent per-instance retention. No timer-only partial implementation will ship.
+## How it was tested
+- Rebased on playerbot 5f3b23a7 (documentation-only advance). Default RelWithDebInfo build passes with no new warnings in touched files. All 12 unit suites pass.
+- Live 20-second test cadence: canonical partial fixtures survive startup/empty cycles; expired finished/empty saves clear; first boss in progress defers a boundary; script progress, group binds and respawns survive restart.
+- Live completion clears all binds/respawns; occupied reset releases IDs only after map destruction and the ID is reused. Non-owner denied; solo owner and raid leader can abandon with an offline human and bot bound. Enable/notification toggles pass.
+- custom-reload-rng and login regressions pass. Actual Protectors deaths wrote three held respawn records; fresh-instance repeat and Capture regression remain.
 
-## Implementation in progress
-Raid-only startup/cycle retention, explicit owner/leader abandonment and GM probes are implemented. Atomic script/credit saves reuse existing resettime metadata (reserved UINT32_MAX means partial; finite timestamp means finished), leaving encounter bits and raid scripts unchanged. MoP world encounter rows are missing, so existing script BossState and validated LFG wing masks cover those raids; normal Throne excludes heroic-only Ra-den. No schema changes.
+## Decisions made
+- Human approved expanded retention/abandonment scope and confirmed no existing raid saves at rollout. No migration.
+- The period is read from config each cycle. Boss death retention is a held state until reset, not another duration.
 
-Eleven unit suites pass on current playerbot, including boundaries, permissions, wing completion and script masks. The default RelWithDebInfo build is running; live save/restart/abandon checks remain.
+## For the other agent
+- Core changes: human review required; do not merge. No Heartseed edits.
+- Test setup applied already-merged T-039 GM-tool SQL only to Codex databases. No T-013 SQL to apply.
 
 ## Next
-Finish build and live verification. PR #45 stays draft until build and tests pass; Claude reviews, do not merge.
+- Complete fresh-instance real-death check and capture-idea regression; mark ready and review.
+
+## Map additions
+- game/Instances/RaidRetention and RaidResetPolicy; Custom/RaidRetention; tests/raid_retention.
