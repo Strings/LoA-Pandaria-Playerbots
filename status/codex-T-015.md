@@ -2,40 +2,35 @@
 
 **Agent:** codex
 **Branch:** codex/T-015-no-binding
-**Task status:** in progress (draft PR 69; not ready to ship)
+**Task status:** review
 
 ## What changed
-- Rebased on playerbot 6bbfb8ef, including the merged routine regression harness fix (PR 67).
-- Pure BindingRules and game adapter protect quest/quest-starter/artifact/configured entries, unknown templates and registered per-instance progression checks.
-- Minimal core call sites cover soulbound flag writes (including transmog), loaded bindings, binding enchants and item-sparse tooltip flags/bonding. Widely included headers stay unchanged.
-- Config reload refreshes online inventory and hotfix versions; metadata is batched below packet-size limits. GM status/item/bind/refresh commands and brief login intro exist.
-- Cleanup generator consumes an explicit numeric TSV catalog, supports protected entry/GUID lists and emits scoped soulbound-bit updates plus non-destructive hotfix metadata SQL. Original template binding remains intact.
+- Config-gated ordinary item binding policy, preserving quest/starter/artifact items, configured entries and registered per-instance progression checks.
+- Minimal core call sites cover pickup/equip/transmog flag writes, loaded items, binding enchants and item-sparse tooltip flags/bonding. No widely included header changes.
+- Config reload refreshes online items and hotfix versions. Catalog metadata is batched within packet limits. GM status/item/bind/pickup/refresh commands and brief login intro.
+- Deterministic numeric-catalog cleanup generator with explicit protected entry/GUID inputs; original template bonding remains intact.
 
 ## How it was tested
-- Default RelWithDebInfo worldserver build passes with no new warnings in touched files (build/T015-first-build.log).
-- All 12 CTest suites pass, including protection, tooltip flags, version monotonicity and metadata packet boundaries.
-- All six cleanup-generator unittests and Python syntax checks pass.
-- Generated world hotfix and character cleanup updates from 80,064 templates (71,870 eligible); SQL validator reports zero issues.
-- Verified twice on disposable world/real-character-save copies: all 151 item rows including five sentinel types match the expected flag-only change, configured entry/GUID exclusions work, unknown/quest/artifact items remain bound, and every other character table hashes identically. Both updates then applied only to Codex DBs.
-- Final build and all 12 units pass again. Live and regression checks are now running against the new binary.
+- Default RelWithDebInfo worldserver build: passes, no new warnings in touched files. All 12 CTest suites pass; six generator tests and Python syntax checks pass.
+- Both generated SQL files: validator reports zero issues. Catalog has 80,064 templates, 71,870 eligible.
+- Real Codex save copied to disposable characters/world DBs. All 151 item rows, including five sentinel kinds, match the expected soulbound-bit-only delta; explicit entry/GUID protection works; other character tables hash identically. Both SQL updates applied twice with identical results, then applied to Codex DBs only. Original dump retained under ignored build/.
+- Live normal pickup (not .additem's GM-unbinding shortcut): ordinary BoP 13953 unbound/tradeable, quest 2794 bound. Equip 18832 and actual headless transmog to 2244 succeeded; persisted transmogrifyId=2244 and source flags remain unbound.
+- Actual item-sparse packets: ordinary binding=0, quest binding=1; disabling restores normal BoP pickup and binding=1 tooltip. Configured 13953 protection stays bound; ordinary items created while disabled clear on enabled relog. Invalid protected IDs disable safely; defaults restored.
+- All current regression scenarios pass against the final server: capture-idea, custom-reload-rng, login.
 
 ## Decisions made
-- Config defaults: NoBinding.Enable=1, NoBinding.ProtectedItemIds="", NoBinding.IntroOnLogin=1. No durations introduced.
-- Artifact quality is conservatively protected. Future progression/storage systems register instance protection before player loading, and export protected low GUIDs when generating a one-time cleanup.
-- Disabling restores future binding/tooltip behavior, not historical flags cleared by an explicit cleanup.
+- NoBinding.Enable=1, NoBinding.ProtectedItemIds="", NoBinding.IntroOnLogin=1. No durations added. Artifact quality conservatively stays protected.
+- Future progression/storage providers register protection before player loading and export protected low GUIDs before generating an explicit cleanup. Unknown templates stay untouched.
+- Disabling restores future binding/tooltip behavior, not historical flags removed by the explicit cleanup.
 
-## For the next session
-- Current primary worktree is on this branch, clean and pushed. Secondary build/pr-validation is detached; do not edit it for this task.
-- Codex server currently runs the matching baseline/harness-fix snapshot worldserver-regression-fix.exe in build/devenv-solo-reload, not the new no-binding binary. Auth 3744, world 8105, SOAP 7898; *_codex DBs only. Random bot AI disabled. Main fixture is guid 1, safely staged with GM on/god off. Private credentials remain under ignored build/runtime.
-- T-013 PR45 and T-011 PR61 are ready, unmerged for human core review. Routine tools-only PR67 was independently built/tested and merged under the latest authorization.
-- Remaining queue after this: T-014, script half of T-041, T-044, T-046, T-047, T-007, BUG-003.
+## For the other agent
+- Core changes require review. Draft PR 69 is ready; no self-merge without required approval.
+- Updates: world/2026_11_01_codex_00_no_binding_hotfix.sql; characters/2026_11_01_codex_01_no_binding_cleanup.sql. Codex applied both; main DBs must receive them after merge, with backups before the sizable cleanup.
+- Reproduce: .nobinding pickup ENTRY; .nobinding item SLOT; .nobinding bind SLOT; .nobinding refresh. Headless item-hotfix ENTRY inspects actual wire data; transmog NPC_GUID SLOT SOURCE_ENTRY SOURCE_GUID exercises the client packet. GM .additem deliberately unbinds its additions, so use pickup for binding tests.
+- Codex runtime currently runs worldserver-T015-pickup.exe on its own ports/DBs, no random bots. Main fixture guid 1 is back at the quiet staging point with GM on.
 
-## Next (required before review)
-1. Export item_template entry,class,bonding,Quality AS quality,startquest,flags to build/item-binding.tsv. Generate new dated world/character updates with tools/no-binding/generate.py; match configured protection IDs and reserve the next per-day codex SQL counters.
-2. Back up/copy a real owned save using T-037 tooling. Run SQL validator and apply both updates twice to the owned copy; prove only eligible soulbound bits change and protected/unknown items plus unrelated flags remain identical. Do not apply main DB updates before human merges the core PR.
-3. Start the newly built binary on Codex ports; test pickup, equip, protected quest/configured item, invalid-config fail-safe and config on/off/reload. GM .nobinding bind SLOT exercises the same flag path as transmog, but actual headless transmog still needs verification.
-4. Add minimal headless hotfix/transmog support if needed. Existing CMSG_REQUEST_HOTFIX is in MiscHandler; item-sparse Bonding is byte offset 396 and Flags offset 8 in the serialized record (confirm from serializer). Hotfix table hash is 2442913102; hotfix_data PK is entry,type,hotfixDate. Capture actual wire values for enabled/protected/disabled states.
-5. Run all three current regression scenarios on the new binary, update checklist/status, push and mark ready. Human reviews core changes; do not merge.
+## Next
+- Claude/human core review. After approved merge, back up and apply only these two SQL updates to main DBs as required by AGENTS.md.
 
 ## Map additions
-- game/Entities/Item/BindingRules and NoBinding; Custom/NoBinding; tests/no_binding; tools/no-binding.
+- game/Entities/Item/BindingRules and NoBinding; Custom/NoBinding; tests/no_binding; tools/no-binding; headless item-hotfix/transmog verbs.
