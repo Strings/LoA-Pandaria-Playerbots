@@ -5758,3 +5758,11 @@ SpawnThinning.SameEntryOnly = 0
 SpawnThinning.Maps = "0 1 530 571 870"
 
 ###################################################################################################
+
+# Raid.Retention.Enable: raid-only retention/reset lifecycle (0 restores legacy cleanup).
+# Raid.ResetPeriodSeconds: positive reset period, default 172800 (two days).
+# Period changes apply on restart or the next cycle; non-raid resets are unchanged.
+# Raid.Retention.NotifyOnEnter: explain retention to humans entering raids.
+Raid.Retention.Enable = 1
+Raid.ResetPeriodSeconds = 172800
+Raid.Retention.NotifyOnEnter = 1

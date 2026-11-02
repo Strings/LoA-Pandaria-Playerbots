@@ -2164,6 +2164,7 @@ void AddSC_detached_storage();
 void AddSC_loadouts();
 void AddSC_reagent_bank();
 void AddSC_spawn_thinning();
+void AddSC_raid_retention();
 
 void AddCustomScripts()
 {
@@ -2190,6 +2191,7 @@ void AddCustomScripts()
     AddSC_loadouts();
     AddSC_reagent_bank();
     AddSC_spawn_thinning();
+    AddSC_raid_retention();
 
 #endif
     AddSC_Anticheat();

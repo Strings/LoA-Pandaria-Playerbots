@@ -73,6 +73,7 @@
 #include "QuestPools.h"
 #include "CellImpl.h"
 #include "InstanceSaveMgr.h"
+#include "RaidRetention.h"
 #include "Util.h"
 #include "Language.h"
 #include "CreatureGroups.h"
@@ -547,6 +548,7 @@ void World::LoadConfigSettings(bool reload)
     ///- Read other configuration items from the config file
 
     MountedSpeed::Load();
+    RaidRetention::LoadConfig();
     m_bool_configs[CONFIG_DURABILITY_LOSS_IN_PVP] = sConfigMgr->GetBoolDefault("DurabilityLoss.InPvP", false);
 
     m_int_configs[CONFIG_COMPRESSION] = sConfigMgr->GetIntDefault("Compression", 1);

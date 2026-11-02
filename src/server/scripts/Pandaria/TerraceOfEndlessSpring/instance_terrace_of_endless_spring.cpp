@@ -15,6 +15,7 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "RaidRetention.h"
 #include "ScriptMgr.h"
 #include "InstanceScript.h"
 #include "VMapFactory.h"
@@ -557,6 +558,14 @@ class instance_terrace_of_endless_spring : public InstanceMapScript
                         if (m_auiEncounter[i] == IN_PROGRESS)                // Do not load an encounter as "In Progress" - reset it instead.
                             m_auiEncounter[i] = NOT_STARTED;
 
+
+                    if (RaidRetention::Enabled())
+                    {
+                        // This legacy script stores a parallel array; restore the core state too.
+                        for (uint32 i = 0; i < DATA_MAX_BOSS_DATA; ++i)
+                            InstanceScript::SetBossState(i, EncounterState(m_auiEncounter[i]));
+                        strSaveData = in;
+                    }
 
                     if (m_auiEncounter[TYPE_PROTECTORS] == DONE)
                     {
