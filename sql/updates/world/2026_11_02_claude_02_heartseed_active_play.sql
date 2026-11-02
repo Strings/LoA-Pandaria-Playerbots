@@ -27,12 +27,13 @@ INSERT INTO `heartseed_meter` (`path`, `source`, `max_stacks`, `threshold_pct`, 
 (4, 4, 5, 0,    0, 15000,   0, 20, 1000,    0, 'Yu''lon: spell casts build Coil; Breath deals 20% more per Coil; crits cut the cooldown 1 s');
 
 -- Meter passive: a dummy aura (Effect 6, aura 4) on the caster, passive and infinite like the trait auras.
+-- AttributesEx3 0x04000000 (CAN_PROC_WITH_TRIGGERED): crits of triggered spells (class procs) count too.
 DELETE FROM `spell_dbc` WHERE `Id` = 310009;
 INSERT INTO `spell_dbc` (`Id`, `SpellAuraOptionsId`, `SpellCastingRequirementsId`, `SpellCategoriesId`, `SpellClassOptionsId`, `SpellEquippedItemsId`, `SpellLevelsId`, `SpellTargetRestrictionsId`, `SpellInterruptsId`, `SpellMiscId`, `Comment`) VALUES
 (310009, 0, 0, 0, 0, 0, 0, 0, 0, 310009, 'Heartseed: meter passive, crit procs');
 DELETE FROM `spellmisc_dbc` WHERE `Id` = 310009;
 INSERT INTO `spellmisc_dbc` (`Id`, `Attributes`, `AttributesEx`, `AttributesEx2`, `AttributesEx3`, `AttributesEx4`, `AttributesEx5`, `AttributesEx6`, `AttributesEx7`, `AttributesEx8`, `AttributesEx9`, `AttributesEx10`, `AttributesEx11`, `AttributesEx12`, `AttributesEx13`, `CastingTimeIndex`, `DurationIndex`, `RangeIndex`, `SchoolMask`, `Comment`) VALUES
-(310009, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 21, 1, 1, 'Heartseed: meter passive');
+(310009, 64, 0, 0, 67108864, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 21, 1, 1, 'Heartseed: meter passive');
 DELETE FROM `spelleffect_dbc` WHERE `Id` = 310009;
 INSERT INTO `spelleffect_dbc` (`Id`, `Effect`, `EffectValueMultiplier`, `EffectApplyAuraName`, `EffectAplitude`, `EffectBasePoints`, `EffectBonusMultiplier`, `EffectDamageMultiplier`, `EffectChainTarget`, `EffectDieSides`, `EffectMechanic`, `EffectMiscValue`, `EffectMiscValueB`, `EffectRadiusIndex`, `EffectRadiusIndexMax`, `EffectRealPointsPerLevel`, `EffectSpellClassMaskA`, `EffectSpellClassMaskB`, `EffectSpellClassMaskC`, `EffectSpellClassMaskD`, `EffectTriggerSpell`, `EffectImplicitTargetA`, `EffectImplicitTargetB`, `EffectSpellId`, `EffectIndex`, `EffectAttributes`) VALUES
 (310009, 6, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 310009, 0, 0);
