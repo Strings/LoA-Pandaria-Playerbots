@@ -232,6 +232,59 @@ namespace Heartseed
         }
         return 0;
     }
+
+    // Celestial Gift riders (heartseed_gift_rider): each Heartseed stage adds one to the Gift (DESIGN.md, The Gift
+    // grows with the seed). The kind says which hook applies it; amount, duration and helper spell are data.
+    enum class GiftRiderKind : uint8_t
+    {
+        SelfAura        = 1,   // on cast: helper aura on the caster, effect 0 = amount, for duration
+        ExtraTargets    = 2,   // the Gift's damage spell hits amount more enemies near its targets
+        KillCooldown    = 3,   // a kill cuts the Gift cooldown by amount ms; 0 resets it
+        HealPct         = 4,   // on cast: heal amount % of max health
+        TargetAura      = 5,   // each enemy hit gets the helper aura, effect 0 = amount, for duration
+        AbsorbPerTarget = 6,   // after the cast: helper absorb of amount % of max health per enemy hit
+        Widen           = 7,   // area grows by amount %, and its aura lasts duration ms longer
+        LeechPct        = 8,   // heal amount % of the Gift's damage
+        TargetDot       = 9,   // each enemy hit burns: helper DoT ticking amount % of the Gift's power
+        HitCooldown     = 10,  // each distinct enemy hit cuts the Gift cooldown by amount ms
+    };
+
+    constexpr uint8_t MaxGiftRiderKind = 10;
+
+    struct GiftRider
+    {
+        uint8_t Stage = 0;                    // heartseed_stage index that adds it
+        GiftRiderKind Kind = GiftRiderKind::SelfAura;
+        int32_t Amount = 0;
+        uint32_t Duration = 0;                // ms; 0 keeps the helper spell's own
+        uint32_t SpellId = 0;                 // helper spell, for the kinds that apply one
+    };
+
+    // Riders reached at this stage; a character keeps every earlier stage's rider.
+    inline std::vector<GiftRider> ActiveRiders(std::vector<GiftRider> const& riders, uint8_t stage)
+    {
+        std::vector<GiftRider> active;
+        for (GiftRider const& rider : riders)
+            if (rider.Stage <= stage)
+                active.push_back(rider);
+        return active;
+    }
+
+    inline uint32_t PercentOf(uint32_t value, int32_t pct)
+    {
+        if (pct <= 0)
+            return 0;
+        uint64_t result = uint64_t(value) * uint64_t(pct) / 100;
+        return result > UINT32_MAX ? UINT32_MAX : uint32_t(result);
+    }
+
+    // How far to cut a cooldown with remainingMs left: never past ready, and a cut of 0 means a full reset.
+    inline uint32_t CooldownCut(uint32_t remainingMs, int32_t cutMs)
+    {
+        if (cutMs <= 0)
+            return remainingMs;
+        return uint32_t(cutMs) < remainingMs ? uint32_t(cutMs) : remainingMs;
+    }
 }
 
 #endif
