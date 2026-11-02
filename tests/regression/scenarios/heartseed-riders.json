@@ -18,13 +18,16 @@
     "say .heartseed info",
     "say .npc add temp 6",
     "say .npc add temp 6",
-    "cast 119381",
+    "cast 116098",
     "wait-for evt=never timeout=1",
+    "say .heartseed meter hit 50000",
+    "cast 116098",
     "say .list auras",
     "say .heartseed major 10 4",
-    "cast 115008",
-    "wait-for evt=never timeout=1",
+    "say .heartseed meter 5",
+    "cast 148009",
     "say .list auras",
+    "say .heartseed info",
     "say .heartseed major 10 2",
     "say .npc add temp 6",
     "npcguid 6",
@@ -41,11 +44,15 @@
     },
     {
       "type": "contains",
-      "text": "riders: stage 2 kind 5 amount -20, stage 3 kind 6 amount 5, stage 4 kind 7 amount 50."
+      "text": "riders: stage 1 kind 11 amount 30, stage 2 kind 5 amount -20, stage 3 kind 7 amount 50, stage 4 kind 10 amount 2000."
     },
     {
       "type": "regex",
-      "pattern": "(?s)step: cast 119381.*?11426.*?step: cast 115008.*?2983.*?step: cast 123904.*?26297"
+      "pattern": "(?s)step: cast 116098.*?SMSG_CAST_FAILED spell=116098.*?step: say .heartseed meter hit 50000.*?Meter of Seedtest: stacks 0/0, lit yes"
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)step: say .heartseed meter hit 50000.*?step: cast 116098.*?id: 11426.*?step: cast 148009.*?id: 2983.*?last spend 5 stacks.*?step: cast 123904.*?26297"
     },
     {
       "type": "not_contains",

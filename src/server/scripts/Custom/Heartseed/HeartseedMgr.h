@@ -32,6 +32,16 @@ namespace Heartseed
 {
     // Server-side passive (spell_dbc) carrying the core passive's bonus weapon damage.
     constexpr uint32 SPELL_CORE_WEAPON_BONUS = 310008;
+    // Server-side passive (spell_dbc) whose crit procs (spell_proc_event) feed the path meter.
+    constexpr uint32 SPELL_METER_PASSIVE = 310009;
+
+    // What casting the Gift spent from the path meter; the Gift's effects read it while they land.
+    struct GiftSpend
+    {
+        uint8 Stacks = 0;
+        int32 BonusPctPerStack = 0;
+        uint32 RecentDamage = 0;                      // damage taken in the meter window (Niuzao's Retort)
+    };
 
     // Gossip the Heartseed opens from the player itself to ask before it feeds (Heartseed gossip block).
     constexpr uint32 GOSSIP_MENU_FEED = 90001;
@@ -111,6 +121,10 @@ namespace Heartseed
         std::set<ObjectGuid> DeclinedFeeds;           // weapons the player chose to keep this session
         uint64 FirstNewItemGuid = 0;                  // items from this counter on were created after login
         bool CapNoticeSent = false;                   // "it needs you to grow" is said once per session
+        uint32 GiftTraitId = 0;                       // the taught Gift's trait, whose path meter is built
+        Heartseed::MeterState Meter;
+        std::vector<std::pair<uint32, uint32>> RecentHits;   // (getMSTime(), damage) taken, for the meter window
+        GiftSpend LastSpend;
     };
 
     // An essence type (world heartseed_essence_template): a minor trait by the weapon's origin. While it sits
@@ -192,8 +206,10 @@ namespace Heartseed
         uint32 GiftSpellId = 0;                       // Celestial Gift: active spell taught while the trait is active
         uint32 GiftCooldown = 0;                      // Gift cooldown in ms, replacing the spell's own; 0 keeps it
         uint32 GiftDuration = 0;                      // Gift summon lifetime in ms, replacing the spell's; 0 keeps it
-        int32 GiftBaseAmount = 0;                     // Gift power (damage per hit for scaled gifts) at item level 0
-        float GiftAmountPerItemLevel = 0.0f;
+        // Gift power in %: of attack or spell power (Serpent's Breath tick), of max health (Crane's Plume heal), of
+        // the damage taken in the meter window (Niuzao's Retort per enemy). Kept relative so low levels aren't overtuned.
+        int32 GiftBaseAmount = 0;
+        float GiftAmountPerItemLevel = 0.0f;          // flat power added per main-hand item level (0 in shipped data)
         std::vector<GiftRider> GiftRiders;            // heartseed_gift_rider, ordered by stage
         int32 BaseAmount = 0;                        // effect 0 amount at item level 0
         float AmountPerItemLevel = 0.0f;              // added per main-hand item level
@@ -340,6 +356,7 @@ public:
     // The active Celestial Gift trait that taught spellId to the character; false when none did. Spell scripts
     // use it for the Gift cooldown and power. spellId 0 finds whichever Gift the character was taught.
     bool GetActiveGift(Player const* player, uint32 spellId, Heartseed::TraitInfo& out) const;
+    // Serpent's Breath tick: GiftBaseAmount % of the higher of attack power and spell power.
     int32 GetGiftAmount(Player const* player, Heartseed::TraitInfo const& gift) const;
     // The Gift's riders the character's stage has reached.
     std::vector<Heartseed::GiftRider> GetGiftRiders(Player const* player, Heartseed::TraitInfo const& gift) const;
@@ -347,6 +364,24 @@ public:
     bool GetGiftRider(Player const* player, uint32 spellId, Heartseed::GiftRiderKind kind, Heartseed::GiftRider& out) const;
     // Cuts the Gift's cooldown by ms (0 = reset), never past ready.
     void CutGiftCooldown(Player* player, uint32 spellId, int32 ms) const;
+
+    // Path meters (heartseed_meter). Play events build the meter of the taught Gift's path; amount is the health
+    // gained or the damage taken for Healing and BigHit. spellId is the spell behind the event, so the Gift's own
+    // casts and crits don't count.
+    void OnMeterEvent(Player* player, Heartseed::MeterSource source, uint32 amount, uint32 spellId = 0);
+    // A gated Gift (Niuzao's Retort) casts only while lit; every other spell is always allowed.
+    bool CanCastGift(Player const* player, uint32 spellId) const;
+    // Casting the Gift spends the meter; GetLastSpend returns it while the Gift's effects land.
+    Heartseed::GiftSpend SpendGiftMeter(Player* player, uint32 spellId);
+    Heartseed::GiftSpend GetLastSpend(Player const* player) const;
+    bool GetMeter(Player const* player, Heartseed::MeterRule& rule, Heartseed::MeterState& meter) const;
+    // GM: sets the stacks (capped) or lights a gated Gift. False when the character has no Gift with a meter.
+    bool ForceMeter(Player* player, uint8 stacks, bool lit);
+    // Tells the addon the meter: "P" <stacks> <max> <lit ms left> <decay ms> <Gift spell>.
+    void SendMeter(Player* player) const;
+    float GetPlumeRadius() const { return _plumeRadius; }
+    uint32 GetPlumeTargets() const { return _plumeTargets; }
+    float GetRetortRadius() const { return _retortRadius; }
     // Traits plus glow; called after any state change.
     void Refresh(Player* player);
 
@@ -387,6 +422,10 @@ private:
     uint32 _xuenLightningVisual = 0;
     float _xuenCatchUpDistance = 0.0f;
     uint32 _xuenFollowInterval = 1000;
+    float _plumeRadius = 30.0f;
+    uint32 _plumeTargets = 3;
+    float _retortRadius = 8.0f;
+    std::map<uint8, Heartseed::MeterRule> _meters;      // path -> meter (heartseed_meter)
     float _coreWeaponDamagePct = 0.0f;
     uint32 _procSpellId = 0;
     float _procChance = 0.0f;

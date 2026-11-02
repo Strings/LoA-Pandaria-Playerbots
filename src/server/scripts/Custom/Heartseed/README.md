@@ -63,13 +63,21 @@ World database (`sql/updates/world/2026_11_01_claude_06_heartseed_gifts.sql`, T-
 
 - `heartseed_gift` (rebuilt by `2026_11_01_claude_07_heartseed_gift_duration.sql`): the Celestial Gift a major
   teaches: the client spell, its cooldown and summon duration in ms (each replaces the spell's own; 0 keeps it, so
-  Call of Xuen runs 20 s / 10 s against Invoke Xuen's 3 min / 45 s), and its power (`base_amount + amount_per_ilvl * main-hand item level`; only
-  Serpent's Breath reads it, as damage per tick). The tier-0 majors (traits 2, 4, 6, 8) are the four Gifts; their
+  Call of Xuen runs 20 s / 10 s against Invoke Xuen's 3 min / 45 s), and its power `base_amount` as a percentage
+  (T-083), so the Gift scales with the character instead of being overtuned at low levels: Serpent's Breath ticks
+  for that % of the higher of attack and spell power, Crane's Plume heals that % of the caster's max health,
+  Niuzao's Retort deals that % of the damage taken in its window to each enemy. `amount_per_ilvl` adds flat power
+  per main-hand item level (0 in shipped data). The tier-0 majors (traits 2, 4, 6, 8) are the four Gifts; their
   old stat auras are minors 9 to 12. A trait with `spell_id` 0 applies no aura.
-- Gifts reuse client spells, because the 5.4.8 client only casts spells it knows: Invoke Xuen (123904), Chi
-  Torpedo (115008), Leg Sweep (119381) and Celestial Breath (117960). `RefreshTraits` teaches the active Gift and
-  unlearns the others, except a spell the character has from its own talents (monks). `spell_heartseed_gift` adds
-  the Gift cooldown; `spell_heartseed_celestial_breath` (124947) replaces the creature spell's damage.
+- Gifts reuse client spells, because the 5.4.8 client only casts spells it knows, and never a monk ability (T-083):
+  Invoke Xuen (123904, the one exception for now), Spirit of Chi-Ji (148009, a legendary cloak proc) as Crane's
+  Plume, Ox Charge (116098, a creature spell) as Niuzao's Retort, and Celestial Breath (117960). `RefreshTraits`
+  teaches the active Gift and unlearns the others, except a spell the character has from its own talents (monks).
+  `spell_heartseed_gift` adds the Gift cooldown, gates and spends the meter; `spell_heartseed_celestial_breath`
+  (124947) replaces the creature spell's damage; `spell_heartseed_crane_plume` picks the caster plus the most
+  wounded group members in `Heartseed.Gift.PlumeRadius` (`Heartseed.Gift.PlumeTargets` of them) and heals through
+  `GiftHeal`; `spell_heartseed_niuzao_retort` strikes enemies in `Heartseed.Gift.RetortRadius`. Triggered casts of
+  the same spells (the cloak's own proc) are left alone.
   `spell_heartseed_xuen_lightning` (123996) plays `Heartseed.Gift.XuenLightningVisual` (default Chain Lightning's
   visual) from Xuen to each target his lightning hits, for monks' Xuen too.
 - `.seed sync` M lines carry the Gift spell id and the trait description, so the addon can show and cast it.
@@ -77,10 +85,28 @@ World database (`sql/updates/world/2026_11_01_claude_06_heartseed_gifts.sql`, T-
   (Sapling 2, Bloom 3, Full Bloom 4); a character keeps every rider its stage has reached. `kind` is
   `Heartseed::GiftRiderKind` (`HeartseedRules.h`); `amount`, `duration` and the helper `spell_id` are data. Aura
   kinds `AddAura` the helper spell and overwrite its effect 0 amount and duration. Hooks: `spell_heartseed_gift`
-  (self aura, heal; Chi Torpedo is cast as 121828, which it also hooks), `spell_heartseed_ox_stomp` (119381:
-  target aura, absorb per hit, widen), `spell_heartseed_xuen_lightning` (extra targets),
-  `spell_heartseed_celestial_breath` (leech, DoT, cooldown per enemy hit) and the player kill hook (kill
-  cooldown, 0 = reset). `.heartseed info` lists the active riders.
+  (self aura, heal, shield from the damage window), `spell_heartseed_crane_plume` (extra targets),
+  `spell_heartseed_niuzao_retort` (target aura, widen, cooldown per enemy hit), `spell_heartseed_xuen_lightning`
+  (extra targets), `spell_heartseed_celestial_breath` (leech, DoT, cooldown per enemy hit) and the player kill hook
+  (kill cooldown, 0 = reset). Stage 1 (Sprout) riders come with the Gift itself. `.heartseed info` lists the
+  active riders.
+- `heartseed_meter` (`2026_11_02_claude_02_heartseed_active_play.sql`, T-083): one meter per path, built by normal
+  play of any class and spent by the Gift (DESIGN.md "Active play, not big cooldowns"). `source` is
+  `Heartseed::MeterSource`: crits dealt (Xuen's Thunder), health actually healed, done or received (Chi-Ji's Hope,
+  one stack per `threshold_pct` of max health), a hit taken of `threshold_pct` of max health (lights Niuzao's
+  Retort for `lit_duration`; a gated Gift fails to cast while dark), spell casts that are not triggered (Yu'lon's
+  Coil). Casting the Gift spends the stacks for `spend_bonus_pct` more power each (Xuen: tiger duration).
+  `crit_cooldown_cut` shortens the Gift on each crit (at most once per `build_cooldown`), `decay` empties idle
+  stacks, `window` is how much damage taken Retort remembers. Meter state is runtime only (never saved) and
+  resets when the Gift changes. Pure rules live in `HeartseedRules.h` (`MeterBuild`, `MeterSpend`,
+  `HealingStacks`, ...) and are unit-tested.
+- Crits reach the meter through the server-side passive 310009 (`spell_dbc`, applied with the Gift): its
+  `spell_proc_event` row procs on every critical damage or healing hit, triggered spells included
+  (`SPELL_ATTR3_CAN_PROC_WITH_TRIGGERED`), and `spell_heartseed_meter` feeds the proc in. Healing comes from
+  the `OnHeal` unit hook (spell heals reach only that one); the Gift's own heals go through `GiftHeal`, which
+  the hook skips. Damage taken comes from `OnDamage`, spell casts from the player `OnSpellCast` hook.
+- The server tells the addon about every change with an addon whisper `P <stacks> <max> <lit ms left> <decay ms>
+  <Gift spell>`; the addon shows a small movable meter and glows the Gift on the action bars when full or lit.
 - Call of Xuen's tiger keeps up with a mount: out of combat it runs at its owner's speed and jumps to them past
   `Heartseed.Gift.XuenCatchUpDistance` (25 yd), checked every `Heartseed.Gift.XuenFollowInterval` ms.
 
@@ -222,6 +248,8 @@ worldserver.conf:
   saved loadouts keep their tier index.
 - Granting quest: `Heartseed.Grant.QuestId` (90000), `.OfferOnLogin` (1), `.OfferDelay` (5000 ms).
 - Choices: `Heartseed.Choice.PromptOnLogin` (1), `.PromptDelay` (6000 ms), `.ChangeAtShrineOnly` (1).
+- Gift areas (T-083): `Heartseed.Gift.PlumeRadius` (30 yd), `.PlumeTargets` (3, caster not counted),
+  `.RetortRadius` (8 yd). Meter numbers live in `heartseed_meter`.
 - Story beats: `Heartseed.Story.Hooks` (1), `.PandariaMaps` ("870"), `.WorldBosses` (MoP and old world boss
   entries), `.AwakeningSound` (0 = none).
 - All pacing numbers are placeholders until v0.5.
@@ -245,6 +273,8 @@ Permission 90000 (`Command: heartseed`, Gamemaster role). Target is the selected
 - `.heartseed traits`: every trait, marking the ones active on the target.
 - `.heartseed major <10|25|40|55|70|85> <trait id | 0>`: set or clear a major in the active spec's
   loadout. Skips the level check.
+- `.heartseed meter [<stacks> | lit | hit <damage>]`: show the path meter, set its stacks, light it, or feed it
+  a hit taken (Niuzao: records the damage and lights the meter if the hit is big enough).
 - `.heartseed reload`: reload stages, glows, traits, essences and shrines, and refresh the target.
 - `.heartseed cap`: the cap and how it is made up (level, awakening flags), rank, Growth, next rank cost.
 - `.heartseed feed <item link | entry>`: feed one such weapon from the target's bags (no prompt, no upgrade

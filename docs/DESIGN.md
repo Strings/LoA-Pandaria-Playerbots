@@ -376,8 +376,8 @@ Later threads: Jaina's reconciliation when she sees the seed bloom in Pandaria; 
 
      | Path | Builds from | Gift | Example majors |
      | --- | --- | --- | --- |
-     | Xuen | Crits build Thunder (5 stacks) | Xuen's tiger (kept), 60 s; crits and kills shorten it | Pounce: 6 s after a kill, leap to a new enemy. Storm Fang: at 5 Thunder the next hit chains lightning |
-     | Chi-Ji | Healing done or received builds Hope (self-heals, potions, lifesteal count) | Crane's Plume, 2 charges, ~30 s recharge: heals you and nearby allies, more per Hope spent | Last Hope: a fatal blow leaves you at 30% health; take healing worth 40% of your health within 10 s or die (long internal cooldown that healing shortens). Kindred Flame: Plume splashes to the lowest ally |
+     | Xuen | Crits build Thunder (5 stacks) | Xuen's tiger (kept), 20 s, +10% tiger duration per Thunder spent; crits and kills shorten it | Pounce: 6 s after a kill, leap to a new enemy. Storm Fang: at 5 Thunder the next hit chains lightning |
+     | Chi-Ji | Healing done or received builds Hope (self-heals, potions, lifesteal count) | Crane's Plume, 15 s (one charge; the 5.4.8 client has no charges for it): heals you and the most wounded nearby allies, +20% per Hope spent | Last Hope: a fatal blow leaves you at 30% health; take healing worth 40% of your health within 10 s or die (long internal cooldown that healing shortens). Kindred Flame: Plume splashes to the lowest ally |
      | Niuzao | A hit over 8% of your health lights the Gift for 6 s | Niuzao's Retort, 20 s, only while lit: a shockwave that hits back and shields you for part of the damage taken in the last 5 s | Stand Firm: dodges and parries also light it. Unyielding: Retort taunts and adds brief damage reduction |
      | Yu'lon | Spell casts build Coil (5 stacks) | Serpent's Breath (kept), 30 s, +20% per Coil spent; spell crits shorten it | Jade Rune: Breath leaves ground runes that grant haste while you stand in them. Second Breath: spending 5 Coil makes the next spell instant |
 

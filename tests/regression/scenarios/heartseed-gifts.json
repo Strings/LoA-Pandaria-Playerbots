@@ -23,9 +23,10 @@
     "say .heartseed info",
     "say .heartseed info",
     "say .heartseed major 10 6",
-    "cast 119381",
+    "say .heartseed meter lit",
+    "cast 116098",
     "say .heartseed major 10 4",
-    "cast 115008",
+    "cast 148009",
     "say .heartseed revoke"
   ],
   "assertions": [
@@ -43,7 +44,7 @@
     },
     {
       "type": "contains",
-      "text": "fights at your side, crackling with lightning"
+      "text": "fights at your side. Your critical hits build Thunder"
     },
     {
       "type": "contains",
@@ -55,7 +56,7 @@
     },
     {
       "type": "contains",
-      "text": "|119381"
+      "text": "|116098"
     },
     {
       "type": "contains",
@@ -63,11 +64,11 @@
     },
     {
       "type": "contains",
-      "text": "A Celestial Gift wakes: Leg Sweep"
+      "text": "A Celestial Gift wakes: Ox Charge"
     },
     {
       "type": "contains",
-      "text": "A Celestial Gift wakes: Chi Torpedo"
+      "text": "A Celestial Gift wakes: Spirit of Chi-Ji"
     },
     {
       "type": "not_contains",
@@ -79,11 +80,11 @@
     },
     {
       "type": "not_contains",
-      "text": "SMSG_CAST_FAILED spell=119381"
+      "text": "SMSG_CAST_FAILED spell=116098"
     },
     {
       "type": "not_contains",
-      "text": "SMSG_CAST_FAILED spell=115008"
+      "text": "SMSG_CAST_FAILED spell=148009"
     },
     {
       "type": "not_contains",

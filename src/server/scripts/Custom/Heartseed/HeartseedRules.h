@@ -7,6 +7,7 @@
 #ifndef HEARTSEED_RULES_H
 #define HEARTSEED_RULES_H
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -247,9 +248,10 @@ namespace Heartseed
         LeechPct        = 8,   // heal amount % of the Gift's damage
         TargetDot       = 9,   // each enemy hit burns: helper DoT ticking amount % of the Gift's power
         HitCooldown     = 10,  // each distinct enemy hit cuts the Gift cooldown by amount ms
+        RecentDamageShield = 11, // on cast: helper absorb of amount % of the damage taken in the meter window
     };
 
-    constexpr uint8_t MaxGiftRiderKind = 10;
+    constexpr uint8_t MaxGiftRiderKind = 11;
 
     struct GiftRider
     {
@@ -284,6 +286,159 @@ namespace Heartseed
         if (cutMs <= 0)
             return remainingMs;
         return uint32_t(cutMs) < remainingMs ? uint32_t(cutMs) : remainingMs;
+    }
+
+    // Path meters (heartseed_meter, DESIGN.md "Active play, not big cooldowns"): normal play of any class builds
+    // the meter of the Gift's path, and casting the Gift spends it. Times are getMSTime() values; differences
+    // are taken unsigned, so the wrap after 49 days is harmless.
+    enum class MeterSource : uint8_t
+    {
+        None      = 0,
+        Crit      = 1,   // each critical hit dealt adds a stack
+        Healing   = 2,   // healing done or received adds a stack per threshold % of max health
+        BigHit    = 3,   // a hit taken of at least threshold % of max health lights the Gift
+        SpellCast = 4,   // each spell cast (not the Gift, not triggered) adds a stack
+    };
+
+    constexpr uint8_t MaxMeterSource = 4;
+
+    struct MeterRule
+    {
+        MeterSource Source = MeterSource::None;
+        uint8_t MaxStacks = 0;                // 0 = the meter has no stacks (BigHit lights instead)
+        uint32_t ThresholdPct = 0;            // Healing: % of max health per stack; BigHit: % of max health
+        uint32_t LitMs = 0;                   // BigHit: how long the Gift stays usable; 0 = never gated
+        uint32_t DecayMs = 0;                 // stacks drop this long after the last build; 0 = never
+        uint32_t BuildCooldownMs = 0;         // minimum time between two builds
+        int32_t SpendBonusPct = 0;            // Gift power per stack spent
+        int32_t CritCooldownCutMs = 0;        // each crit cuts the Gift cooldown by this much (shares BuildCooldownMs)
+        uint32_t WindowMs = 0;                // damage taken is remembered this long (Retort)
+    };
+
+    struct MeterState
+    {
+        uint8_t Stacks = 0;
+        uint32_t LastBuild = 0;
+        bool HasBuilt = false;
+        uint32_t LitAt = 0;
+        bool Lit = false;
+        uint32_t HealAccum = 0;               // healing toward the next stack
+        uint32_t LastCritCut = 0;
+        bool HasCritCut = false;
+    };
+
+    inline bool Elapsed(uint32_t since, uint32_t now, uint32_t ms)
+    {
+        return uint32_t(now - since) >= ms;
+    }
+
+    // Drops stacks and healing that sat past the decay time, and a lit window that ran out.
+    inline void MeterDecay(MeterState& meter, MeterRule const& rule, uint32_t now)
+    {
+        if (rule.DecayMs && meter.HasBuilt && Elapsed(meter.LastBuild, now, rule.DecayMs))
+        {
+            meter.Stacks = 0;
+            meter.HealAccum = 0;
+        }
+        if (meter.Lit && Elapsed(meter.LitAt, now, rule.LitMs))
+            meter.Lit = false;
+    }
+
+    // One build event. Returns true when the meter changed.
+    inline bool MeterBuild(MeterState& meter, MeterRule const& rule, uint32_t now, uint8_t stacks = 1)
+    {
+        MeterDecay(meter, rule, now);
+        if (meter.HasBuilt && rule.BuildCooldownMs && !Elapsed(meter.LastBuild, now, rule.BuildCooldownMs))
+            return false;
+        bool changed = false;
+        if (rule.LitMs)
+        {
+            changed = !meter.Lit || meter.LitAt != now;
+            meter.Lit = true;
+            meter.LitAt = now;
+        }
+        if (rule.MaxStacks && stacks)
+        {
+            uint8_t before = meter.Stacks;
+            meter.Stacks = uint8_t(std::min<uint32_t>(uint32_t(meter.Stacks) + stacks, rule.MaxStacks));
+            changed = changed || meter.Stacks != before;
+        }
+        meter.LastBuild = now;
+        meter.HasBuilt = true;
+        return changed;
+    }
+
+    // Healing toward Hope: every threshold % of max health healed is one stack; the rest carries over.
+    inline uint8_t HealingStacks(MeterState& meter, MeterRule const& rule, uint32_t amount, uint32_t maxHealth)
+    {
+        uint32_t step = PercentOf(maxHealth, int32_t(rule.ThresholdPct));
+        if (!step)
+            return 0;
+        uint64_t total = uint64_t(meter.HealAccum) + amount;
+        uint64_t stacks = total / step;
+        meter.HealAccum = uint32_t(total % step);
+        return uint8_t(std::min<uint64_t>(stacks, 255));
+    }
+
+    inline bool IsBigHit(MeterRule const& rule, uint32_t damage, uint32_t maxHealth)
+    {
+        uint32_t needed = PercentOf(maxHealth, int32_t(rule.ThresholdPct));
+        return needed && damage >= needed;
+    }
+
+    // The Gift may be cast: a gated meter (LitMs) must be lit.
+    inline bool MeterAllowsCast(MeterState meter, MeterRule const& rule, uint32_t now)
+    {
+        if (!rule.LitMs)
+            return true;
+        MeterDecay(meter, rule, now);
+        return meter.Lit;
+    }
+
+    // Casting the Gift spends the meter. Returns the stacks spent.
+    inline uint8_t MeterSpend(MeterState& meter, MeterRule const& rule, uint32_t now)
+    {
+        MeterDecay(meter, rule, now);
+        uint8_t spent = meter.Stacks;
+        meter.Stacks = 0;
+        meter.HealAccum = 0;
+        meter.Lit = false;
+        return spent;
+    }
+
+    // Gift power with the spent stacks' bonus.
+    inline uint32_t SpendScaled(uint32_t value, uint8_t stacks, int32_t bonusPctPerStack)
+    {
+        int64_t pct = 100 + int64_t(stacks) * bonusPctPerStack;
+        if (pct <= 0)
+            return 0;
+        uint64_t result = uint64_t(value) * uint64_t(pct) / 100;
+        return result > UINT32_MAX ? UINT32_MAX : uint32_t(result);
+    }
+
+    // A crit's Gift cooldown cut, at most once per BuildCooldownMs. Returns the cut in ms, 0 for none.
+    inline int32_t CritCut(MeterState& meter, MeterRule const& rule, uint32_t now)
+    {
+        if (rule.CritCooldownCutMs <= 0)
+            return 0;
+        if (meter.HasCritCut && rule.BuildCooldownMs && !Elapsed(meter.LastCritCut, now, rule.BuildCooldownMs))
+            return 0;
+        meter.LastCritCut = now;
+        meter.HasCritCut = true;
+        return rule.CritCooldownCutMs;
+    }
+
+    // Damage taken in the last windowMs; entries are (time, amount), oldest first, and old ones are dropped.
+    inline uint32_t RecentDamage(std::vector<std::pair<uint32_t, uint32_t>>& hits, uint32_t now, uint32_t windowMs)
+    {
+        size_t keep = 0;
+        while (keep < hits.size() && Elapsed(hits[keep].first, now, windowMs + 1))
+            ++keep;
+        hits.erase(hits.begin(), hits.begin() + keep);
+        uint64_t total = 0;
+        for (auto const& hit : hits)
+            total += hit.second;
+        return total > UINT32_MAX ? UINT32_MAX : uint32_t(total);
     }
 }
 

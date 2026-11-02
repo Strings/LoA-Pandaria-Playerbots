@@ -1,0 +1,74 @@
+{
+  "name": "heartseed-meters",
+  "timeout_seconds": 120,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "2"
+  ],
+  "steps": [
+    "say .revive",
+    "say .go -9339.7 170.2 61.6 0",
+    "say .heartseed revoke",
+    "say .heartseed grant",
+    "say .character level Seedtest 10",
+    "say .cooldown",
+    "say .heartseed major 10 8",
+    "say .heartseed meter",
+    "say .cast 6673",
+    "say .heartseed meter",
+    "say .heartseed major 10 4",
+    "target 1",
+    "say .damage 150",
+    "say .cast 2061",
+    "wait-for evt=never timeout=2",
+    "say .heartseed meter",
+    "say .heartseed major 10 6",
+    "say .heartseed meter hit 10",
+    "say .heartseed major 10 2",
+    "target 1",
+    "say .aura 75060",
+    "say .npc add temp 6",
+    "npcguid 6",
+    "target npc",
+    "say .cast 1449 triggered",
+    "wait-for evt=never timeout=4",
+    "say .heartseed meter",
+    "say .heartseed revoke"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)step: say .heartseed major 10 8.*?Meter of Seedtest: stacks 0/5.*?step: say .cast 6673.*?Meter of Seedtest: stacks 1/5"
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)step: say .cast 2061.*?Meter of Seedtest: stacks [1-5]/5"
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)step: say .heartseed meter hit 10\\b.*?Meter of Seedtest: stacks 0/0, lit no"
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)step: say .cast 1449 triggered.*?Meter of Seedtest: stacks [1-5]/5"
+    },
+    {
+      "type": "contains",
+      "text": "msg=\"P"
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback"
+    }
+  ]
+}

@@ -492,6 +492,105 @@ frame:SetScript("OnHide", function()
     glowPulse:Stop()
 end)
 
+-- Path meter: the server sends "P" whenever play builds the Gift's meter or the Gift spends it -------------------
+
+local meter = { stacks = 0, max = 0, litUntil = 0, decay = 0, spell = 0, built = 0 }
+
+local meterFrame = CreateFrame("Frame", "HeartseedMeterFrame", UIParent)
+meterFrame:SetSize(40, 40)
+meterFrame:SetPoint("CENTER", 0, -170)
+meterFrame:SetMovable(true)
+meterFrame:EnableMouse(true)
+meterFrame:RegisterForDrag("LeftButton")
+meterFrame:SetClampedToScreen(true)
+meterFrame:SetScript("OnDragStart", function(self) if IsShiftKeyDown() then self:StartMoving() end end)
+meterFrame:SetScript("OnDragStop", meterFrame.StopMovingOrSizing)
+meterFrame.icon = meterFrame:CreateTexture(nil, "ARTWORK")
+meterFrame.icon:SetAllPoints()
+meterFrame.count = meterFrame:CreateFontString(nil, "OVERLAY", "NumberFontNormalLarge")
+meterFrame.count:SetPoint("BOTTOMRIGHT", -2, 2)
+meterFrame:Hide()
+Tooltip(meterFrame, function()
+    return { "Celestial meter", "Your play builds it and your Gift spends it. Shift-drag to move." }
+end)
+
+local function MeterReady()
+    return meter.litUntil > GetTime() or (meter.max > 0 and meter.stacks >= meter.max)
+end
+
+local ACTION_BARS = { "ActionButton", "MultiBarBottomLeftButton", "MultiBarBottomRightButton", "MultiBarRightButton",
+    "MultiBarLeftButton" }
+local function ButtonSpell(button)
+    local slot = button.action or (ActionButton_GetPagedID and ActionButton_GetPagedID(button))
+    if not slot then return nil end
+    local kind, id = GetActionInfo(slot)
+    return kind == "spell" and id or nil
+end
+
+-- The default action bar glows spells the client knows to overlay; ours is drawn the same way.
+local function UpdateMeterGlow()
+    local on = meter.spell > 0 and MeterReady()
+    for _, bar in ipairs(ACTION_BARS) do
+        for i = 1, 12 do
+            local button = _G[bar .. i]
+            if button and ButtonSpell(button) == meter.spell then
+                if on then ActionButton_ShowOverlayGlow(button) else ActionButton_HideOverlayGlow(button) end
+            end
+        end
+    end
+    if on then ActionButton_ShowOverlayGlow(giftButton) else ActionButton_HideOverlayGlow(giftButton) end
+    if on then ActionButton_ShowOverlayGlow(meterFrame) else ActionButton_HideOverlayGlow(meterFrame) end
+end
+hooksecurefunc("ActionButton_UpdateOverlayGlow", function(button)
+    if meter.spell > 0 and MeterReady() and ButtonSpell(button) == meter.spell then
+        ActionButton_ShowOverlayGlow(button)
+    end
+end)
+
+local function UpdateMeter()
+    local lit = meter.litUntil > GetTime()
+    if meter.spell == 0 or (meter.max == 0 and not lit) then
+        meterFrame:Hide()
+    else
+        local _, _, icon = GetSpellInfo(meter.spell)
+        meterFrame.icon:SetTexture(icon or ICONS .. "INV_Misc_QuestionMark")
+        meterFrame.icon:SetDesaturated(meter.max > 0 and meter.stacks == 0)
+        meterFrame.count:SetText(meter.max > 0 and meter.stacks or "")
+        meterFrame:Show()
+    end
+    UpdateMeterGlow()
+end
+
+-- Stacks fade and the lit window closes on the client's clock too, so the meter needs no message to empty.
+local meterElapsed = 0
+meterFrame:SetScript("OnUpdate", function(_, elapsed)
+    meterElapsed = meterElapsed + elapsed
+    if meterElapsed < 0.25 then return end
+    meterElapsed = 0
+    local now = GetTime()
+    local changed = false
+    if meter.stacks > 0 and meter.decay > 0 and now - meter.built >= meter.decay / 1000 then
+        meter.stacks = 0
+        changed = true
+    end
+    if meter.litUntil > 0 and meter.litUntil <= now then
+        meter.litUntil = 0
+        changed = true
+    end
+    if changed then UpdateMeter() end
+end)
+
+local function OnMeterMessage(f)
+    meter.stacks = tonumber(f[2]) or 0
+    meter.max = tonumber(f[3]) or 0
+    local litLeft = tonumber(f[4]) or 0
+    meter.litUntil = litLeft > 0 and GetTime() + litLeft / 1000 or 0
+    meter.decay = tonumber(f[5]) or 0
+    meter.spell = tonumber(f[6]) or 0
+    meter.built = GetTime()
+    UpdateMeter()
+end
+
 -- Events -------------------------------------------------------------------------------------------------------
 
 local events = CreateFrame("Frame")
@@ -529,10 +628,18 @@ events:SetScript("OnEvent", function(_, event, ...)
     end
 
     local prefix, message, _, sender = ...
-    if prefix ~= PREFIX or not incoming or (sender and Ambiguate(sender, "none") ~= UnitName("player")) then
+    if prefix ~= PREFIX or (sender and Ambiguate(sender, "none") ~= UnitName("player")) then
         return
     end
     local f = { strsplit("\t", message) }
+    -- Meter updates arrive any time, outside a sync.
+    if f[1] == "P" then
+        OnMeterMessage(f)
+        return
+    end
+    if not incoming then
+        return
+    end
     if f[1] == "N" then
         incoming.none = true
     elseif f[1] == "S" then
