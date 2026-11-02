@@ -17,8 +17,8 @@
   Darkmoon quest adds none.
 
 ## Decisions made
-- Amounts are placeholders like the rest of Growth (tuned in v0.5). At the defaults a level 10 character reaches
-  its first Growth level after about 20 quests.
+- Amounts are placeholders like the rest of Growth (tuned in v0.5). At the defaults a character reaches
+  its first Growth level after 20 quest turn-ins.
 - First dungeon clears are not a source yet: dungeon bosses already pay per kill.
 
 ## For the other agent
