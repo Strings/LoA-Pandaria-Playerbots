@@ -10,6 +10,7 @@
   "steps": [
     "say .revive",
     "walk -9336,172,61.6 -9339.7,170.2,61.6",
+    "target 504403158265495553",
     "say .telemetry flush",
     "say .telemetry status",
     "say .telemetry tag hunt-healer",

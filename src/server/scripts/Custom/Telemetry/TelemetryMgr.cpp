@@ -376,6 +376,8 @@ void TelemetryMgr::OnPlayerUpdate(Player* player)
 
     SetPause(s, Telemetry::PAUSE_GM_MODE, player->IsGameMaster(), now);
     SetPause(s, Telemetry::PAUSE_AFK, player->isAFK(), now);
+    // First, so every row this tick carries the episode it belongs to.
+    UpdateEpisode(s, player, now);
 
     // Movement. Flight paths are not the player's own movement, so they log only as taxi edges.
     bool taxi = player->IsInFlight();
@@ -481,8 +483,6 @@ void TelemetryMgr::OnPlayerUpdate(Player* player)
         Push(s, now, Row(s, "resurrect", now).Add("ghost", s.Ghost).Add("dead_ms", now - s.DeathMs));
     s.Dead = dead;
     s.Ghost = ghost;
-
-    UpdateEpisode(s, player, now);
 }
 
 void TelemetryMgr::UpdateEpisode(Session& s, Player* player, uint64 now)
@@ -747,7 +747,8 @@ void TelemetryMgr::OnCastStart(Player* player, Spell const* spell)
 
 void TelemetryMgr::OnCastDone(Player* player, Spell const* spell)
 {
-    if (!Wanted(player))
+    // Triggered spells (procs, auras applied by other spells) are not the player's choices.
+    if (spell->IsTriggered() || !Wanted(player))
         return;
     std::lock_guard<std::mutex> guard(_lock);
     Session* s = Find(player);
