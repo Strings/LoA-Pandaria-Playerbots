@@ -31,3 +31,5 @@ gamedata/
 tickets/*.json
 tickets/*.md
 !tickets/README.md
+# player telemetry logs (T-004); they stay local
+/telemetry/
