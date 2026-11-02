@@ -143,6 +143,13 @@ environment variables for the headless client (`contrib/headless-client/README.m
 - **Pure logic gets unit tests.** Keep math and rules (scaling, averaging, rolls, schedulers) in
   server-independent code and test it with the unit test framework.
 - **Run the regression suite** (headless-client scenarios) against your test profile before a PR.
+  While iterating, run only the scenarios for the system you touched. Run the full suite once, right
+  before the PR, and again only if code changed after that.
+- **Keep tool output small.** Every line you read stays in your context and is re-sent on every later
+  step, so large outputs cost usage for the rest of the session. Put `LIMIT` or a filter on every SQL
+  query. Never print generated SQL, dumps or data files; check their size and first few lines
+  instead. Filter test logs to the failing step or the lines you are checking, and never read a full
+  aura, character or spell list.
 - **Use fixtures and state commands** instead of playing to a state: fixture characters, database
   snapshots, GM commands for jewel rank, corruption and similar.
 
@@ -190,7 +197,9 @@ These come from decided rules in `docs/DESIGN.md` and apply everywhere.
 
 Every PR adds `status/<agent>-<task-id>.md` from `status/_TEMPLATE.md`: what changed, what's next,
 anything the other agents must know, and any decision you made. Claude Code, as orchestrator, folds
-fragments into `STATUS.md` from time to time and deletes them. Everyone else: never edit `STATUS.md`.
+fragments into `STATUS.md` and deletes them once per session, at the end, or sooner when five or more
+are waiting; not after each merge. Fold from a branch cut from the latest `playerbot`, so every
+merged fragment is there. Everyone else: never edit `STATUS.md`.
 
 ## Build it modular
 
