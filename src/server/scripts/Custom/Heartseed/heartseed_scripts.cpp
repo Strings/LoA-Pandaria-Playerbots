@@ -68,6 +68,19 @@ static void ApplyRiderAura(Unit* caster, Unit* target, Heartseed::GiftRider cons
     }
 }
 
+// Set while a Gift heals, so the heal doesn't build the Hope the Gift just spent. Heals run synchronously on the
+// healer's map thread.
+static thread_local bool s_inGiftHeal = false;
+
+static void GiftHeal(Unit* healer, Unit* target, SpellInfo const* spellInfo, uint32 amount)
+{
+    if (!amount)
+        return;
+    s_inGiftHeal = true;
+    healer->HealBySpell(target, spellInfo, amount);
+    s_inGiftHeal = false;
+}
+
 // Kill riders (Xuen's cooldown cut, Chi-Ji's reset) of the character's Gift.
 static void HandleGiftKill(Player* player, Creature* killed)
 {
@@ -311,17 +324,16 @@ public:
         sHeartseedMgr->OnDamageDealt(attacker->ToPlayer(), victim);
     }
 
-    // Healing done or received builds Chi-Ji's Hope. This hook, unlike OnHeal, names the spell, so the Gift's own
-    // heals can be left out; overhealing counts.
-    void ModifyHealReceived(Unit* target, Unit* healer, uint32& heal, SpellInfo const* spellInfo) override
+    // Healing done or received builds Chi-Ji's Hope: the health actually gained, so topping off a full target
+    // builds nothing. Spell heals reach only this hook; the Gift's own heals (GiftHeal) are left out.
+    void OnHeal(Unit* healer, Unit* receiver, uint32& gain) override
     {
-        if (!heal || !target)
+        if (!gain || !receiver || s_inGiftHeal)
             return;
-        uint32 spellId = spellInfo ? spellInfo->Id : 0;
         if (healer && healer->GetTypeId() == TYPEID_PLAYER)
-            sHeartseedMgr->OnMeterEvent(healer->ToPlayer(), Heartseed::MeterSource::Healing, heal, spellId);
-        if (target->GetTypeId() == TYPEID_PLAYER && target != healer)
-            sHeartseedMgr->OnMeterEvent(target->ToPlayer(), Heartseed::MeterSource::Healing, heal, spellId);
+            sHeartseedMgr->OnMeterEvent(healer->ToPlayer(), Heartseed::MeterSource::Healing, gain);
+        if (receiver->GetTypeId() == TYPEID_PLAYER && receiver != healer)
+            sHeartseedMgr->OnMeterEvent(receiver->ToPlayer(), Heartseed::MeterSource::Healing, gain);
     }
 };
 
@@ -1271,7 +1283,7 @@ class spell_heartseed_gift : public SpellScript
                     ApplyRiderAura(player, player, rider, rider.Amount);
                     break;
                 case Heartseed::GiftRiderKind::HealPct:
-                    player->HealBySpell(player, GetSpellInfo(), Heartseed::PercentOf(player->GetMaxHealth(), rider.Amount));
+                    GiftHeal(player, player, GetSpellInfo(), Heartseed::PercentOf(player->GetMaxHealth(), rider.Amount));
                     break;
                 case Heartseed::GiftRiderKind::RecentDamageShield:
                     if (uint32 shield = Heartseed::PercentOf(spend.RecentDamage, rider.Amount))
@@ -1359,14 +1371,16 @@ class spell_heartseed_crane_plume : public SpellScript
             targets.push_back(ally);
     }
 
-    void HandleHeal(SpellEffIndex /*effIndex*/)
+    // The heal goes through GiftHeal instead of the spell's own, so it builds no Hope.
+    void HandleHeal(SpellEffIndex effIndex)
     {
-        if (!_active)
+        if (!_active || !GetHitUnit())
             return;
+        PreventHitDefaultEffect(effIndex);
         Player* caster = GetCaster()->ToPlayer();
         Heartseed::GiftSpend spend = sHeartseedMgr->GetLastSpend(caster);
-        SetHitHeal(int32(Heartseed::SpendScaled(Heartseed::PercentOf(caster->GetMaxHealth(), _gift.GiftBaseAmount), spend.Stacks,
-            spend.BonusPctPerStack)));
+        GiftHeal(caster, GetHitUnit(), GetSpellInfo(), Heartseed::SpendScaled(Heartseed::PercentOf(caster->GetMaxHealth(),
+            _gift.GiftBaseAmount), spend.Stacks, spend.BonusPctPerStack));
     }
 
     void Register() override
@@ -1471,7 +1485,7 @@ class spell_heartseed_celestial_breath : public SpellScript
             switch (rider.Kind)
             {
                 case Heartseed::GiftRiderKind::LeechPct:
-                    player->HealBySpell(player, GetSpellInfo(), Heartseed::PercentOf(uint32(std::max(power, 0)), rider.Amount));
+                    GiftHeal(player, player, GetSpellInfo(), Heartseed::PercentOf(uint32(std::max(power, 0)), rider.Amount));
                     break;
                 case Heartseed::GiftRiderKind::TargetDot:
                     if (target)

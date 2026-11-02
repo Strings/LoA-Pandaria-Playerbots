@@ -365,8 +365,9 @@ public:
     // Cuts the Gift's cooldown by ms (0 = reset), never past ready.
     void CutGiftCooldown(Player* player, uint32 spellId, int32 ms) const;
 
-    // Path meters (heartseed_meter). Play events build the meter of the taught Gift's path; amount is the
-    // healing or damage for Healing and BigHit. spellId is the healing spell, so the Gift's own heals don't count.
+    // Path meters (heartseed_meter). Play events build the meter of the taught Gift's path; amount is the health
+    // gained or the damage taken for Healing and BigHit. spellId is the spell behind the event, so the Gift's own
+    // casts and crits don't count.
     void OnMeterEvent(Player* player, Heartseed::MeterSource source, uint32 amount, uint32 spellId = 0);
     // A gated Gift (Niuzao's Retort) casts only while lit; every other spell is always allowed.
     bool CanCastGift(Player const* player, uint32 spellId) const;
