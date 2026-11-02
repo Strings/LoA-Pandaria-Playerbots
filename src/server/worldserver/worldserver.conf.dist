@@ -5772,3 +5772,9 @@ Raid.Retention.NotifyOnEnter = 1
 # Defaults: 1. Reload affects future first logins; playerbot sessions keep their own initialization.
 StartingKit.Mount.Enable = 1
 StartingKit.Bags.Enable = 1
+
+# Ordinary items remain tradeable; quest, artifact and custom progression items stay protected.
+NoBinding.Enable = 1
+# Comma/space-separated extra protected item entries. Invalid IDs disable no-binding safely.
+NoBinding.ProtectedItemIds = ""
+NoBinding.IntroOnLogin = 1

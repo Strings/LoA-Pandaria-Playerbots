@@ -16,6 +16,8 @@
 */
 
 #include "Object.h"
+#include "NoBinding.h"
+#include "ItemPrototype.h"
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
 #include "CellImpl.h"
@@ -1243,6 +1245,9 @@ void Object::ApplyModPositiveFloatValue(uint16 index, float  val, bool apply)
 void Object::SetFlag(uint16 index, uint32 newFlag)
 {
     ASSERT(index < m_valuesCount || PrintIndexError(index, true));
+    // Item binding, including transmogrification, shares this flag-write path.
+    if (index == ITEM_FIELD_DYNAMIC_FLAGS && (newFlag & ITEM_FLAG_SOULBOUND) && isType(TYPEMASK_ITEM) && NoBinding::SkipBinding(*this))
+        newFlag &= ~uint32(ITEM_FLAG_SOULBOUND);
     uint32 oldval = m_uint32Values[index];
     uint32 newval = oldval | newFlag;
 
