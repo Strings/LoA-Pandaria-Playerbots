@@ -11,6 +11,8 @@
 #include "Player.h"
 #include "RBAC.h"
 #include "ScriptMgr.h"
+#include "SpellInfo.h"
+#include "SpellScript.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
 
@@ -943,7 +945,8 @@ public:
             Heartseed::TraitInfo trait;
             bool known = traitId && sHeartseedMgr->GetTrait(traitId, trait);
             send("M	" + std::to_string(Heartseed::MajorTierLevel(tier)) + "	" + (known ? trait.Name : "") + "	" +
-                (known ? GetPathName(trait.TraitPath) : ""));
+                (known ? GetPathName(trait.TraitPath) : "") + "	" + std::to_string(known ? trait.GiftSpellId : 0) + "	" +
+                (known ? trait.Description : ""));
         }
 
         for (auto const& [essenceId, held] : state.Essences)
@@ -1009,10 +1012,57 @@ public:
     }
 };
 
+// Celestial Gifts (heartseed_gift): the active spell a level 10 major teaches. The Gift's own cooldown applies when
+// it is longer than the client spell's, unless the character has the spell from its own talents (monks).
+class spell_heartseed_gift : public SpellScript
+{
+    PrepareSpellScript(spell_heartseed_gift);
+
+    void HandleAfterCast()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (!player || player->HasTalent(GetSpellInfo()->Id, player->GetActiveSpec()))
+            return;
+        Heartseed::TraitInfo gift;
+        if (!sHeartseedMgr->GetActiveGift(player, GetSpellInfo()->Id, gift) || gift.GiftCooldown <= GetSpellInfo()->RecoveryTime)
+            return;
+        player->AddCustomCooldown(GetSpellInfo()->Id, Milliseconds(gift.GiftCooldown));
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_heartseed_gift::HandleAfterCast);
+    }
+};
+
+// 124947 - Celestial Breath tick. The creature spell's damage is replaced by the Gift's power, which grows with the
+// main-hand item level, when Yu'lon's Gift (117960) is the source.
+class spell_heartseed_celestial_breath : public SpellScript
+{
+    PrepareSpellScript(spell_heartseed_celestial_breath);
+
+    void HandleDamage(SpellEffIndex /*effIndex*/)
+    {
+        Player* player = GetCaster() ? GetCaster()->ToPlayer() : nullptr;
+        if (!player)
+            return;
+        Heartseed::TraitInfo gift;
+        if (sHeartseedMgr->GetActiveGift(player, GIFT_SPELL_CELESTIAL_BREATH, gift))
+            SetHitDamage(sHeartseedMgr->GetGiftAmount(player, gift));
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_heartseed_celestial_breath::HandleDamage, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
+    }
+
+    static constexpr uint32 GIFT_SPELL_CELESTIAL_BREATH = 117960;
+};
+
 void AddSC_heartseed()
 {
     if (!CustomReload::Tables().RegisterGroup({ "heartseed", "heartseed_stage", "heartseed_glow", "heartseed_trait",
-        "heartseed_essence_template", "heartseed_essence_source", "twink_item", "heartseed_shrine" }, "Heartseed world data (one coherent snapshot)", []
+        "heartseed_gift", "heartseed_essence_template", "heartseed_essence_source", "twink_item", "heartseed_shrine" }, "Heartseed world data (one coherent snapshot)", []
     {
         std::size_t rows = 0;
         bool success = sHeartseedMgr->LoadData(&rows);
@@ -1024,4 +1074,6 @@ void AddSC_heartseed()
     new heartseed_playerscript();
     new heartseed_unitscript();
     new heartseed_commandscript();
+    new spell_script<spell_heartseed_gift>("spell_heartseed_gift");
+    new spell_script<spell_heartseed_celestial_breath>("spell_heartseed_celestial_breath");
 }

@@ -59,6 +59,18 @@ World database (`sql/updates/world/2026_10_31_claude_03_heartseed_trait.sql`):
 - The aura spells are server-side rows in `spell_dbc`, `spellmisc_dbc` and `spelleffect_dbc`, in the
   Heartseed spell block (310000+). The server reads those tables at startup only.
 
+World database (`sql/updates/world/2026_11_01_claude_06_heartseed_gifts.sql`, T-080):
+
+- `heartseed_gift`: the Celestial Gift a major teaches: the client spell, its cooldown in ms (applied after a cast
+  when longer than the spell's own), and its power (`base_amount + amount_per_ilvl * main-hand item level`; only
+  Serpent's Breath reads it, as damage per tick). The tier-0 majors (traits 2, 4, 6, 8) are the four Gifts; their
+  old stat auras are minors 9 to 12. A trait with `spell_id` 0 applies no aura.
+- Gifts reuse client spells, because the 5.4.8 client only casts spells it knows: Invoke Xuen (123904), Chi
+  Torpedo (115008), Leg Sweep (119381) and Celestial Breath (117960). `RefreshTraits` teaches the active Gift and
+  unlearns the others, except a spell the character has from its own talents (monks). `spell_heartseed_gift` adds
+  the Gift cooldown; `spell_heartseed_celestial_breath` (124947) replaces the creature spell's damage.
+- `.seed sync` M lines carry the Gift spell id and the trait description, so the addon can show and cast it.
+
 World database (`sql/updates/world/2026_10_31_claude_04_heartseed_essence.sql`):
 
 - `heartseed_essence_template`: essence types: name, the spell shown for its proc, proc chance and

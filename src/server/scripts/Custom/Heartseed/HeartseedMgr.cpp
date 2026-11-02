@@ -336,13 +336,43 @@ bool HeartseedMgr::LoadData(std::size_t* loadedRows)
                 TC_LOG_ERROR("sql.sql", "Table `heartseed_trait`: major %u is in tier %u; tiers are 0 to %u. Reload aborted.", trait.Id, trait.Tier, Heartseed::MaxMajorTiers - 1);
                 return false;
             }
-            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(trait.SpellId);
-            if (!spellInfo || !spellInfo->IsPassive() || !spellInfo->Effects[EFFECT_0].IsAura())
+            SpellInfo const* spellInfo = trait.SpellId ? sSpellMgr->GetSpellInfo(trait.SpellId) : nullptr;
+            // Spell 0 is allowed for a major that only teaches a Celestial Gift (heartseed_gift).
+            if (trait.SpellId && (!spellInfo || !spellInfo->IsPassive() || !spellInfo->Effects[EFFECT_0].IsAura()))
             {
                 TC_LOG_ERROR("sql.sql", "Table `heartseed_trait`: trait %u uses spell %u, which is missing, not passive or has no aura in effect 0. Reload aborted.", trait.Id, trait.SpellId);
                 return false;
             }
             traits[trait.Id] = std::move(trait);
+        } while (result->NextRow());
+    }
+
+    {
+        QueryResult result = WorldDatabase.Query("SELECT `trait_id`, `spell_id`, `cooldown`, `base_amount`, `amount_per_ilvl`, NULL AS sentinel FROM `heartseed_gift` UNION ALL SELECT NULL, NULL, NULL, NULL, NULL, 'end'");
+        if (!result)
+            return false;
+        do
+        {
+            Field* fields = result->Fetch();
+            if (!fields[5].IsNull())
+                continue;
+            uint32 traitId = fields[0].GetUInt32();
+            uint32 spellId = fields[1].GetUInt32();
+            auto trait = traits.find(traitId);
+            if (trait == traits.end() || trait->second.Kind != Heartseed::TraitKind::Major)
+            {
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_gift`: trait %u is missing or not a major, reload aborted.", traitId);
+                return false;
+            }
+            if (!sSpellMgr->GetSpellInfo(spellId))
+            {
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_gift`: trait %u uses unknown spell %u, reload aborted.", traitId, spellId);
+                return false;
+            }
+            trait->second.GiftSpellId = spellId;
+            trait->second.GiftCooldown = fields[2].GetUInt32();
+            trait->second.GiftBaseAmount = fields[3].GetInt32();
+            trait->second.GiftAmountPerItemLevel = fields[4].GetFloat();
         } while (result->NextRow());
     }
 
@@ -716,6 +746,7 @@ bool HeartseedMgr::Revoke(Player* player)
         if (!revoked)
             continue;
         RemoveAuras(revoked, auras);
+        SyncGifts(revoked, {}, false);
         if (revoked->GetQuestStatus(_grantQuestId) != QUEST_STATUS_NONE)
             revoked->RemoveActiveQuest(_grantQuestId, true, true);
         revoked->RemoveRewardedQuest(_grantQuestId);
@@ -1645,6 +1676,7 @@ void HeartseedMgr::RefreshTraits(Player* player)
     uint16 specId = uint16(player->GetTalentSpecialization());
     std::map<uint32, int32> desired;
     std::map<uint32, int32> previous;
+    std::set<uint32> gifts;
     bool copiedLoadout = false;
     {
         std::lock_guard<std::mutex> guard(_lock);
@@ -1678,8 +1710,12 @@ void HeartseedMgr::RefreshTraits(Player* player)
                 bool active = trait.Kind == Heartseed::TraitKind::Minor
                     ? Heartseed::MinorActive(trait.TraitPath, trait.MinRank, rank, majors)
                     : loadout != state.Loadouts.end() && loadout->second[trait.Tier] == traitId;
-                if (active)
+                if (!active)
+                    continue;
+                if (trait.SpellId)
                     desired[trait.SpellId] += Heartseed::TraitAmount(trait.BaseAmount, trait.AmountPerItemLevel, itemLevel);
+                if (trait.GiftSpellId)
+                    gifts.insert(trait.GiftSpellId);
             }
             if (weaponBonus > 0)
                 desired[Heartseed::SPELL_CORE_WEAPON_BONUS] += weaponBonus;
@@ -1706,8 +1742,70 @@ void HeartseedMgr::RefreshTraits(Player* player)
                 effect->ChangeAmount(amount);
     }
 
+    SyncGifts(player, gifts, true);
+
     if (copiedLoadout)
         SavePlayer(player);
+}
+
+void HeartseedMgr::SyncGifts(Player* player, std::set<uint32> const& wanted, bool announce)
+{
+    std::set<uint32> all;
+    {
+        std::lock_guard<std::mutex> guard(_lock);
+        for (auto const& [traitId, trait] : _traits)
+            if (trait.GiftSpellId)
+                all.insert(trait.GiftSpellId);
+        auto itr = _states.find(player->GetGUID().GetCounter());
+        if (itr != _states.end())
+            itr->second.TaughtGifts = wanted;
+    }
+
+    // Gifts reuse client spells, some of them monk talents: a monk who took the talent keeps it.
+    for (uint32 spellId : all)
+    {
+        bool has = player->HasSpell(spellId);
+        if (wanted.count(spellId))
+        {
+            if (has)
+                continue;
+            player->LearnSpell(spellId, false);
+            if (announce)
+                if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId))
+                    ChatHandler(player->GetSession()).PSendSysMessage("|cff40ff40Your Heartseed stirs. A Celestial Gift wakes: %s. Find it in your spellbook.|r",
+                        spellInfo->SpellName);
+        }
+        else if (has && !player->HasTalent(spellId, player->GetActiveSpec()))
+            player->RemoveSpell(spellId);
+    }
+}
+
+bool HeartseedMgr::GetActiveGift(Player const* player, uint32 spellId, Heartseed::TraitInfo& out) const
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    auto state = _states.find(player->GetGUID().GetCounter());
+    if (state == _states.end() || !state->second.TaughtGifts.count(spellId))
+        return false;
+    auto loadout = state->second.Loadouts.find(uint16(player->GetTalentSpecialization()));
+    if (loadout == state->second.Loadouts.end())
+        return false;
+    for (uint32 traitId : loadout->second)
+    {
+        auto trait = _traits.find(traitId);
+        if (trait != _traits.end() && trait->second.GiftSpellId == spellId)
+        {
+            out = trait->second;
+            return true;
+        }
+    }
+    return false;
+}
+
+int32 HeartseedMgr::GetGiftAmount(Player const* player, Heartseed::TraitInfo const& gift) const
+{
+    Item* weapon = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+    uint32 itemLevel = weapon && !weapon->IsBroken() && weapon->GetTemplate()->Class == ITEM_CLASS_WEAPON ? weapon->GetItemLevel() : 0;
+    return Heartseed::TraitAmount(gift.GiftBaseAmount, gift.GiftAmountPerItemLevel, itemLevel);
 }
 
 void HeartseedMgr::RemoveAuras(Player* player, std::map<uint32, int32> const& auras)

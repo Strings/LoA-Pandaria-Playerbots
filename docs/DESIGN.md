@@ -362,6 +362,9 @@ Later threads: Jaina's reconciliation when she sees the seed bloom in Pandaria; 
 
 1. **Core passive:** bonus weapon damage plus one proc, both scaling with weapon item level.
 2. **Four Celestial paths** with minor traits that fill in automatically and a major choice at each major tier (10, 25, 40, 55, 70, 85, between MoP's talent tiers at 15, 30, 45, 60, 75, 90): Xuen the Tiger (offense and speed), Chi-Ji the Crane (healing and hope), Niuzao the Ox (endurance and defense), Yu'lon the Serpent (wisdom and spell power).
+   - **The Celestial Gift (decided, replaces the stat major at 10).** The major at 10 is an active ability, one per Celestial, on a 1.5 to 2 minute cooldown: Xuen calls a spectral tiger that fights beside you; Chi-Ji's Crane Rush dashes forward healing you and allies you pass; Niuzao's Ox Stomp knocks down nearby enemies; Yu'lon's Serpent Breath is a jade cone that damages and returns mana. Lesson from the Heart of Azeroth and Legion artifacts: the system orbits one button you press, and later unlocks change that button visibly.
+   - **The Gift grows with the seed:** each stage (Sapling, Bloom, Full Bloom) adds a rider to the Gift. Later majors (25 onward) favor choices that modify the Gift over flat percentages; the old stat bonuses become auto-filled minor traits.
+   - **Client spells (decided):** a Gift reuses an existing client spell with a fitting visual that normal play does not teach to that character, with its effect adjusted server-side, because the 5.4.8 client only casts spells it knows. Custom action-bar icons wait for a client patch; the Heartseed panel uses its own art from the addon folder.
 3. **Essence slots** (1 at 10, 2 at 40, 3 at 70): choose which collected essences are active.
 4. **Utility perks at awakenings**, e.g. Seedsense: nearby rares and treasures on the minimap.
 5. **Visuals:** glow and color by stage and dominant Celestial path.
