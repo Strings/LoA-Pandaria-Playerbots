@@ -15,6 +15,7 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "NoBinding.h"
 #include "Common.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
@@ -22,6 +23,8 @@
 #include "Log.h"
 #include "Chat.h"
 #include "ObjectMgr.h"
+#include "Config.h"
+#include "CustomTransmogrification.h"
 #include "Player.h"
 #include "Item.h"
 #include "UpdateData.h"
@@ -1952,9 +1955,15 @@ void WorldSession::HandleTransmogrifyItems(WorldPacket& recvData)
         }
         else
         {
-            if (!sObjectMgr->CanTransmogrifyItemWithItem(itemTransmogrified->GetTemplate(), itemTransmogrifier ? itemTransmogrifier->GetTemplate() : sObjectMgr->GetItemTemplate(vsItem->ItemEntry)))
+            ItemTemplate const* source = itemTransmogrifier ? itemTransmogrifier->GetTemplate() :
+                vsItem ? sObjectMgr->GetItemTemplate(vsItem->ItemEntry) : nullptr;
+            // Use the same configured compatibility rules as the custom transmog script.
+            bool allowed = source && (sConfigMgr->GetBoolDefault("SoloQoL.NativeTransmogRules", true) ?
+                sTransmogrification->CanTransmogrifyItemWithItem(player, itemTransmogrified->GetTemplate(), source) :
+                sObjectMgr->CanTransmogrifyItemWithItem(itemTransmogrified->GetTemplate(), source));
+            if (!allowed)
             {
-                TC_LOG_DEBUG("network", "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) failed CanTransmogrifyItemWithItem (%u with %u).", player->GetGUID().GetCounter(), player->GetName().c_str(), itemTransmogrified->GetEntry(), itemTransmogrifier->GetEntry());
+                TC_LOG_DEBUG("network", "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) failed CanTransmogrifyItemWithItem (%u with %u).", player->GetGUID().GetCounter(), player->GetName().c_str(), itemTransmogrified->GetEntry(), newEntries[i]);
                 return;
             }
 
@@ -2274,7 +2283,7 @@ void WorldSession::SendItemSparseDb2Reply(uint32 entry, ByteBuffer& buffer)
 
     buffer << uint32(entry);
     buffer << uint32(proto->Quality);
-    buffer << uint32(proto->Flags);
+    buffer << uint32(NoBinding::TooltipFlags(proto));
     buffer << uint32(proto->Flags2);
     buffer << uint32(proto->Flags3);
     buffer << float(proto->Unk430_1);
@@ -2333,7 +2342,7 @@ void WorldSession::SendItemSparseDb2Reply(uint32 entry, ByteBuffer& buffer)
     for (uint32 x = 0; x < MAX_ITEM_PROTO_SPELLS; ++x)
         buffer << int32(proto->Spells[x].SpellCategoryCooldown);
 
-    buffer << uint32(proto->Bonding);
+    buffer << uint32(NoBinding::TooltipBonding(proto));
 
     // item name
     std::string name = proto->Name1;

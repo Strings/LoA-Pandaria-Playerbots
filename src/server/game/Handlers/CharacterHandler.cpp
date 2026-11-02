@@ -15,6 +15,7 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "NoBinding.h"
 #include "AccountMgr.h"
 #include "ArenaTeam.h"
 #include "Battleground.h"
@@ -41,6 +42,7 @@
 #include "Realm.h"
 #include "ReputationMgr.h"
 #include "ScriptMgr.h"
+#include "FirstLoginHooks.h"
 #include "SharedDefines.h"
 #include "SocialMgr.h"
 #include "SystemConfig.h"
@@ -1033,20 +1035,7 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder const& holder)
 
     SendTimezoneInformation();
 
-    HotfixData const& hotfix = sObjectMgr->GetHotfixData();
-
-    data.Initialize(SMSG_HOTFIX_INFO);
-    data.WriteBits(hotfix.size(), 20);
-    data.FlushBits();
-
-    for (uint32 i = 0; i < hotfix.size(); ++i)
-    {
-        data << uint32(hotfix[i].Timestamp);
-        data << uint32(hotfix[i].Entry);
-        data << uint32(hotfix[i].TableHash);
-    }
-
-    SendPacket(&data);
+    NoBinding::SendHotfixInfo(pCurrChar);
 
     pCurrChar->SendInitialPacketsBeforeAddToMap();
 
@@ -1170,6 +1159,7 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder const& holder)
 
     if (pCurrChar->HasAtLoginFlag(AT_LOGIN_FIRST))
     {
+        FirstLoginHooks::Dispatch(pCurrChar);
         pCurrChar->RemoveAtLoginFlag(AT_LOGIN_FIRST);
 
         PlayerInfo const* info = sObjectMgr->GetPlayerInfo(pCurrChar->GetRace(), pCurrChar->GetClass());

@@ -73,6 +73,7 @@
 #include "QuestPools.h"
 #include "CellImpl.h"
 #include "InstanceSaveMgr.h"
+#include "RaidRetention.h"
 #include "Util.h"
 #include "Language.h"
 #include "CreatureGroups.h"
@@ -88,6 +89,7 @@
 #include "CharacterDatabaseCleaner.h"
 #include "ScriptMgr.h"
 #include "SoloConfig.h"
+#include "NoBinding.h"
 #include "WeatherMgr.h"
 #include "CreatureTextMgr.h"
 #include "SmartAI.h"
@@ -547,6 +549,7 @@ void World::LoadConfigSettings(bool reload)
     ///- Read other configuration items from the config file
 
     MountedSpeed::Load();
+    RaidRetention::LoadConfig();
     m_bool_configs[CONFIG_DURABILITY_LOSS_IN_PVP] = sConfigMgr->GetBoolDefault("DurabilityLoss.InPvP", false);
 
     m_int_configs[CONFIG_COMPRESSION] = sConfigMgr->GetIntDefault("Compression", 1);
@@ -817,6 +820,7 @@ void World::LoadConfigSettings(bool reload)
         m_int_configs[CONFIG_CURRENCY_START_CONQUEST_POINTS] = 0;
     }
     SoloConfig::Load();
+    NoBinding::Load();
     m_int_configs[CONFIG_CURRENCY_CONQUEST_POINTS_WEEK_CAP] = sConfigMgr->GetIntDefault("Currency.ConquestPointsWeekCap", 1650);
     if (int32(m_int_configs[CONFIG_CURRENCY_CONQUEST_POINTS_WEEK_CAP]) <= 0)
     {

@@ -17,6 +17,7 @@
 
 #include "Common.h"
 #include "Item.h"
+#include "NoBinding.h"
 #include <atomic>
 #include "ObjectMgr.h"
 #include "WorldPacket.h"
@@ -474,7 +475,7 @@ bool Item::LoadFromDB(uint32 guid, ObjectGuid ownerGuid, Field* fields, uint32 e
 
     SetUInt32Value(ITEM_FIELD_DYNAMIC_FLAGS, fields[5].GetUInt32());
     // Remove bind flag for items vs BIND_NONE set
-    if (IsSoulBound() && proto->Bonding == BIND_NONE)
+    if (IsSoulBound() && (NoBinding::Enabled() ? NoBinding::SkipBinding(*this) : proto->Bonding == BIND_NONE))
     {
         ApplyModFlag(ITEM_FIELD_DYNAMIC_FLAGS, ITEM_FLAG_SOULBOUND, false);
         need_save = true;
@@ -904,6 +905,9 @@ uint32 Item::GetEnchantRequiredLevel() const
 
 bool Item::IsBoundByEnchant() const
 {
+    if (NoBinding::SkipBinding(*this))
+        return false;
+
     // Check all enchants for soulbound
     for (uint32 enchant_slot = PERM_ENCHANTMENT_SLOT; enchant_slot < MAX_ENCHANTMENT_SLOT; ++enchant_slot)
     {

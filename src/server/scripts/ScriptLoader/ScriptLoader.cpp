@@ -2155,6 +2155,8 @@ void AddSC_custom_reload();
 void AddSC_mounted_speed();
 void AddSC_solo_config();
 void AddSC_professions();
+void AddSC_no_binding();
+void AddSC_solo_qol();
 void AddSC_gmtools_clock();
 void AddSC_gmtools_scenarios();
 void AddSC_gmtools_spectate();
@@ -2164,6 +2166,8 @@ void AddSC_detached_storage();
 void AddSC_loadouts();
 void AddSC_reagent_bank();
 void AddSC_spawn_thinning();
+void AddSC_raid_retention();
+void AddSC_starting_kit();
 
 void AddCustomScripts()
 {
@@ -2181,6 +2185,8 @@ void AddCustomScripts()
     AddSC_mounted_speed();
     AddSC_solo_config();
     AddSC_professions();
+    AddSC_no_binding();
+    AddSC_solo_qol();
     AddSC_gmtools_clock();
     AddSC_gmtools_scenarios();
     AddSC_gmtools_spectate();
@@ -2190,6 +2196,8 @@ void AddCustomScripts()
     AddSC_loadouts();
     AddSC_reagent_bank();
     AddSC_spawn_thinning();
+    AddSC_raid_retention();
+    AddSC_starting_kit();
 
 #endif
     AddSC_Anticheat();
