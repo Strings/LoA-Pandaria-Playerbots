@@ -8,6 +8,7 @@
     "1"
   ],
   "steps": [
+    "say .revive",
     "say .checkpoint list",
     "say .checkpoint explain hs-10",
     "say .checkpoint apply hs-10",

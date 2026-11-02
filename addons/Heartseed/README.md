@@ -4,8 +4,9 @@ A panel for the Heartseed (`src/server/scripts/Custom/Heartseed/`). Open with `/
 (Key Bindings > Heartseed; Shift-H by default when that key is free).
 
 A Celestial mandala: the seed in the middle, glowing in the dominant path's colour, with Xuen (west), Niuzao
-(north), Yu'lon (east) and Chi-Ji (south) around it. Below: rank against the character's cap, Growth toward the
-next rank, the **Celestial Gift** (the level 10 major's active spell, castable from the panel with its cooldown
+(north), Yu'lon (east) and Chi-Ji (south) around it. Below: the Growth level with any points to spend, Growth XP
+toward the next level, a row of **stat buttons** (click one to spend a point on it, `.seed spend <id>`; **Reset**
+gives them back at a Celestial shrine, `.seed reset`), the **Celestial Gift** (the level 10 major's active spell, castable from the panel with its cooldown
 shown), one node per major tier (chosen, ready to choose, or locked; tooltips explain), essences with their slots,
 weapons fed, and whether the character stands at a Celestial shrine. **Choose paths** opens the server's choice
 window (`.seed`).
@@ -15,15 +16,17 @@ flash when a new Gift wakes. Custom art goes in `art/` (see `art/README.md`); bu
 
 ## Interface
 
-The addon only reads. It sends `.seed sync` and the server answers with whisper addon messages on prefix `Heartseed`,
-tab separated, ending with `E`:
+It sends `.seed sync` and the server answers with whisper addon messages on prefix `Heartseed`, tab separated, ending
+with `E`. The only things it changes are stat points, through `.seed spend` and `.seed reset`.
 
 | Line | Fields |
 |---|---|
 | `N` | the character has no Heartseed |
-| `S` | effective rank, account rank, rank cap, Growth, Growth for next rank, stage name, dominant path, weapons fed, open essence slots, shrine name (empty when not at one) |
+| `S` | Growth level, unspent points, Growth XP, XP for the next level, stage name, dominant path, weapons fed, open essence slots, shrine name (empty when not at one) |
 | `M` | one per major tier: tier level, trait name (empty when not chosen), trait path, Gift spell id (0 for none), trait description |
 | `X` | one per essence: name, times collected, slot (0 when not slotted) |
+| `G` | one per Growth stat: stat id, name, points spent, percent per point |
+| `P` | any time, outside a sync: the path meter (stacks, max, lit ms left, decay ms, Gift spell) |
 
 The panel refreshes when it opens, on level up, after a gossip or quest window closes, on a spec change, on a zone
 change and when a spell is learned. The Gift button is a secure action button: in combat its spell cannot change, so

@@ -5,13 +5,46 @@ using namespace Heartseed;
 
 namespace
 {
-    void EffectiveRankHeldToCap()
+    void MinorsByCharacterLevel()
     {
-        // One seed per account: an alt or a twink uses the shared rank only up to its own cap.
-        UMP_CHECK(EffectiveRank(64, 20) == 20);
-        UMP_CHECK(EffectiveRank(12, 59) == 12);
-        UMP_CHECK(EffectiveRank(30, 30) == 30);
-        UMP_CHECK(EffectiveRank(64, RankCap(1, 1.0f, 0, 5)) == 1);
+        std::array<uint8_t, MaxPaths> majors = {};
+        UMP_CHECK(MinorActive(Path::None, 1, 1, majors));
+        UMP_CHECK(!MinorActive(Path::Xuen, 1, 90, majors));          // no major on the path yet
+        majors[uint8_t(Path::Xuen)] = 1;
+        UMP_CHECK(MinorActive(Path::Xuen, 20, 20, majors) && !MinorActive(Path::Xuen, 20, 19, majors));
+    }
+
+    void GrowthXpLevels()
+    {
+        UMP_CHECK(GrowthXpForLevel(0, 200, 50) == 200 && GrowthXpForLevel(3, 200, 50) == 350);
+        UMP_CHECK(GrowthXpForLevel(0, 0, 0) == 1);                   // never free
+        UMP_CHECK(GrowthXpForLevel(UINT32_MAX, UINT32_MAX, UINT32_MAX) == UINT32_MAX);
+        GrowthProgress p = ApplyGrowthXp(0, 499, 200, 50);           // 200 + 250 = 450 for two levels
+        UMP_CHECK(p.Level == 2 && p.Xp == 49);
+        p = ApplyGrowthXp(40, 0, 200, 50);
+        UMP_CHECK(p.Level == 40 && p.Xp == 0);
+        p = ApplyGrowthXp(UINT32_MAX, UINT32_MAX, 1, 0);             // no wrap at the top
+        UMP_CHECK(p.Level == UINT32_MAX);
+
+        UMP_CHECK(GrowthSourceNearLevel(85, 80, 5) && !GrowthSourceNearLevel(85, 79, 5));
+        UMP_CHECK(GrowthSourceNearLevel(20, 90, 0));                 // a harder source always counts
+    }
+
+    void GrowthPointsAndAmounts()
+    {
+        std::map<uint8_t, uint32_t> spent;
+        spent[1] = 2;
+        spent[3] = 1;
+        UMP_CHECK(UnspentPoints(5, spent) == 2);
+        UMP_CHECK(UnspentPoints(2, spent) == 0);                     // over-spent (GM) never wraps
+        UMP_CHECK(UnspentPoints(4, {}) == 4);
+        UMP_CHECK(StatPointAmount(3, 1) == 3 && StatPointAmount(3, 0) == 0 && StatPointAmount(3, -2) == 0);
+        UMP_CHECK(StatPointAmount(UINT32_MAX, 2) == INT32_MAX);
+
+        UMP_CHECK(MainStatFor(10, 268) == MainStat::Agility && MainStatFor(10, 270) == MainStat::Intellect);
+        UMP_CHECK(MainStatFor(2, 66) == MainStat::Strength && MainStatFor(2, 65) == MainStat::Intellect);
+        UMP_CHECK(MainStatFor(11, 0) == MainStat::Intellect && MainStatFor(4, 0) == MainStat::Agility);
+        UMP_CHECK(MainStatFor(1, 0) == MainStat::Strength);
     }
 
     void DefaultUnlockLevels()
@@ -153,7 +186,9 @@ namespace
 
 void RunTests()
 {
-    EffectiveRankHeldToCap();
+    MinorsByCharacterLevel();
+    GrowthXpLevels();
+    GrowthPointsAndAmounts();
     DefaultUnlockLevels();
     ConfiguredUnlockLevels();
     RejectedUnlockLevels();

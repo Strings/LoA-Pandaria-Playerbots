@@ -5474,38 +5474,49 @@ Heartseed.Proc.WeaponDamagePct = 50
 Heartseed.Proc.Cooldown = 3000
 
 #
-#    Heartseed.Rank.CapPerLevel
-#        Description: Rank cap per character level (the cap is level x this, rounded down, plus the
-#                     awakening bonus). Pacing numbers are placeholders until v0.5.
-#        Default:     1
+#    Heartseed.Growth.XpBase
+#    Heartseed.Growth.XpPerLevel
+#        Description: Growth XP needed from Growth level L to L + 1: XpBase + XpPerLevel x L. Each Growth
+#                     level is one stat point; there is no cap. Pacing numbers are placeholders until v0.5.
+#        Default:     300, 50
 
-Heartseed.Rank.CapPerLevel = 1
+Heartseed.Growth.XpBase = 300
+Heartseed.Growth.XpPerLevel = 50
 
 #
-#    Heartseed.Rank.CapPerAwakening
-#        Description: Ranks each awakening adds to the cap. An awakening is a story flag listed in
-#                     Heartseed.Rank.AwakeningFlags that the character has reached.
+#    Heartseed.Growth.BattlegroundWin
+#    Heartseed.Growth.DungeonBoss
+#    Heartseed.Growth.RaidBoss
+#        Description: Growth XP for a battleground win and for each dungeon or raid boss kill near the
+#                     character's level (every credited group member earns). Arenas give none.
+#        Default:     100, 50, 100
+
+Heartseed.Growth.BattlegroundWin = 100
+Heartseed.Growth.DungeonBoss = 50
+Heartseed.Growth.RaidBoss = 100
+
+#
+#    Heartseed.Growth.LevelRange
+#        Description: How many levels below the character a boss may be and still give Growth XP.
 #        Default:     5
 
-Heartseed.Rank.CapPerAwakening = 5
+Heartseed.Growth.LevelRange = 5
 
 #
-#    Heartseed.Rank.AwakeningFlags
-#        Description: Story flags (space-separated ids) that count as awakenings for the rank cap.
-#                     1 = first dungeon, 2 = reached Pandaria, 3 = first world boss.
-#        Default:     "1 2 3"
+#    Heartseed.Growth.TwinksEarn
+#        Description: Characters with experience gain turned off (twinks) earn Growth XP too.
+#                     0 = they keep the balance of their bracket.
+#        Default:     0
 
-Heartseed.Rank.AwakeningFlags = "1 2 3"
+Heartseed.Growth.TwinksEarn = 0
 
 #
-#    Heartseed.Rank.GrowthBase
-#    Heartseed.Rank.GrowthPerRank
-#        Description: Growth needed from rank R to R + 1: GrowthBase + GrowthPerRank x (R - 1).
-#                     Growth past the cap is banked and spent when the cap rises.
-#        Default:     100, 20
+#    Heartseed.Growth.ResetAtShrineOnly
+#        Description: Taking stat points back (.seed reset, the addon) needs a Celestial shrine.
+#                     0 = anywhere.
+#        Default:     1
 
-Heartseed.Rank.GrowthBase = 100
-Heartseed.Rank.GrowthPerRank = 20
+Heartseed.Growth.ResetAtShrineOnly = 1
 
 #
 #    Heartseed.Feed.OnReplace
@@ -5517,22 +5528,13 @@ Heartseed.Rank.GrowthPerRank = 20
 Heartseed.Feed.OnReplace = 1
 
 #
-#    Heartseed.Feed.GrowthBase
-#    Heartseed.Feed.GrowthPerItemLevel
-#        Description: Growth from feeding a weapon: (GrowthBase + GrowthPerItemLevel x item level) x the
-#                     quality percentage below.
-#        Default:     20, 2
+#    Heartseed.Feed.Qualities
+#        Description: Item qualities that can be fed, space-separated: 0 poor, 1 common, 2 uncommon,
+#                     3 rare, 4 epic, 5 legendary, 6 artifact, 7 heirloom. Feeding gives the weapon's
+#                     appearance and a chance at an essence, no power.
+#        Default:     "0 1 2 3 4" (legendary, artifact and heirloom never fed)
 
-Heartseed.Feed.GrowthBase = 20
-Heartseed.Feed.GrowthPerItemLevel = 2
-
-#
-#    Heartseed.Feed.QualityPct
-#        Description: Percentage of feeding Growth by item quality, space-separated from poor (0) to
-#                     heirloom (7). 0 means weapons of that quality are never fed.
-#        Default:     "50 100 150 250 400 0 0 0" (legendary, artifact and heirloom never fed)
-
-Heartseed.Feed.QualityPct = "50 100 150 250 400 0 0 0"
+Heartseed.Feed.Qualities = "0 1 2 3 4"
 
 #
 #    Heartseed.Essence.ProcCooldown
@@ -5593,7 +5595,7 @@ Heartseed.Story.WorldBosses = "60491 62346 69099 69161 71952 71953 71954 71955 7
 
 #
 #    Heartseed.Story.AwakeningSound
-#        Description: Sound kit played to the player when a story beat raises the rank cap (0 = none).
+#        Description: Sound kit played to the player when the Heartseed reaches a story beat (0 = none).
 #        Default:     0
 
 Heartseed.Story.AwakeningSound = 0

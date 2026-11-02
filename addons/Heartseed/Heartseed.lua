@@ -3,7 +3,7 @@
 
 local PREFIX = "Heartseed"
 local DEFAULT_KEY = "SHIFT-H"
-local WIDTH, HEIGHT = 400, 520
+local WIDTH, HEIGHT = 400, 556
 local ICONS = "Interface\\Icons\\"
 
 -- Custom art goes in art/ (see art/README.md). Until it ships, built-in textures stand in: set USE_ART once the
@@ -51,7 +51,7 @@ local function Command(text)
 end
 
 local function Sync()
-    incoming = { majors = {}, essences = {} }
+    incoming = { majors = {}, essences = {}, stats = {} }
     Command(".seed sync")
 end
 
@@ -214,11 +214,59 @@ bar.bg:SetTexture(0, 0, 0, 0.6)
 bar.text = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 bar.text:SetPoint("CENTER", 0, 1)
 
+-- Growth stat points: one per Growth level, spent by clicking a stat ------------------------------------------
+
+local STAT_ICONS = {
+    [1] = ICONS .. "Spell_Holy_WordFortitude",
+    [2] = ICONS .. "Spell_Nature_Strength",
+    [3] = ICONS .. "Ability_CriticalStrike",
+    [4] = ICONS .. "Spell_Nature_Bloodlust",
+}
+local statRow = CreateFrame("Frame", nil, frame)
+statRow:SetPoint("TOP", bar, "BOTTOM", 0, -8)
+statRow:SetSize(WIDTH - 90, 24)
+local statButtons = {}
+for i = 1, 4 do
+    local b = CreateFrame("Button", nil, statRow)
+    b:SetSize(22, 22)
+    b:SetPoint("LEFT", (i - 1) * 62, 0)
+    b.icon = b:CreateTexture(nil, "ARTWORK")
+    b.icon:SetAllPoints()
+    b.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    b:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+    b.count = b:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    b.count:SetPoint("LEFT", b, "RIGHT", 4, 0)
+    b:SetScript("OnClick", function(self)
+        if self.stat and data and data.state and data.state.unspent > 0 then
+            Sound("click")
+            Command(".seed spend " .. self.stat.id)
+            SyncSoon()
+        end
+    end)
+    Tooltip(b, function(self)
+        local st = self.stat
+        if not st then return nil end
+        local lines = { st.name, "+" .. st.points * st.pct .. "% from " .. st.points .. " point" .. (st.points == 1 and "" or "s"),
+            "+" .. st.pct .. "% per point" }
+        if data and data.state and data.state.unspent > 0 then
+            lines[#lines + 1] = "|cff00ff00Click to spend a point.|r"
+        end
+        return lines
+    end)
+    statButtons[i] = b
+end
+local statReset = CreateFrame("Button", nil, statRow, "UIPanelButtonTemplate")
+statReset:SetSize(56, 20)
+statReset:SetPoint("RIGHT", 0, 0)
+statReset:SetText("Reset")
+statReset:SetScript("OnClick", function() Sound("click"); Command(".seed reset"); SyncSoon() end)
+Tooltip(statReset, { "Take back every point", "Spend them again as you like. A Celestial shrine has to be near." })
+
 -- The Celestial Gift: the level 10 major's active spell, castable from the panel ------------------------------
 
 local giftBox = CreateFrame("Frame", nil, frame)
-giftBox:SetPoint("TOPLEFT", 24, CENTER_Y - RADIUS - 92)
-giftBox:SetPoint("TOPRIGHT", -24, CENTER_Y - RADIUS - 92)
+giftBox:SetPoint("TOPLEFT", 24, CENTER_Y - RADIUS - 128)
+giftBox:SetPoint("TOPRIGHT", -24, CENTER_Y - RADIUS - 128)
 giftBox:SetHeight(64)
 giftBox.bg = giftBox:CreateTexture(nil, "BACKGROUND")
 giftBox.bg:SetAllPoints()
@@ -350,7 +398,7 @@ refresh:SetPoint("BOTTOMRIGHT", -20, 16)
 refresh:SetText("Refresh")
 refresh:SetScript("OnClick", function() Sound("click"); Sync() end)
 
-local content = { mandala, rankLine, bar, giftBox, nodesLabel, essenceLine, footer }
+local content = { mandala, rankLine, bar, statRow, giftBox, nodesLabel, essenceLine, footer }
 for _, n in ipairs(nodes) do content[#content + 1] = n end
 local function ShowContent(shown)
     for _, w in ipairs(content) do
@@ -391,12 +439,28 @@ local function Layout()
         b:SetAlpha((lit or s.path == "none") and 1 or 0.55)
     end
 
-    local accountNote = s.rank < s.accountRank and ("  (account " .. s.accountRank .. ")") or ""
-    rankLine:SetText("Rank " .. s.rank .. " of " .. s.cap .. accountNote)
+    local pointsNote = s.unspent > 0 and ("  |cff00ff00" .. s.unspent .. " point" .. (s.unspent == 1 and "" or "s") .. " to spend|r") or ""
+    rankLine:SetText("Growth level " .. s.level .. pointsNote)
     bar:SetStatusBarColor(color[1], color[2], color[3])
     bar:SetMinMaxValues(0, math.max(s.need, 1))
-    bar:SetValue(math.min(s.growth, s.need))
-    bar.text:SetText("Growth " .. s.growth .. " / " .. s.need)
+    bar:SetValue(math.min(s.xp, s.need))
+    bar.text:SetText("Growth " .. s.xp .. " / " .. s.need)
+
+    local spent = 0
+    for i, b in ipairs(statButtons) do
+        local st = data.stats[i]
+        b.stat = st
+        if st then
+            b:Show()
+            b.icon:SetTexture(STAT_ICONS[st.id] or ICONS .. "INV_Misc_QuestionMark")
+            b.icon:SetDesaturated(st.points == 0 and s.unspent == 0)
+            b.count:SetText(st.points > 0 and ("+" .. st.points * st.pct .. "%") or "")
+            spent = spent + st.points
+        else
+            b:Hide()
+        end
+    end
+    if spent > 0 then statReset:Show() else statReset:Hide() end
 
     local level = UnitLevel("player")
     local gift = data.majors[1]
@@ -644,10 +708,13 @@ events:SetScript("OnEvent", function(_, event, ...)
         incoming.none = true
     elseif f[1] == "S" then
         incoming.state = {
-            rank = tonumber(f[2]) or 0, accountRank = tonumber(f[3]) or 0, cap = tonumber(f[4]) or 0,
-            growth = tonumber(f[5]) or 0, need = tonumber(f[6]) or 0, stage = f[7] or "", path = f[8] or "none",
-            fed = tonumber(f[9]) or 0, slots = tonumber(f[10]) or 0, shrine = f[11] or "",
+            level = tonumber(f[2]) or 0, unspent = tonumber(f[3]) or 0, xp = tonumber(f[4]) or 0,
+            need = tonumber(f[5]) or 0, stage = f[6] or "", path = f[7] or "none",
+            fed = tonumber(f[8]) or 0, slots = tonumber(f[9]) or 0, shrine = f[10] or "",
         }
+    elseif f[1] == "G" then
+        incoming.stats[#incoming.stats + 1] = { id = tonumber(f[2]) or 0, name = f[3] or "?", points = tonumber(f[4]) or 0,
+            pct = tonumber(f[5]) or 0 }
     elseif f[1] == "M" then
         incoming.majors[#incoming.majors + 1] = { level = tonumber(f[2]) or 0, name = f[3] or "", path = f[4] or "",
             gift = tonumber(f[5]) or 0, description = f[6] or "" }

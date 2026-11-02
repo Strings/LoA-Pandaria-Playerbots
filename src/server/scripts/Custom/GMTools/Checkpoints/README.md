@@ -30,7 +30,7 @@ being played to. The GMSuite addon (`addons/GMSuite/`) puts these commands on bu
 | `tele` | text `game_tele` name, or `Alliance|Horde` | Teleports |
 | `command` | text, `$name` = target | Runs any GM command; the escape hatch until a system has its own step |
 | `heartseed` | | Grants a Heartseed if there is none |
-| `heartseed_rank`, `heartseed_growth` | arg1 | Sets rank (ignores the cap) or banked Growth |
+| `heartseed_growth` | arg1 | Sets the character's Growth level (no XP); points past it are refunded |
 | `heartseed_major` | arg1 tier level, arg2 trait (0 clears) | Sets or clears a major in the active spec |
 | `heartseed_flag` | text flag name (or arg1 id), arg2 1 set / 0 clear | Story flags; awakenings raise the cap |
 | `heartseed_essence` | arg1 essence, arg2 slot (0 = just add) | Gives and slots an essence |

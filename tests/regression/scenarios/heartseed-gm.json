@@ -12,9 +12,14 @@
     "say .heartseed info",
     "say .heartseed grant",
     "say .heartseed info",
-    "say .heartseed cap",
-    "say .heartseed rank 5",
-    "say .heartseed growth +100",
+    "say .heartseed growth +700",
+    "say .heartseed points spend stam 1",
+    "say .heartseed points spend main",
+    "say .list auras",
+    "say .seed spend crit",
+    "say .seed reset",
+    "say .heartseed points reset",
+    "say .heartseed growth 0",
     "say .heartseed flag set first_dungeon",
     "say .heartseed flag clear first_dungeon",
     "say .heartseed essence add 1",
@@ -46,20 +51,20 @@
       "text": "dominant path"
     },
     {
-      "type": "contains",
-      "text": "Rank cap of"
+      "type": "regex",
+      "pattern": "(?s)step: say .heartseed growth \\+700.*?Growth level 2\\. 2 stat points to spend.*?Growth of Seedtest: level 2, 50 of 400 XP"
     },
     {
-      "type": "contains",
-      "text": "Awakening flags:"
+      "type": "regex",
+      "pattern": "(?s)step: say .heartseed points spend main.*? 1 Stamina: 1 points, \\+1% \\(spell 310010\\).*? 2 Main stat: 1 points, \\+1% \\(spell 3100(11|12|13)\\)"
     },
     {
-      "type": "contains",
-      "text": "is now rank 5"
+      "type": "regex",
+      "pattern": "(?s)step: say .list auras.*?id: 310010.*?step: say .seed spend crit"
     },
     {
-      "type": "contains",
-      "text": "earned 100 Growth"
+      "type": "regex",
+      "pattern": "(?s)step: say .seed spend crit.*?no stat points to spend.*?step: say .seed reset.*?Only a Celestial shrine.*?step: say .heartseed points reset.*?Reset: done\\."
     },
     {
       "type": "contains",

@@ -11,6 +11,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <map>
 #include <vector>
 
 namespace Heartseed
@@ -115,11 +116,11 @@ namespace Heartseed
         return tier < MaxMajorTiers && level >= Unlocks().MajorTiers[tier];
     }
 
-    // A minor fills in once the rank reaches it, on a path the character has taken at least one major in.
-    // Path None marks a minor every Heartseed gets.
-    inline bool MinorActive(Path path, uint8_t minRank, uint8_t rank, std::array<uint8_t, MaxPaths> const& majorsPerPath)
+    // A minor fills in at a character level, on a path the character has taken at least one major in, so an alt
+    // or a twink has the balance it would have alone (no account rank, T-083). Path None: every Heartseed gets it.
+    inline bool MinorActive(Path path, uint8_t minLevel, uint8_t level, std::array<uint8_t, MaxPaths> const& majorsPerPath)
     {
-        if (rank < minRank)
+        if (level < minLevel)
             return false;
         return path == Path::None || majorsPerPath[uint8_t(path)] > 0;
     }
@@ -146,8 +147,6 @@ namespace Heartseed
         return damage > 0.0f ? uint32_t(std::lround(damage)) : 0;
     }
 
-    constexpr uint8_t MaxRank = 255;           // rank is saved as TINYINT UNSIGNED
-
     inline uint8_t EssenceSlotsForLevel(uint8_t level)
     {
         uint8_t slots = 0;
@@ -157,63 +156,91 @@ namespace Heartseed
         return slots;
     }
 
-    // The rank a character uses: the account's shared rank, held to the character's own cap, so an alt or a
-    // twink has the balance it would have alone (DESIGN.md, One seed per account).
-    inline uint8_t EffectiveRank(uint8_t accountRank, uint8_t characterCap)
-    {
-        return accountRank < characterCap ? accountRank : characterCap;
-    }
+    // Growth XP (DESIGN.md Progression, T-083): battleground wins and dungeon and raid bosses near the character's
+    // level fill a bar; each Growth level is one stat point the player spends. No cap: the cost per level rises.
 
-    // Rank cap: the character level sets it, each awakening (story flag that counts) raises it.
-    // Never below 1, so a fresh Heartseed always has its first rank.
-    inline uint8_t RankCap(uint8_t level, float capPerLevel, uint32_t awakenings, uint32_t capPerAwakening)
+    // Growth XP needed to go from level to level + 1. Never 0, so a level-up loop always ends.
+    inline uint32_t GrowthXpForLevel(uint32_t level, uint32_t base, uint32_t perLevel)
     {
-        double cap = std::floor(double(level) * double(capPerLevel)) + double(awakenings) * double(capPerAwakening);
-        if (cap < 1.0)
-            return 1;
-        return cap > double(MaxRank) ? MaxRank : uint8_t(cap);
-    }
-
-    // Growth needed to go from rank to rank + 1. Never 0, so a rank-up loop always ends.
-    inline uint32_t GrowthForNextRank(uint8_t rank, uint32_t base, uint32_t perRank)
-    {
-        uint64_t cost = uint64_t(base) + uint64_t(perRank) * uint64_t(rank > 0 ? rank - 1 : 0);
+        uint64_t cost = uint64_t(base) + uint64_t(perLevel) * uint64_t(level);
         if (cost == 0)
             return 1;
         return cost > UINT32_MAX ? UINT32_MAX : uint32_t(cost);
     }
 
-    struct RankProgress
+    struct GrowthProgress
     {
-        uint8_t Rank;
-        uint32_t Growth;      // left over toward the next rank
+        uint32_t Level;
+        uint32_t Xp;          // left over toward the next level
     };
 
-    // Spends Growth on ranks up to the cap. Growth past the cap stays banked, so raising the cap (a level
-    // or an awakening) ranks the Heartseed up at once. A rank already above the cap (GM) is kept.
-    inline RankProgress ApplyGrowth(uint8_t rank, uint32_t growth, uint8_t cap, uint32_t base, uint32_t perRank)
+    inline GrowthProgress ApplyGrowthXp(uint32_t level, uint32_t xp, uint32_t base, uint32_t perLevel)
     {
-        while (rank < cap)
+        while (level < UINT32_MAX)
         {
-            uint32_t cost = GrowthForNextRank(rank, base, perRank);
-            if (growth < cost)
+            uint32_t cost = GrowthXpForLevel(level, base, perLevel);
+            if (xp < cost)
                 break;
-            growth -= cost;
-            ++rank;
+            xp -= cost;
+            ++level;
         }
-        return { rank, growth };
+        return { level, xp };
     }
 
-    // Growth from feeding a weapon: grows with its item level, scaled by its quality.
-    inline uint32_t FeedGrowth(uint32_t itemLevel, uint32_t base, float perItemLevel, float qualityPct)
+    // A source counts when it is at most `range` levels below the character; a higher one always counts.
+    inline bool GrowthSourceNearLevel(uint8_t characterLevel, uint8_t sourceLevel, uint8_t range)
     {
-        double growth = (double(base) + double(perItemLevel) * double(itemLevel)) * double(qualityPct) / 100.0;
-        if (growth <= 0.0)
-            return 0;
-        return growth >= double(UINT32_MAX) ? UINT32_MAX : uint32_t(std::lround(growth));
+        return uint32_t(sourceLevel) + range >= characterLevel;
     }
 
-    // Saturating add, for Growth and essence counts.
+    // One point per Growth level; points already spent (stat id -> points) come off.
+    inline uint32_t UnspentPoints(uint32_t level, std::map<uint8_t, uint32_t> const& spent)
+    {
+        uint64_t total = 0;
+        for (auto const& entry : spent)
+            total += entry.second;
+        return total >= level ? 0 : uint32_t(level - total);
+    }
+
+    // The stat aura's amount: points times percent per point, saturating at INT32_MAX.
+    inline int32_t StatPointAmount(uint32_t points, int32_t pctPerPoint)
+    {
+        if (pctPerPoint <= 0)
+            return 0;
+        int64_t amount = int64_t(points) * pctPerPoint;
+        return amount > INT32_MAX ? INT32_MAX : int32_t(amount);
+    }
+
+    // The main stat a "main stat" point raises: the specialization's, or the class's usual one before a spec is
+    // chosen. Values are the core's Stats (0 strength, 1 agility, 3 intellect).
+    enum class MainStat : uint8_t { Strength = 0, Agility = 1, Intellect = 3 };
+
+    inline MainStat MainStatFor(uint8_t classId, uint32_t specId)
+    {
+        switch (specId)
+        {
+            case 66: case 70: case 71: case 72: case 73: case 250: case 251: case 252:
+                return MainStat::Strength;
+            case 103: case 104: case 253: case 254: case 255: case 259: case 260: case 261: case 263: case 268: case 269:
+                return MainStat::Agility;
+            case 62: case 63: case 64: case 65: case 102: case 105: case 256: case 257: case 258: case 262: case 264:
+            case 265: case 266: case 267: case 270:
+                return MainStat::Intellect;
+            default:
+                break;
+        }
+        switch (classId)
+        {
+            case 1: case 2: case 6:                   // warrior, paladin, death knight
+                return MainStat::Strength;
+            case 3: case 4: case 10:                  // hunter, rogue, monk
+                return MainStat::Agility;
+            default:
+                return MainStat::Intellect;
+        }
+    }
+
+    // Saturating add, for Growth XP and essence counts.
     inline uint32_t AddCapped(uint32_t value, uint32_t amount)
     {
         return amount > UINT32_MAX - value ? UINT32_MAX : value + amount;

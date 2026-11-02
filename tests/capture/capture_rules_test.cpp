@@ -99,10 +99,9 @@ namespace
 
         snap.Heartseed.Enabled = true;
         snap.Heartseed.HasSeed = true;
-        snap.Heartseed.Rank = 3;
-        snap.Heartseed.EffectiveRank = 3;
-        snap.Heartseed.RankCap = 10;
-        snap.Heartseed.Growth = 250;
+        snap.Heartseed.GrowthLevel = 3;
+        snap.Heartseed.GrowthXp = 250;
+        snap.Heartseed.UnspentPoints = 1;
         snap.ServerCommitHash = "e68d7112";
         snap.ServerBuild = "UltimateMoP";
         snap.ScreenshotPath = "WoWScrnShot_103126_183015";
@@ -113,7 +112,7 @@ namespace
         UMP_CHECK(json.find("Bots should wave \\\"hello\\\" at campfires") != std::string::npos);
         UMP_CHECK(json.find("\"last_action\": \"melee - OK\"") != std::string::npos);
         UMP_CHECK(json.find("\"last_decision\": \"melee - OK\"") != std::string::npos);
-        UMP_CHECK(json.find("\"rank\": 3") != std::string::npos);
+        UMP_CHECK(json.find("\"growth_level\": 3") != std::string::npos);
         UMP_CHECK(json.find("\"screenshot_path\": \"WoWScrnShot_103126_183015\"") != std::string::npos);
 
         std::string md = FormatTicketMarkdown(snap);

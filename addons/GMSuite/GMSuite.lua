@@ -129,7 +129,7 @@ local function Layout()
         { label = "Free power", tooltip = "Toggle .cheat power.", onClick = function() Command(".cheat power") end },
         { label = "God mode", tooltip = "Toggle .cheat god.", onClick = function() Command(".cheat god") end },
         { label = "Learn class", tooltip = "Learn the class and specialization spells for the level (no talents).", onClick = function() Command(".gmsuite classspells") end },
-        { label = "Heartseed info", tooltip = "Rank, Growth, majors, essences and story flags.", onClick = function() Command(".heartseed info") end },
+        { label = "Heartseed info", tooltip = "Growth, stat points, majors, essences and story flags.", onClick = function() Command(".heartseed info") end },
         { label = "Choose majors", tooltip = "Open the Heartseed choice window (.seed).", onClick = function() Command(".seed") end },
         { label = "Reload lists", tooltip = "Ask the server for the checkpoint and kit lists again.", onClick = function() Command(".gmsuite sync") end },
     }, y)
