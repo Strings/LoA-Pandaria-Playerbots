@@ -59,7 +59,7 @@ UPDATE `heartseed_trait` SET `description` = 'Yu''lon''s Gift: breathe jade fire
 -- Riders for the new Gifts (kind: Heartseed::GiftRiderKind). Stage 1 is Sprout, so Retort's shield comes with it.
 DELETE FROM `heartseed_gift_rider` WHERE `trait_id` IN (4, 6);
 INSERT INTO `heartseed_gift_rider` (`trait_id`, `stage`, `kind`, `amount`, `duration`, `spell_id`, `comment`) VALUES
-(4, 2, 1,   30, 3000,  2983, 'Sapling: a burst of speed (Sprint as helper)'),
+(4, 2, 1,   30, 4000,  2983, 'Sapling: a burst of speed (Sprint as helper)'),
 (4, 3, 2,    2,    0,     0, 'Bloom: heals 2 more allies'),
 (4, 4, 3,    0,    0,     0, 'Full Bloom: a killing blow resets it'),
 (6, 1, 11,  30, 8000, 11426, 'Sprout: shield for 30% of the damage answered (Ice Barrier as helper)'),

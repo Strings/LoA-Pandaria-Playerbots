@@ -597,14 +597,26 @@ public:
         return (end && !*end && value > 0 && value <= 0xFFFF) ? uint16(value) : 0;
     }
 
-    // .heartseed meter [stacks | lit]: sets the Gift's path meter (stacks, capped) or lights a gated Gift, then
-    // shows it; with no argument it only shows it.
+    // .heartseed meter [stacks | lit | hit <damage>]: sets the Gift's path meter (stacks, capped), lights a gated
+    // Gift, or feeds it a hit taken as if in combat (Niuzao's window and big-hit check), then shows it; with no
+    // argument it only shows it.
     static bool HandleMeterCommand(ChatHandler* handler, char const* args)
     {
         Player* target = GetTarget(handler);
         if (!target)
             return false;
-        if (args && *args)
+        if (args && !strncmp(args, "hit ", 4))
+        {
+            long damage = strtol(args + 4, nullptr, 10);
+            if (damage <= 0)
+            {
+                handler->SendSysMessage("Usage: .heartseed meter hit <damage>");
+                handler->SetSentErrorMessage(true);
+                return false;
+            }
+            sHeartseedMgr->OnMeterEvent(target, Heartseed::MeterSource::BigHit, uint32(damage));
+        }
+        else if (args && *args)
         {
             bool lit = std::string(args) == "lit";
             char* end = nullptr;
@@ -1262,7 +1274,8 @@ class spell_heartseed_gift : public SpellScript
                     player->HealBySpell(player, GetSpellInfo(), Heartseed::PercentOf(player->GetMaxHealth(), rider.Amount));
                     break;
                 case Heartseed::GiftRiderKind::RecentDamageShield:
-                    ApplyRiderAura(player, player, rider, int32(Heartseed::PercentOf(spend.RecentDamage, rider.Amount)));
+                    if (uint32 shield = Heartseed::PercentOf(spend.RecentDamage, rider.Amount))
+                        ApplyRiderAura(player, player, rider, int32(shield));
                     break;
                 default:
                     break;
