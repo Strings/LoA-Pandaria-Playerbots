@@ -1,0 +1,4 @@
+{
+  "dev": {"world": {"Telemetry.Enable": "1"}},
+  "test": {"world": {"Telemetry.Enable": "1"}}
+}
