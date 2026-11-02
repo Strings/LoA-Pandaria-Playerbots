@@ -31,8 +31,8 @@ INSERT INTO `heartseed_gift_rider` (`trait_id`, `stage`, `kind`, `amount`, `dura
 
 -- 121828: the server casts Chi Torpedo as 121828 when the client asks for 115008, so Crane Rush's cooldown and
 -- riders hook it too.
-DELETE FROM `spell_script_names` WHERE `ScriptName` = 'spell_heartseed_ox_stomp'
-    OR (`spell_id` = 121828 AND `ScriptName` = 'spell_heartseed_gift');
+DELETE FROM `spell_script_names` WHERE `spell_id` = 119381 AND `ScriptName` = 'spell_heartseed_ox_stomp';
+DELETE FROM `spell_script_names` WHERE `spell_id` = 121828 AND `ScriptName` = 'spell_heartseed_gift';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (119381, 'spell_heartseed_ox_stomp'),
 (121828, 'spell_heartseed_gift');
