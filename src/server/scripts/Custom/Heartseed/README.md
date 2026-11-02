@@ -61,14 +61,17 @@ World database (`sql/updates/world/2026_10_31_claude_03_heartseed_trait.sql`):
 
 World database (`sql/updates/world/2026_11_01_claude_06_heartseed_gifts.sql`, T-080):
 
-- `heartseed_gift`: the Celestial Gift a major teaches: the client spell, its cooldown in ms (applied after a cast
-  when longer than the spell's own), and its power (`base_amount + amount_per_ilvl * main-hand item level`; only
+- `heartseed_gift` (rebuilt by `2026_11_01_claude_07_heartseed_gift_duration.sql`): the Celestial Gift a major
+  teaches: the client spell, its cooldown and summon duration in ms (each replaces the spell's own; 0 keeps it, so
+  Call of Xuen runs 20 s / 10 s against Invoke Xuen's 3 min / 45 s), and its power (`base_amount + amount_per_ilvl * main-hand item level`; only
   Serpent's Breath reads it, as damage per tick). The tier-0 majors (traits 2, 4, 6, 8) are the four Gifts; their
   old stat auras are minors 9 to 12. A trait with `spell_id` 0 applies no aura.
 - Gifts reuse client spells, because the 5.4.8 client only casts spells it knows: Invoke Xuen (123904), Chi
   Torpedo (115008), Leg Sweep (119381) and Celestial Breath (117960). `RefreshTraits` teaches the active Gift and
   unlearns the others, except a spell the character has from its own talents (monks). `spell_heartseed_gift` adds
   the Gift cooldown; `spell_heartseed_celestial_breath` (124947) replaces the creature spell's damage.
+  `spell_heartseed_xuen_lightning` (123996) plays `Heartseed.Gift.XuenLightningVisual` (default Chain Lightning's
+  visual) from Xuen to each target his lightning hits, for monks' Xuen too.
 - `.seed sync` M lines carry the Gift spell id and the trait description, so the addon can show and cast it.
 
 World database (`sql/updates/world/2026_10_31_claude_04_heartseed_essence.sql`):
