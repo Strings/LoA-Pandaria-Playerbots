@@ -1,6 +1,6 @@
 ## Interface: 50400
 ## Title: Heartseed
-## Notes: UltimateMoP Heartseed panel: rank, Growth, path, majors and essences. Open with /hs or the key binding.
+## Notes: UltimateMoP Heartseed panel: Growth, stat points, path, majors and essences. Open with /hs or the key binding.
 ## Version: 0.1
 
 Heartseed.lua
