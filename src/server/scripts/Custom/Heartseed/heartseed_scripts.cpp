@@ -364,6 +364,7 @@ public:
             { "essence", essenceCommandTable, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "traits", &HandleTraitsCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "major",  &HandleMajorCommand,  RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
+            { "meter",  &HandleMeterCommand,  RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "reload", &HandleReloadCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "shrines", &HandleShrinesCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
         };
@@ -594,6 +595,42 @@ public:
         char* end = nullptr;
         unsigned long value = strtoul(text.c_str(), &end, 10);
         return (end && !*end && value > 0 && value <= 0xFFFF) ? uint16(value) : 0;
+    }
+
+    // .heartseed meter [stacks | lit]: sets the Gift's path meter (stacks, capped) or lights a gated Gift, then
+    // shows it; with no argument it only shows it.
+    static bool HandleMeterCommand(ChatHandler* handler, char const* args)
+    {
+        Player* target = GetTarget(handler);
+        if (!target)
+            return false;
+        if (args && *args)
+        {
+            bool lit = std::string(args) == "lit";
+            char* end = nullptr;
+            long stacks = lit ? 0 : strtol(args, &end, 10);
+            if (!lit && (end == args || stacks < 0 || stacks > 255))
+            {
+                handler->SendSysMessage("Usage: .heartseed meter [stacks | lit]");
+                handler->SetSentErrorMessage(true);
+                return false;
+            }
+            if (!sHeartseedMgr->ForceMeter(target, uint8(stacks), lit))
+            {
+                handler->PSendSysMessage("%s has no Celestial Gift with a meter.", target->GetName().c_str());
+                return true;
+            }
+        }
+        Heartseed::MeterRule rule;
+        Heartseed::MeterState meter;
+        if (!sHeartseedMgr->GetMeter(target, rule, meter))
+        {
+            handler->PSendSysMessage("%s has no Celestial Gift with a meter.", target->GetName().c_str());
+            return true;
+        }
+        handler->PSendSysMessage("Meter of %s: stacks %u/%u, lit %s.", target->GetName().c_str(), uint32(meter.Stacks),
+            uint32(rule.MaxStacks), meter.Lit ? "yes" : "no");
+        return true;
     }
 
     static bool HandleRankCommand(ChatHandler* handler, char const* args)

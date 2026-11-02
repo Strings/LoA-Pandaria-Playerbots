@@ -374,6 +374,8 @@ public:
     Heartseed::GiftSpend SpendGiftMeter(Player* player, uint32 spellId);
     Heartseed::GiftSpend GetLastSpend(Player const* player) const;
     bool GetMeter(Player const* player, Heartseed::MeterRule& rule, Heartseed::MeterState& meter) const;
+    // GM: sets the stacks (capped) or lights a gated Gift. False when the character has no Gift with a meter.
+    bool ForceMeter(Player* player, uint8 stacks, bool lit);
     // Tells the addon the meter: "P" <stacks> <max> <lit ms left> <decay ms> <Gift spell>.
     void SendMeter(Player* player) const;
     float GetPlumeRadius() const { return _plumeRadius; }

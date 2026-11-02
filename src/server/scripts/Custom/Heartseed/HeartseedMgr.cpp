@@ -2066,6 +2066,34 @@ bool HeartseedMgr::GetMeter(Player const* player, Heartseed::MeterRule& rule, He
     return true;
 }
 
+bool HeartseedMgr::ForceMeter(Player* player, uint8 stacks, bool lit)
+{
+    {
+        std::lock_guard<std::mutex> guard(_lock);
+        auto itr = _states.find(player->GetGUID().GetCounter());
+        if (itr == _states.end() || !itr->second.GiftTraitId)
+            return false;
+        auto trait = _traits.find(itr->second.GiftTraitId);
+        if (trait == _traits.end())
+            return false;
+        auto meter = _meters.find(uint8(trait->second.TraitPath));
+        if (meter == _meters.end())
+            return false;
+        Heartseed::MeterState& state = itr->second.Meter;
+        uint32 now = getMSTime();
+        state.Stacks = std::min(stacks, meter->second.MaxStacks);
+        state.LastBuild = now;
+        state.HasBuilt = true;
+        if (lit && meter->second.LitMs)
+        {
+            state.Lit = true;
+            state.LitAt = now;
+        }
+    }
+    SendMeter(player);
+    return true;
+}
+
 void HeartseedMgr::SendMeter(Player* player) const
 {
     if (player->GetSession()->IsBot())

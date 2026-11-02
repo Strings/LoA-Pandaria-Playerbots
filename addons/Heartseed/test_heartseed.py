@@ -72,6 +72,16 @@ function fire(event, ...)
     end
 end
 function addon(msg) fire("CHAT_MSG_ADDON", "Heartseed", msg, "WHISPER", "Tester") end
+now = 100
+function GetTime() return now end
+glows = {}
+function ActionButton_ShowOverlayGlow(b) glows[b] = true end
+function ActionButton_HideOverlayGlow(b) glows[b] = nil end
+hooks = {}
+function hooksecurefunc(name, fn) hooks[name] = fn end
+actions = {}
+function GetActionInfo(slot) if actions[slot] then return "spell", actions[slot] end end
+function IsShiftKeyDown() return false end
 """
 
 
@@ -122,6 +132,40 @@ class HeartseedAddonTest(unittest.TestCase):
         self.assertIsNone(self.g.HeartseedGiftButton.attributes["spell"])
         self.lua.execute('InCombatLockdown = function() return false end; fire("PLAYER_REGEN_ENABLED")')
         self.assertEqual(self.g.HeartseedGiftButton.attributes["spell"], "Invoke Xuen, the White Tiger")
+
+    def tick(self, seconds):
+        self.lua.execute(f"now = now + {seconds}; HeartseedMeterFrame.scripts.OnUpdate(HeartseedMeterFrame, 0.3)")
+
+    def test_meter_counts_glows_when_full_and_decays(self):
+        self.lua.execute('local b = CreateFrame("Button", "ActionButton1"); b.action = 1; actions[1] = 123904')
+        self.g.addon("P	3	5	0	15000	123904")                  # no sync needed for meter updates
+        frame = self.g.HeartseedMeterFrame
+        self.assertTrue(frame.shown)
+        self.assertEqual(frame.count.text, 3)
+        self.assertIsNone(self.g.glows[self.g.ActionButton1])
+        self.g.addon("P	5	5	0	15000	123904")
+        self.assertTrue(self.g.glows[self.g.ActionButton1])          # full: the Gift glows on the bar
+        self.assertTrue(self.g.glows[self.g.HeartseedGiftButton])
+        self.lua.execute("hooks.ActionButton_UpdateOverlayGlow(ActionButton1)")   # survives a bar update
+        self.assertTrue(self.g.glows[self.g.ActionButton1])
+        self.tick(16)                                                # past the 15 s decay
+        self.assertEqual(frame.count.text, 0)
+        self.assertIsNone(self.g.glows[self.g.ActionButton1])
+
+    def test_lit_meter_shows_until_it_closes(self):
+        self.g.addon("P	0	0	6000	0	116098")
+        frame = self.g.HeartseedMeterFrame
+        self.assertTrue(frame.shown)
+        self.assertTrue(self.g.glows[frame])
+        self.tick(5)
+        self.assertTrue(frame.shown)
+        self.tick(2)
+        self.assertFalse(frame.shown)
+        self.assertIsNone(self.g.glows[frame])
+
+    def test_meter_ignores_other_senders(self):
+        self.lua.execute('fire("CHAT_MSG_ADDON", "Heartseed", "P	5	5	0	0	123904", "WHISPER", "Someone")')
+        self.assertFalse(self.g.HeartseedMeterFrame.shown)
 
     def test_no_heartseed(self):
         self.lua.execute('HeartseedPanel_Toggle(); addon("N"); addon("E")')
