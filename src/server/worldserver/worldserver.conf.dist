@@ -5408,6 +5408,14 @@ Heartseed.Core.WeaponDamagePct = 5
 Heartseed.Proc.SpellId = 16614
 
 #
+#    Heartseed.Gift.XuenLightningVisual
+#        Description: Spell visual played from Xuen (Call of Xuen, and monks' Invoke Xuen) to each target his
+#                     Crackling Tiger Lightning hits; the creature spell has none of its own. 0 turns it off.
+#        Default:     36 - (Chain Lightning's visual)
+
+Heartseed.Gift.XuenLightningVisual = 36
+
+#
 #    Heartseed.Proc.Chance
 #        Description: Chance in percent for damage the character deals to roll the core proc.
 #        Default:     10

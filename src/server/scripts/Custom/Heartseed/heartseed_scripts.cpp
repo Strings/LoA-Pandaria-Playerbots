@@ -13,6 +13,7 @@
 #include "ScriptMgr.h"
 #include "SpellInfo.h"
 #include "SpellScript.h"
+#include "TemporarySummon.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
 
@@ -1012,8 +1013,8 @@ public:
     }
 };
 
-// Celestial Gifts (heartseed_gift): the active spell a level 10 major teaches. The Gift's own cooldown applies when
-// it is longer than the client spell's, unless the character has the spell from its own talents (monks).
+// Celestial Gifts (heartseed_gift): the active spell a level 10 major teaches. The Gift's cooldown and summon
+// lifetime replace the client spell's, unless the character has the spell from its own talents (monks).
 class spell_heartseed_gift : public SpellScript
 {
     PrepareSpellScript(spell_heartseed_gift);
@@ -1021,12 +1022,27 @@ class spell_heartseed_gift : public SpellScript
     void HandleAfterCast()
     {
         Player* player = GetCaster()->ToPlayer();
-        if (!player || player->HasTalent(GetSpellInfo()->Id, player->GetActiveSpec()))
+        uint32 spellId = GetSpellInfo()->Id;
+        if (!player || player->HasTalent(spellId, player->GetActiveSpec()))
             return;
         Heartseed::TraitInfo gift;
-        if (!sHeartseedMgr->GetActiveGift(player, GetSpellInfo()->Id, gift) || gift.GiftCooldown <= GetSpellInfo()->RecoveryTime)
+        if (!sHeartseedMgr->GetActiveGift(player, spellId, gift))
             return;
-        player->AddCustomCooldown(GetSpellInfo()->Id, Milliseconds(gift.GiftCooldown));
+
+        if (gift.GiftCooldown)
+        {
+            // Clearing first lets the Gift be shorter than the spell's own cooldown (Invoke Xuen's 3 minutes).
+            player->RemoveSpellCooldown(spellId, true);
+            player->AddCustomCooldown(spellId, Milliseconds(gift.GiftCooldown));
+        }
+
+        if (gift.GiftDuration && GetSpellInfo()->Effects[EFFECT_0].Effect == SPELL_EFFECT_SUMMON)
+        {
+            uint32 entry = uint32(GetSpellInfo()->Effects[EFFECT_0].MiscValue);
+            for (TempSummon* summon : player->GetSummons())
+                if (summon->GetEntry() == entry && summon->GetTimer() > gift.GiftDuration)
+                    summon->UnSummon(gift.GiftDuration);
+        }
     }
 
     void Register() override
@@ -1059,6 +1075,25 @@ class spell_heartseed_celestial_breath : public SpellScript
     static constexpr uint32 GIFT_SPELL_CELESTIAL_BREATH = 117960;
 };
 
+// 123996 - Crackling Tiger Lightning. The creature spell has no visible bolt, so Xuen's strikes play a lightning
+// visual (Heartseed.Gift.XuenLightningVisual) from the tiger to each target. Applies to monks' Xuen too.
+class spell_heartseed_xuen_lightning : public SpellScript
+{
+    PrepareSpellScript(spell_heartseed_xuen_lightning);
+
+    void HandleHit(SpellEffIndex /*effIndex*/)
+    {
+        uint32 visual = sHeartseedMgr->GetXuenLightningVisual();
+        if (visual && GetCaster() && GetHitUnit())
+            GetCaster()->SendPlaySpellVisual(visual, GetHitUnit()->GetGUID(), 0.0f);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_heartseed_xuen_lightning::HandleHit, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
+    }
+};
+
 void AddSC_heartseed()
 {
     if (!CustomReload::Tables().RegisterGroup({ "heartseed", "heartseed_stage", "heartseed_glow", "heartseed_trait",
@@ -1076,4 +1111,5 @@ void AddSC_heartseed()
     new heartseed_commandscript();
     new spell_script<spell_heartseed_gift>("spell_heartseed_gift");
     new spell_script<spell_heartseed_celestial_breath>("spell_heartseed_celestial_breath");
+    new spell_script<spell_heartseed_xuen_lightning>("spell_heartseed_xuen_lightning");
 }
