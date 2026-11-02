@@ -1,6 +1,6 @@
 # Project status
 
-Last folded: 2026-11-02 by Claude Code (53 fragments, T-001 to T-081, BUG-004). Agents: read this, never edit
+Last folded: 2026-11-02 by Claude Code (58 fragments, T-001 to T-082, BUG-004). Agents: read this, never edit
 it; write a fragment in `status/`. Claude Code folds them.
 
 ## Current milestone: v0.1 The jewel run
@@ -18,9 +18,9 @@ patch, no ML. Task list: `TASKS.md`.
 | Fork, build, game data, databases | Done (T-001). Builds with Ninja and sccache through `tools\build\build.ps1`, which queues builds machine-wide |
 | Agent environments | Done: worktrees, per-agent databases and ports for Claude Code, Codex and Gemini (T-002, T-005) |
 | Fast iteration (Phase 0a) | Done except fixtures (T-007) and faster builds (T-060): test profiles, loader profiler, unit tests (CTest, 15 suites), Eluna prototypes, headless regression runner, save snapshots and migration checks, `.reload`, seeded test RNG, GM tools (`.clock`, `.scenario`, `.spectate`, `.bot why/state/...`), `/idea` and `/bug` capture (players too since BUG-004), regression scenarios covering every custom command set (professions added, T-074) |
-| Heartseed (Phase 0b) | MVP done (T-020 to T-026, T-049): account-wide seed, stage glows, traits and majors, path-choice gossip, feeding and essences, rank cap, story flags, GM commands. The level 10 major is an active Celestial Gift (T-080): Call of Xuen, Crane Rush, Ox Stomp, Serpent's Breath, with a redesigned addon panel (mandala, castable Gift button, sounds) and art slots awaiting generated art. All numbers are placeholders until v0.5; glow IDs await a pick in the client |
+| Heartseed (Phase 0b) | MVP done (T-020 to T-026, T-049): account-wide seed, stage glows, traits and majors, path-choice gossip, feeding and essences, rank cap, story flags, GM commands. The level 10 major is an active Celestial Gift (T-080): Call of Xuen, Crane Rush, Ox Stomp, Serpent's Breath, with a redesigned addon panel (mandala, castable Gift button, sounds) and art slots awaiting generated art. Each later stage adds a rider to the Gift (T-082), and Call of Xuen keeps up with a mounted owner. All numbers are placeholders until v0.5; glow IDs await a pick in the client |
 | GM test suite | Done (T-048): checkpoints (`hs-10` and more), twink checkpoints, kits, ability tester, GMSuite addon |
-| Quick wins | Done: mount speed x2 (T-010), rare mounts 10% including the world bosses (T-012, T-064), free respec and dual spec from 10 (T-016), solo config defaults (T-019), twink gear +7% (T-045, generator T-050), eleven primary professions with the `/profbar` addon (T-014), trade goods stack to 1000 (T-062), 36-slot bags from vendors (T-042, T-061). Approved, waiting to merge: raid resets (T-013), starting kit (T-011), no binding (T-015), solo QoL (T-041). Open: T-044, T-046, T-047 |
+| Quick wins | Done: mount speed x2 (T-010), rare mounts 10% including the world bosses (T-012, T-064), free respec and dual spec from 10 (T-016), solo config defaults (T-019), twink gear +7% (T-045, generator T-050), eleven primary professions with the `/profbar` addon (T-014), trade goods stack to 1000 (T-062), 36-slot bags from vendors (T-042, T-061). Raid saves kept until finished or abandoned, resets every 2 days (T-013); first login grants riding, the racial mount and four 10-slot bags (T-011); no binding for ordinary gear, quest and progression items stay bound (T-015); guild perks for everyone, free character-service stewards in the capitals, 5-minute hearthstone, mixed-type transmog (T-041). Open: T-044, T-046, T-047 |
 | Loadouts and detached storage | Done: spec loadouts with `/lo` panel (T-017), gear pages per loadout (T-018), shared detached item storage, reagent bank with crafting drawing from it and `/rb` panel (T-043). Twink templates will use the same storage. Addon panels await a real-client playtest |
 | Tooling | Done: live server MCP, crash triage, SQL validator, DBC reader and content search, SQL, config, command and legacy-script audits, `tools/map-check` for `docs/MAP.md`. Open: balance sim (T-031) |
 | World density | Spawn thinning (T-081): hostile open-world spawns within 10 yd of an older one are left out of the grids at startup (18,495 of 85,544); world data untouched, `.spawnthin` to inspect. Awaiting playtest feedback |
@@ -28,12 +28,15 @@ patch, no ML. Task list: `TASKS.md`.
 | Timeline decision (T-036) | Waiting on the human |
 | Game client | `mop-clean/`, 5.4.8.18414 enUS, not patched |
 
-**In progress:** Codex PRs 61, 85, 69 and 45 approved for one batch merge but conflicting with `playerbot` (need a rebase); T-044 (PR 86), T-046 (PR 91) and T-047 (draft PR 99) open. Claude on T-060 (draft PR 78) and Gift riders. The human is playtesting T-080 and T-081.
+**In progress:** Codex's T-044 (PR 86), T-046 (PR 91) and T-047 (draft PR 99) open; Flash on the T-075 smoke run; Claude on T-060 (draft PR 78). Main still runs the T-081 build: the batch (T-011, T-013, T-015, T-041) and T-082 deploy at the next restart, with PR 69's characters cleanup. The human is playtesting T-080 and T-081.
 
 **Blocked:** nothing.
 
 ## Recent decisions (newest first)
 
+- 2026-11-02: Gift riders (T-082, the human's call): Xuen haste / lightning arcs to 2 more / each kill cuts 1 s; Chi-Ji heal 10% / speed / killing blow resets; Niuzao -20% enemy damage / shield per enemy hit / wider, longer stun; Yu'lon leech 30% / jade DoT / each enemy hit cuts 1.5 s. Cooldown cuts halved from the first proposal so the Gift isn't up too often. Only the player's own killing blows count. Riders borrow client auras (Berserking, Sprint, Curse of Impotence, Ice Barrier, Jade Serpent Wave) with amounts and durations as data.
+- 2026-11-02: Call of Xuen keeps up with a mounted owner: out of combat the tiger runs at its owner's speed and jumps to them past 25 yd (config keys).
+- 2026-11-02: Codex's four approved PRs merged as one batch (PR 108, the human's OK); hotspot conflicts resolved by keeping both sides.
 - 2026-11-02: Spawn thinning (T-081) is cross-type (one camp per 10 yd, whatever the mob), greedy by spawn id so the oldest spawn stays. Scripted, formation, linked, pooled, event and waypoint spawns, rares, bosses, critters and NPCs with flags are never thinned.
 - 2026-11-02: Call of Xuen: 20 s cooldown, 10 s tiger, so it is part of the rotation (the human's call). `heartseed_gift.cooldown` and `duration` override the client spell's own; Xuen's lightning plays Chain Lightning's visual (`Heartseed.Gift.XuenLightningVisual`).
 - 2026-11-01: The level 10 Heartseed major is an active Celestial Gift borrowing a client spell (the human's call); the old stat majors became minors 9 to 12. Gift cooldowns and power are data, like other trait numbers.
@@ -86,9 +89,9 @@ patch, no ML. Task list: `TASKS.md`.
 ## Open follow-ups
 
 - Spawn thinning: ask the human how density feels; raise `SpawnThinning.Radius` if still packed, consider faster respawns if zones feel empty.
-- Celestial Gifts: riders per stage (Sapling, Bloom, Full Bloom); generated art (`addons/Heartseed/art/`, then `USE_ART = true`); Xuen's lightning visual needs a client look. Spell tooltips show the borrowed spells' text until a client patch.
+- Celestial Gifts: the lightning chain, kill cooldown cuts, Serpent's Breath riders and Xuen's mounted catch-up have no automated check; look in a playtest. Generated art (`addons/Heartseed/art/`, then `USE_ART = true`); Xuen's lightning visual needs a client look. Spell tooltips show the borrowed spells' text until a client patch.
 - Possess `AddAllowedMover` assert crashed main once; needs a look.
-- Main characters DB: apply PR 69's soulbound cleanup after it merges (the human approved; back up `item_instance` first).
+- Main characters DB: apply PR 69's soulbound cleanup while main is stopped for the next restart (the human approved; back up `item_instance` first). Main world and auth already have the batch and T-082 SQL.
 - Professions (T-014): the intro shows on every login; limit it to characters with fewer than 3 primaries. The conf comment says "Range: 0-10" with default 11.
 - Raid retention (T-013): `SetBossState` keeps a DONE boss DONE while retention is on; raid scripts that reset a boss on purpose need a look. Saves commit synchronously on the map thread.
 - No binding (T-015): about 65,000 item-sparse hotfix rows make each login send about 780 KB of hotfix info. Watch login time.
@@ -114,6 +117,8 @@ patch, no ML. Task list: `TASKS.md`.
 - **Runtime:** `legacy.dll` from the OpenSSL bin folder must sit next to `worldserver.exe`, or the first world connection crashes in `ARC4::ARC4`.
 - **SQL:** `Updates.EnableDatabases = 0`; apply updates by hand. The server reads `spell_dbc` only at startup. Run `tools/sql-validator` on new SQL before a PR (run its tests from its own folder). `core.autocrlf=true` with no `.gitattributes` for `*.sql`, so working-tree SQL has CRLF.
 - **Twink SQL:** `tools/twink-tuning` writes to stdout by default; a retune goes into a new dated update, never over an applied one.
+- **Scenarios that spawn NPCs** start with `.go -9339.7 170.2 61.6 0` (Elwynn): `checkpoint-hs10` leaves Seedtest in Stormwind, where guards kill spawned kobolds.
+- **Chi Torpedo** is cast as 121828 when the client asks for 115008; scripts on the Gift hook both.
 - **Headless client:** SOAP verbs need `MOP_SOAP_USER`/`MOP_SOAP_PASSWORD`; `target npc` doesn't resolve, pass the raw guid. Self-given quests use the character's own guid. `.die` gives no kill credit (use `.damage <health>`). `.go x y z map` takes coordinates directly. Path choice is two `gossip-select` steps.
 - **Test profile:** set `Heartseed.Grant.OfferOnLogin = 0` and `Heartseed.Choice.PromptOnLogin = 0` if the login windows get in the way.
 - **Reload:** `.reload config` reopens logs in overwrite mode, so startup lines vanish from `Server.log`. Lua reloads through `.reload config`, not `.reload eluna`.
