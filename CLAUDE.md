@@ -7,6 +7,10 @@
 
 - Your worktree is `.worktrees/claude`, your branch prefix `claude/`, your ports and databases are
   the Claude Code row in AGENTS.md.
+- Start sessions in `I:\UltimateMoP\.worktrees\claude` itself, with the desktop app's own worktree option
+  off. Edit, build and test in that one checkout; its `build/` holds the incremental build, the devenv
+  and the helper scripts (`build/claude-tools/`). An app-made worktree under `.claude/worktrees/` can't
+  write there, which forces a commit, push and fetch for every fix.
 - Permissions are set in `.claude/settings.json`; anything that prompts there is something AGENTS.md
   already says to ask about.
 - Do not use computer-use or browser tools without asking first.
