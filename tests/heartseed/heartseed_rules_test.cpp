@@ -32,7 +32,9 @@ namespace
 
     void GrowthPointsAndAmounts()
     {
-        std::map<uint8_t, uint32_t> spent = { { 1, 2 }, { 3, 1 } };
+        std::map<uint8_t, uint32_t> spent;
+        spent[1] = 2;
+        spent[3] = 1;
         UMP_CHECK(UnspentPoints(5, spent) == 2);
         UMP_CHECK(UnspentPoints(2, spent) == 0);                     // over-spent (GM) never wraps
         UMP_CHECK(UnspentPoints(4, {}) == 4);
