@@ -9,6 +9,7 @@
   ],
   "steps": [
     "say .revive",
+    "say .go -9339.7 170.2 61.6 0",
     "say .heartseed revoke",
     "say .heartseed grant",
     "say .cooldown",
