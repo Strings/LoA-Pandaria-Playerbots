@@ -1224,6 +1224,12 @@ Learn how you play from server-side telemetry, then compile it offline into para
 - The server already sees every movement packet, cast, target change, emote, loot choice and chat line; log them with a server-side hook.
 - An addon adds what the server cannot see (UI panels opened).
 - Turn logging on early (Phase 1–2); every session before then is lost data. Distributions are usable after a few hours of play; a movement library wants tens of hours.
+- **Game-agnostic core (decided 2026-11-02):** the schema and the state machine it feeds are built around stock
+  class play: abilities, cooldowns, movement, targets, resources. They capture none of our custom systems
+  (Heartseed Gifts, riders, essences, and the like), so the bot brain can be open-sourced and reused as is. A
+  custom ability shows up only as an ordinary cast of its spell ID. When some bots get Heartseeds (twinks,
+  nemeses), handle them with heuristics added to the state machine through an adapter layer, not with new
+  telemetry fields.
 
 **Decision context (decided)**
 
