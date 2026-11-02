@@ -1,3 +1,5 @@
+> **Superseded:** T-001 is done. The current handoff is [HANDOFF-002.md](HANDOFF-002.md).
+
 # Handoff 001: from design to first build
 
 **Date:** 2026-10-31. **From:** the design sessions in Claude (claude.ai). **To:** Claude Code, first session.
