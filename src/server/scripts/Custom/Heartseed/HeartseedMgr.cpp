@@ -1323,7 +1323,7 @@ uint32 HeartseedMgr::GetGrowthStatSpell(Player const* player, Heartseed::GrowthS
 {
     if (!stat.MainStat)
         return stat.SpellId;
-    switch (Heartseed::MainStatFor(player->getClass(), player->GetTalentSpecialization()))
+    switch (Heartseed::MainStatFor(player->GetClass(), player->GetTalentSpecialization()))
     {
         case Heartseed::MainStat::Strength: return Heartseed::SPELL_GROWTH_STRENGTH;
         case Heartseed::MainStat::Agility:  return Heartseed::SPELL_GROWTH_AGILITY;
