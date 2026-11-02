@@ -54,6 +54,7 @@ something worth knowing.
 | `Custom/` | Our scripts go here. Already contains `PlayerStartScript.cpp`, `solocraft.cpp`, `npc_teleport.cpp`, `custom_items.cpp` and others; check them before writing similar code |
 | `Custom/Heartseed/` | The Heartseed living jewel system (stages, feeding, traits, essences) |
 | `Custom/GMTools/` | GM test suite (`Custom/GMTools/Checkpoints/`, `Custom/GMTools/Clock/`, `Custom/GMTools/Scenarios/`, `Custom/GMTools/Spectate/`, `Custom/GMTools/README.md` overview) |
+| `Custom/SpawnThinning/` | Startup thinning of crowded hostile open-world spawns (`.spawnthin`); world data untouched |
 | `Custom/MountedSpeed/` | `.mountspeed` inspect command and configuration docs |
 | `Custom/Respec/` | `.respec` inspect, reset, learn commands |
 | `Custom/Loadouts/` | Spec loadouts and gear pages (`.loadout`) |

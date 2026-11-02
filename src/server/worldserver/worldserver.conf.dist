@@ -5727,3 +5727,34 @@ Capture.NearbyBotRadius = 100
 # Brief notice explaining all-profession access and the extra-profession addon. Shown at login until the
 # character knows a third primary profession.
 Professions.IntroOnLogin = 1
+
+###################################################################################################
+# SPAWN THINNING (T-081)
+#
+#    SpawnThinning.Radius
+#        Description: At startup, hostile open-world spawns closer than this many yards to an older spawn are
+#                     left out of the map grids, so pulls stop bringing three or more mobs. World data is not
+#                     changed: 0 brings every spawn back after a restart. Never thinned: critters, NPCs with
+#                     services, rares and bosses, scripted spawns, formations, linked respawns, waypoint
+#                     patrols, pools and game events. .spawnthin shows what was left out.
+#        Default:     10 - (about 24 yd between mobs in a dense camp, beyond the 20 yd aggro radius)
+#                     0  - (off)
+
+SpawnThinning.Radius = 10
+
+#
+#    SpawnThinning.SameEntryOnly
+#        Description: Only thin spawns of the same creature entry (stacked duplicates) instead of any two
+#                     hostile mobs that crowd each other.
+#        Default:     0 - (any hostile mobs)
+
+SpawnThinning.SameEntryOnly = 0
+
+#
+#    SpawnThinning.Maps
+#        Description: Space-separated map ids to thin; instances and battlegrounds stay as designed.
+#        Default:     "0 1 530 571 870" - (Eastern Kingdoms, Kalimdor, Outland, Northrend, Pandaria)
+
+SpawnThinning.Maps = "0 1 530 571 870"
+
+###################################################################################################
