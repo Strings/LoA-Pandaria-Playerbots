@@ -73,6 +73,16 @@ World database (`sql/updates/world/2026_11_01_claude_06_heartseed_gifts.sql`, T-
   `spell_heartseed_xuen_lightning` (123996) plays `Heartseed.Gift.XuenLightningVisual` (default Chain Lightning's
   visual) from Xuen to each target his lightning hits, for monks' Xuen too.
 - `.seed sync` M lines carry the Gift spell id and the trait description, so the addon can show and cast it.
+- `heartseed_gift_rider` (`2026_11_02_claude_00_heartseed_gift_riders.sql`, T-082): one rider per Gift per stage
+  (Sapling 2, Bloom 3, Full Bloom 4); a character keeps every rider its stage has reached. `kind` is
+  `Heartseed::GiftRiderKind` (`HeartseedRules.h`); `amount`, `duration` and the helper `spell_id` are data. Aura
+  kinds `AddAura` the helper spell and overwrite its effect 0 amount and duration. Hooks: `spell_heartseed_gift`
+  (self aura, heal; Chi Torpedo is cast as 121828, which it also hooks), `spell_heartseed_ox_stomp` (119381:
+  target aura, absorb per hit, widen), `spell_heartseed_xuen_lightning` (extra targets),
+  `spell_heartseed_celestial_breath` (leech, DoT, cooldown per enemy hit) and the player kill hook (kill
+  cooldown, 0 = reset). `.heartseed info` lists the active riders.
+- Call of Xuen's tiger keeps up with a mount: out of combat it runs at its owner's speed and jumps to them past
+  `Heartseed.Gift.XuenCatchUpDistance` (25 yd), checked every `Heartseed.Gift.XuenFollowInterval` ms.
 
 World database (`sql/updates/world/2026_10_31_claude_04_heartseed_essence.sql`):
 

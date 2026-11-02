@@ -174,6 +174,8 @@ void HeartseedMgr::LoadConfig()
     _coreWeaponDamagePct = sConfigMgr->GetFloatDefault("Heartseed.Core.WeaponDamagePct", 5.0f);
     _procSpellId = sConfigMgr->GetIntDefault("Heartseed.Proc.SpellId", 16614);
     _xuenLightningVisual = sConfigMgr->GetIntDefault("Heartseed.Gift.XuenLightningVisual", 36);
+    _xuenCatchUpDistance = std::max(0.0f, sConfigMgr->GetFloatDefault("Heartseed.Gift.XuenCatchUpDistance", 25.0f));
+    _xuenFollowInterval = std::max(250, sConfigMgr->GetIntDefault("Heartseed.Gift.XuenFollowInterval", 1000));
     _procChance = sConfigMgr->GetFloatDefault("Heartseed.Proc.Chance", 10.0f);
     _procWeaponDamagePct = sConfigMgr->GetFloatDefault("Heartseed.Proc.WeaponDamagePct", 50.0f);
     _procCooldown = sConfigMgr->GetIntDefault("Heartseed.Proc.Cooldown", 3000);
@@ -375,6 +377,43 @@ bool HeartseedMgr::LoadData(std::size_t* loadedRows)
             trait->second.GiftDuration = fields[3].GetUInt32();
             trait->second.GiftBaseAmount = fields[4].GetInt32();
             trait->second.GiftAmountPerItemLevel = fields[5].GetFloat();
+        } while (result->NextRow());
+    }
+
+    {
+        QueryResult result = WorldDatabase.Query("SELECT `trait_id`, `stage`, `kind`, `amount`, `duration`, `spell_id`, NULL AS sentinel FROM `heartseed_gift_rider` UNION ALL SELECT NULL, NULL, NULL, NULL, NULL, NULL, 'end' ORDER BY `trait_id`, `stage`");
+        if (!result)
+            return false;
+        do
+        {
+            Field* fields = result->Fetch();
+            if (!fields[6].IsNull())
+                continue;
+            uint32 traitId = fields[0].GetUInt32();
+            Heartseed::GiftRider rider;
+            rider.Stage = fields[1].GetUInt8();
+            uint8 kind = fields[2].GetUInt8();
+            rider.Kind = Heartseed::GiftRiderKind(kind);
+            rider.Amount = fields[3].GetInt32();
+            rider.Duration = fields[4].GetUInt32();
+            rider.SpellId = fields[5].GetUInt32();
+            auto trait = traits.find(traitId);
+            if (trait == traits.end() || !trait->second.GiftSpellId)
+            {
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_gift_rider`: trait %u has no Gift, reload aborted.", traitId);
+                return false;
+            }
+            if (rider.Stage >= stages.size() || !kind || kind > Heartseed::MaxGiftRiderKind)
+            {
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_gift_rider`: trait %u stage %u has an unknown stage or kind %u, reload aborted.", traitId, rider.Stage, kind);
+                return false;
+            }
+            if (rider.SpellId && !sSpellMgr->GetSpellInfo(rider.SpellId))
+            {
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_gift_rider`: trait %u stage %u uses unknown spell %u, reload aborted.", traitId, rider.Stage, rider.SpellId);
+                return false;
+            }
+            trait->second.GiftRiders.push_back(rider);
         } while (result->NextRow());
     }
 
@@ -1786,7 +1825,7 @@ bool HeartseedMgr::GetActiveGift(Player const* player, uint32 spellId, Heartseed
 {
     std::lock_guard<std::mutex> guard(_lock);
     auto state = _states.find(player->GetGUID().GetCounter());
-    if (state == _states.end() || !state->second.TaughtGifts.count(spellId))
+    if (state == _states.end() || (spellId && !state->second.TaughtGifts.count(spellId)))
         return false;
     auto loadout = state->second.Loadouts.find(uint16(player->GetTalentSpecialization()));
     if (loadout == state->second.Loadouts.end())
@@ -1794,7 +1833,9 @@ bool HeartseedMgr::GetActiveGift(Player const* player, uint32 spellId, Heartseed
     for (uint32 traitId : loadout->second)
     {
         auto trait = _traits.find(traitId);
-        if (trait != _traits.end() && trait->second.GiftSpellId == spellId)
+        if (trait == _traits.end() || !trait->second.GiftSpellId)
+            continue;
+        if (spellId ? trait->second.GiftSpellId == spellId : state->second.TaughtGifts.count(trait->second.GiftSpellId) > 0)
         {
             out = trait->second;
             return true;
@@ -1808,6 +1849,34 @@ int32 HeartseedMgr::GetGiftAmount(Player const* player, Heartseed::TraitInfo con
     Item* weapon = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
     uint32 itemLevel = weapon && !weapon->IsBroken() && weapon->GetTemplate()->Class == ITEM_CLASS_WEAPON ? weapon->GetItemLevel() : 0;
     return Heartseed::TraitAmount(gift.GiftBaseAmount, gift.GiftAmountPerItemLevel, itemLevel);
+}
+
+std::vector<Heartseed::GiftRider> HeartseedMgr::GetGiftRiders(Player const* player, Heartseed::TraitInfo const& gift) const
+{
+    return Heartseed::ActiveRiders(gift.GiftRiders, GetStage(player));
+}
+
+bool HeartseedMgr::GetGiftRider(Player const* player, uint32 spellId, Heartseed::GiftRiderKind kind, Heartseed::GiftRider& out) const
+{
+    Heartseed::TraitInfo gift;
+    if (!GetActiveGift(player, spellId, gift))
+        return false;
+    for (Heartseed::GiftRider const& rider : GetGiftRiders(player, gift))
+    {
+        if (rider.Kind == kind)
+        {
+            out = rider;
+            return true;
+        }
+    }
+    return false;
+}
+
+void HeartseedMgr::CutGiftCooldown(Player* player, uint32 spellId, int32 ms) const
+{
+    uint32 cut = Heartseed::CooldownCut(player->GetSpellCooldownDelay(spellId), ms);
+    if (cut)
+        player->ModifySpellCooldown(spellId, -int32(cut));
 }
 
 void HeartseedMgr::RemoveAuras(Player* player, std::map<uint32, int32> const& auras)

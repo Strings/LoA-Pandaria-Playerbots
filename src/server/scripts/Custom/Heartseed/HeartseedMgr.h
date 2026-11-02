@@ -194,7 +194,8 @@ namespace Heartseed
         uint32 GiftDuration = 0;                      // Gift summon lifetime in ms, replacing the spell's; 0 keeps it
         int32 GiftBaseAmount = 0;                     // Gift power (damage per hit for scaled gifts) at item level 0
         float GiftAmountPerItemLevel = 0.0f;
-        int32 BaseAmount = 0;                         // effect 0 amount at item level 0
+        std::vector<GiftRider> GiftRiders;            // heartseed_gift_rider, ordered by stage
+        int32 BaseAmount = 0;                        // effect 0 amount at item level 0
         float AmountPerItemLevel = 0.0f;              // added per main-hand item level
         std::string Name;
         std::string Description;
@@ -337,9 +338,15 @@ public:
     // main-hand weapon. Cheap when nothing changed.
     void RefreshTraits(Player* player);
     // The active Celestial Gift trait that taught spellId to the character; false when none did. Spell scripts
-    // use it for the Gift cooldown and power.
+    // use it for the Gift cooldown and power. spellId 0 finds whichever Gift the character was taught.
     bool GetActiveGift(Player const* player, uint32 spellId, Heartseed::TraitInfo& out) const;
     int32 GetGiftAmount(Player const* player, Heartseed::TraitInfo const& gift) const;
+    // The Gift's riders the character's stage has reached.
+    std::vector<Heartseed::GiftRider> GetGiftRiders(Player const* player, Heartseed::TraitInfo const& gift) const;
+    // Rider of this kind from spellId's active Gift; false when the character has none.
+    bool GetGiftRider(Player const* player, uint32 spellId, Heartseed::GiftRiderKind kind, Heartseed::GiftRider& out) const;
+    // Cuts the Gift's cooldown by ms (0 = reset), never past ready.
+    void CutGiftCooldown(Player* player, uint32 spellId, int32 ms) const;
     // Traits plus glow; called after any state change.
     void Refresh(Player* player);
 
@@ -351,6 +358,8 @@ public:
     uint32 GetProcDamage(Player* player) const { return GetProcDamage(player, _procWeaponDamagePct); }
     uint32 GetProcSpellId() const { return _procSpellId; }
     uint32 GetXuenLightningVisual() const { return _xuenLightningVisual; }
+    float GetXuenCatchUpDistance() const { return _xuenCatchUpDistance; }
+    uint32 GetXuenFollowInterval() const { return _xuenFollowInterval; }
 
     uint8 GetStage(Player const* player) const;
     std::string GetStageName(uint8 stage) const;
@@ -376,6 +385,8 @@ private:
 
     bool _enabled = true;
     uint32 _xuenLightningVisual = 0;
+    float _xuenCatchUpDistance = 0.0f;
+    uint32 _xuenFollowInterval = 1000;
     float _coreWeaponDamagePct = 0.0f;
     uint32 _procSpellId = 0;
     float _procChance = 0.0f;

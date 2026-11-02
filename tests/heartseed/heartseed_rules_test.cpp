@@ -43,6 +43,28 @@ namespace
         UMP_CHECK(Unlocks().EssenceSlots == before);
         Unlocks() = saved;
     }
+
+    void GiftRidersByStage()
+    {
+        std::vector<GiftRider> riders = {
+            { 2, GiftRiderKind::SelfAura, 15, 10000, 26297 },
+            { 3, GiftRiderKind::ExtraTargets, 2, 0, 0 },
+            { 4, GiftRiderKind::KillCooldown, 1000, 0, 0 } };
+        UMP_CHECK(ActiveRiders(riders, 1).empty());                  // Sprout: the bare Gift
+        UMP_CHECK(ActiveRiders(riders, 3).size() == 2);              // Bloom keeps Sapling's rider
+        UMP_CHECK(ActiveRiders(riders, 5).size() == 3);              // Celestial Weapon keeps all three
+        UMP_CHECK(ActiveRiders(riders, 3)[1].Kind == GiftRiderKind::ExtraTargets);
+    }
+
+    void GiftRiderAmounts()
+    {
+        UMP_CHECK(PercentOf(200000, 10) == 20000);
+        UMP_CHECK(PercentOf(1000, 0) == 0 && PercentOf(1000, -5) == 0);
+        UMP_CHECK(PercentOf(UINT32_MAX, 200) == UINT32_MAX);
+        UMP_CHECK(CooldownCut(20000, 1000) == 1000);
+        UMP_CHECK(CooldownCut(500, 1500) == 500);                    // never past ready
+        UMP_CHECK(CooldownCut(17000, 0) == 17000);                   // 0 is a full reset
+    }
 }
 
 void RunTests()
@@ -51,4 +73,6 @@ void RunTests()
     DefaultUnlockLevels();
     ConfiguredUnlockLevels();
     RejectedUnlockLevels();
+    GiftRidersByStage();
+    GiftRiderAmounts();
 }

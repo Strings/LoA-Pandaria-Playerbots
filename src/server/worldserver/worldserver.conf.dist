@@ -5416,6 +5416,21 @@ Heartseed.Proc.SpellId = 16614
 Heartseed.Gift.XuenLightningVisual = 36
 
 #
+#    Heartseed.Gift.XuenCatchUpDistance
+#        Description: Out of combat, Call of Xuen's tiger runs at its owner's speed (mounted too) and jumps
+#                     to its owner once farther away than this many yards. 0 turns the jump off.
+#        Default:     25
+
+Heartseed.Gift.XuenCatchUpDistance = 25
+
+#
+#    Heartseed.Gift.XuenFollowInterval
+#        Description: How often, in milliseconds, the tiger's speed and distance are checked (at least 250).
+#        Default:     1000
+
+Heartseed.Gift.XuenFollowInterval = 1000
+
+#
 #    Heartseed.Proc.Chance
 #        Description: Chance in percent for damage the character deals to roll the core proc.
 #        Default:     10

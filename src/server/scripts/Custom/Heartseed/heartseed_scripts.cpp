@@ -7,10 +7,13 @@
 #include "Custom/Reload/ReloadRegistry.h"
 #include "HeartseedMgr.h"
 #include "Log.h"
+#include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "RBAC.h"
 #include "ScriptMgr.h"
+#include "SpellAuraEffects.h"
+#include "SpellAuras.h"
 #include "SpellInfo.h"
 #include "SpellScript.h"
 #include "TemporarySummon.h"
@@ -21,6 +24,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <map>
+#include <mutex>
+#include <set>
 #include <string>
 
 // Heartseed block of docs/ID_RANGES.md; linked to role 197 by sql/updates/master/auth/2026_10_31_claude_02_heartseed_command.sql
@@ -42,6 +48,78 @@ static char const* GetPathName(Heartseed::Path path)
         default:                      return "none";
     }
 }
+
+// A Gift rider's helper aura: effect 0 carries the rider's amount, the rider's duration replaces the spell's.
+static void ApplyRiderAura(Unit* caster, Unit* target, Heartseed::GiftRider const& rider, int32 amount)
+{
+    if (!rider.SpellId || !target->IsAlive())
+        return;
+    Aura* aura = caster->AddAura(rider.SpellId, target);
+    if (!aura)
+        return;
+    if (AuraEffect* effect = aura->GetEffect(EFFECT_0))
+        effect->ChangeAmount(amount);
+    if (rider.Duration)
+    {
+        aura->SetMaxDuration(int32(rider.Duration));
+        aura->SetDuration(int32(rider.Duration));
+    }
+}
+
+// Kill riders (Xuen's cooldown cut, Chi-Ji's reset) of the character's Gift.
+static void HandleGiftKill(Player* player, Creature* killed)
+{
+    if (killed->GetCreatureType() == CREATURE_TYPE_CRITTER)
+        return;
+    Heartseed::TraitInfo gift;
+    if (!sHeartseedMgr->GetActiveGift(player, 0, gift) || player->HasTalent(gift.GiftSpellId, player->GetActiveSpec()))
+        return;
+    for (Heartseed::GiftRider const& rider : sHeartseedMgr->GetGiftRiders(player, gift))
+        if (rider.Kind == Heartseed::GiftRiderKind::KillCooldown)
+            sHeartseedMgr->CutGiftCooldown(player, gift.GiftSpellId, rider.Amount);
+}
+
+// Call of Xuen: a summoned tiger can't keep up with a mount. Out of combat it runs at its owner's speed and
+// jumps to them past Heartseed.Gift.XuenCatchUpDistance; checks repeat until the tiger is gone.
+class HeartseedXuenFollowEvent : public BasicEvent
+{
+public:
+    HeartseedXuenFollowEvent(Player* owner, ObjectGuid xuen) : _owner(owner), _xuen(xuen) { }
+
+    bool Execute(uint64 /*time*/, uint32 /*diff*/) override
+    {
+        Creature* xuen = ObjectAccessor::GetCreature(*_owner, _xuen);
+        if (!xuen || !xuen->IsAlive())
+            return true;
+
+        if (_owner->IsInCombat() || xuen->IsInCombat())
+            xuen->SetSpeed(MOVE_RUN, xuen->GetCreatureTemplate()->speed_run);
+        else
+        {
+            float ownerRate = _owner->IsFlying() ? _owner->GetSpeedRate(MOVE_FLIGHT) : _owner->GetSpeedRate(MOVE_RUN);
+            xuen->SetSpeed(MOVE_RUN, std::max(ownerRate, xuen->GetCreatureTemplate()->speed_run));
+            float catchUp = sHeartseedMgr->GetXuenCatchUpDistance();
+            if (catchUp > 0.0f && (xuen->GetMapId() != _owner->GetMapId() || !xuen->IsWithinDist(_owner, catchUp)))
+            {
+                Position pos = _owner->GetNearPosition(2.0f, float(M_PI));
+                if (xuen->GetMapId() == _owner->GetMapId())
+                    xuen->NearTeleportTo(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), _owner->GetOrientation());
+            }
+        }
+
+        _owner->m_Events.AddEventAtOffset(new HeartseedXuenFollowEvent(_owner, _xuen), sHeartseedMgr->GetXuenFollowInterval());
+        return true;
+    }
+
+private:
+    Player* _owner;
+    ObjectGuid _xuen;
+};
+
+// Serpent's Breath cuts its cooldown once per distinct enemy a channel hits; the set restarts with each cast.
+// Ticks run on map threads, so the sets are locked.
+static std::mutex s_breathHitsLock;
+static std::map<ObjectGuid, std::set<ObjectGuid>> s_breathHits;
 
 class heartseed_worldscript : public WorldScript
 {
@@ -185,6 +263,12 @@ public:
             sHeartseedMgr->OnKillCredit(player, killed);
     }
 
+    void OnCreatureKill(Player* player, Creature* killed) override
+    {
+        if (!player->GetSession()->IsBot())
+            HandleGiftKill(player, killed);
+    }
+
     void OnDungeonCompleted(Player* player, uint32 /*dungeonId*/) override
     {
         if (!player->GetSession()->IsBot())
@@ -317,6 +401,16 @@ public:
             uint32(sHeartseedMgr->GetGlowEnchant(target)), uint32(dominant), GetPathName(dominant), DescribeFlags(state).c_str(),
             uint32(time(nullptr)) - state.GrantedTime, sHeartseedMgr->IsEnabled() ? "" : " (Heartseed.Enabled = 0)");
         handler->PSendSysMessage("Loadout: %s.", DescribeLoadout(state, specId).c_str());
+
+        Heartseed::TraitInfo gift;
+        if (sHeartseedMgr->GetActiveGift(target, 0, gift))
+        {
+            std::string riders;
+            for (Heartseed::GiftRider const& rider : sHeartseedMgr->GetGiftRiders(target, gift))
+                riders += (riders.empty() ? "" : ", ") + std::string("stage ") + std::to_string(rider.Stage) + " kind " +
+                    std::to_string(uint32(rider.Kind)) + " amount " + std::to_string(rider.Amount);
+            handler->PSendSysMessage("Gift spell %u, riders: %s.", gift.GiftSpellId, riders.empty() ? "none yet" : riders.c_str());
+        }
 
         std::string auras;
         for (auto const& [spellId, amount] : state.AppliedAuras)
@@ -1022,7 +1116,8 @@ class spell_heartseed_gift : public SpellScript
     void HandleAfterCast()
     {
         Player* player = GetCaster()->ToPlayer();
-        uint32 spellId = GetSpellInfo()->Id;
+        // The client casts the spellbook spell, but the server casts Chi Torpedo as 121828 in its place.
+        uint32 spellId = GetSpellInfo()->Id == SPELL_CHI_TORPEDO_CAST ? SPELL_CHI_TORPEDO : GetSpellInfo()->Id;
         if (!player || player->HasTalent(spellId, player->GetActiveSpec()))
             return;
         Heartseed::TraitInfo gift;
@@ -1036,12 +1131,37 @@ class spell_heartseed_gift : public SpellScript
             player->AddCustomCooldown(spellId, Milliseconds(gift.GiftCooldown));
         }
 
-        if (gift.GiftDuration && GetSpellInfo()->Effects[EFFECT_0].Effect == SPELL_EFFECT_SUMMON)
+        if (GetSpellInfo()->Effects[EFFECT_0].Effect == SPELL_EFFECT_SUMMON)
         {
             uint32 entry = uint32(GetSpellInfo()->Effects[EFFECT_0].MiscValue);
             for (TempSummon* summon : player->GetSummons())
-                if (summon->GetEntry() == entry && summon->GetTimer() > gift.GiftDuration)
+            {
+                if (summon->GetEntry() != entry)
+                    continue;
+                if (gift.GiftDuration && summon->GetTimer() > gift.GiftDuration)
                     summon->UnSummon(gift.GiftDuration);
+                player->m_Events.AddEventAtOffset(new HeartseedXuenFollowEvent(player, summon->GetGUID()), sHeartseedMgr->GetXuenFollowInterval());
+            }
+        }
+
+        {
+            std::lock_guard<std::mutex> guard(s_breathHitsLock);
+            s_breathHits.erase(player->GetGUID());
+        }
+
+        for (Heartseed::GiftRider const& rider : sHeartseedMgr->GetGiftRiders(player, gift))
+        {
+            switch (rider.Kind)
+            {
+                case Heartseed::GiftRiderKind::SelfAura:
+                    ApplyRiderAura(player, player, rider, rider.Amount);
+                    break;
+                case Heartseed::GiftRiderKind::HealPct:
+                    player->HealBySpell(player, GetSpellInfo(), Heartseed::PercentOf(player->GetMaxHealth(), rider.Amount));
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
@@ -1049,6 +1169,9 @@ class spell_heartseed_gift : public SpellScript
     {
         AfterCast += SpellCastFn(spell_heartseed_gift::HandleAfterCast);
     }
+
+    static constexpr uint32 SPELL_CHI_TORPEDO = 115008;
+    static constexpr uint32 SPELL_CHI_TORPEDO_CAST = 121828;
 };
 
 // 124947 - Celestial Breath tick. The creature spell's damage is replaced by the Gift's power, which grows with the
@@ -1063,8 +1186,39 @@ class spell_heartseed_celestial_breath : public SpellScript
         if (!player)
             return;
         Heartseed::TraitInfo gift;
-        if (sHeartseedMgr->GetActiveGift(player, GIFT_SPELL_CELESTIAL_BREATH, gift))
-            SetHitDamage(sHeartseedMgr->GetGiftAmount(player, gift));
+        if (!sHeartseedMgr->GetActiveGift(player, GIFT_SPELL_CELESTIAL_BREATH, gift))
+            return;
+        int32 power = sHeartseedMgr->GetGiftAmount(player, gift);
+        SetHitDamage(power);
+
+        Unit* target = GetHitUnit();
+        for (Heartseed::GiftRider const& rider : sHeartseedMgr->GetGiftRiders(player, gift))
+        {
+            switch (rider.Kind)
+            {
+                case Heartseed::GiftRiderKind::LeechPct:
+                    player->HealBySpell(player, GetSpellInfo(), Heartseed::PercentOf(uint32(std::max(power, 0)), rider.Amount));
+                    break;
+                case Heartseed::GiftRiderKind::TargetDot:
+                    if (target)
+                        ApplyRiderAura(player, target, rider, int32(Heartseed::PercentOf(uint32(std::max(power, 0)), rider.Amount)));
+                    break;
+                case Heartseed::GiftRiderKind::HitCooldown:
+                {
+                    bool firstHit = false;
+                    if (target)
+                    {
+                        std::lock_guard<std::mutex> guard(s_breathHitsLock);
+                        firstHit = s_breathHits[player->GetGUID()].insert(target->GetGUID()).second;
+                    }
+                    if (firstHit)
+                        sHeartseedMgr->CutGiftCooldown(player, GIFT_SPELL_CELESTIAL_BREATH, rider.Amount);
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
     }
 
     void Register() override
@@ -1088,16 +1242,121 @@ class spell_heartseed_xuen_lightning : public SpellScript
             GetCaster()->SendPlaySpellVisual(visual, GetHitUnit()->GetGUID(), 0.0f);
     }
 
+    // Bloom rider: the lightning arcs to more enemies near the ones it already strikes.
+    void AddChainTargets(std::list<WorldObject*>& targets)
+    {
+        Unit* xuen = GetCaster();
+        Player* owner = xuen->GetOwner() ? xuen->GetOwner()->ToPlayer() : nullptr;
+        Heartseed::GiftRider rider;
+        if (!owner || targets.empty() || owner->HasTalent(GIFT_SPELL_INVOKE_XUEN, owner->GetActiveSpec())
+            || !sHeartseedMgr->GetGiftRider(owner, GIFT_SPELL_INVOKE_XUEN, Heartseed::GiftRiderKind::ExtraTargets, rider))
+            return;
+
+        std::list<Unit*> nearby;
+        xuen->GetAttackableUnitListInRange(nearby, CHAIN_RANGE);
+        int32 added = 0;
+        for (Unit* unit : nearby)
+        {
+            if (added >= rider.Amount)
+                break;
+            if (std::find(targets.begin(), targets.end(), unit) != targets.end() || !xuen->IsValidAttackTarget(unit)
+                || !xuen->IsWithinLOSInMap(unit))
+                continue;
+            targets.push_back(unit);
+            ++added;
+        }
+    }
+
     void Register() override
     {
         OnEffectHitTarget += SpellEffectFn(spell_heartseed_xuen_lightning::HandleHit, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_heartseed_xuen_lightning::AddChainTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
     }
+
+    static constexpr uint32 GIFT_SPELL_INVOKE_XUEN = 123904;
+    static constexpr float CHAIN_RANGE = 15.0f;
+};
+
+// 119381 - Leg Sweep as Niuzao's Gift (Ox Stomp): stage riders weaken stunned enemies, shield the caster per enemy
+// hit, widen the stomp and lengthen the stun. A monk's own Leg Sweep is left alone.
+class spell_heartseed_ox_stomp : public SpellScript
+{
+    PrepareSpellScript(spell_heartseed_ox_stomp);
+
+    bool Load() override
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Heartseed::TraitInfo gift;
+        if (!player || player->HasTalent(GetSpellInfo()->Id, player->GetActiveSpec())
+            || !sHeartseedMgr->GetActiveGift(player, GetSpellInfo()->Id, gift))
+            return true;
+        _riders = sHeartseedMgr->GetGiftRiders(player, gift);
+        return true;
+    }
+
+    Heartseed::GiftRider const* Rider(Heartseed::GiftRiderKind kind) const
+    {
+        for (Heartseed::GiftRider const& rider : _riders)
+            if (rider.Kind == kind)
+                return &rider;
+        return nullptr;
+    }
+
+    void Widen(std::list<WorldObject*>& targets)
+    {
+        Heartseed::GiftRider const* rider = Rider(Heartseed::GiftRiderKind::Widen);
+        if (!rider || rider->Amount <= 0)
+            return;
+        Unit* caster = GetCaster();
+        float radius = GetSpellInfo()->Effects[EFFECT_0].CalcRadius(caster) * (100.0f + float(rider->Amount)) / 100.0f;
+        std::list<Unit*> nearby;
+        caster->GetAttackableUnitListInRange(nearby, radius);
+        for (Unit* unit : nearby)
+            if (std::find(targets.begin(), targets.end(), unit) == targets.end() && caster->IsValidAttackTarget(unit)
+                && caster->IsWithinLOSInMap(unit))
+                targets.push_back(unit);
+    }
+
+    void HandleHit()
+    {
+        Unit* target = GetHitUnit();
+        if (_riders.empty() || !target)
+            return;
+        ++_hits;
+        if (Heartseed::GiftRider const* rider = Rider(Heartseed::GiftRiderKind::TargetAura))
+            ApplyRiderAura(GetCaster(), target, *rider, rider->Amount);
+        if (Heartseed::GiftRider const* rider = Rider(Heartseed::GiftRiderKind::Widen))
+        {
+            if (Aura* stun = GetHitAura())
+            {
+                stun->SetMaxDuration(stun->GetMaxDuration() + int32(rider->Duration));
+                stun->SetDuration(stun->GetDuration() + int32(rider->Duration));
+            }
+        }
+
+        // Targets are hit after the cast finishes, so the shield grows with each hit instead of being set once.
+        if (Heartseed::GiftRider const* rider = Rider(Heartseed::GiftRiderKind::AbsorbPerTarget))
+        {
+            Unit* caster = GetCaster();
+            uint32 perTarget = Heartseed::PercentOf(caster->GetMaxHealth(), rider->Amount);
+            ApplyRiderAura(caster, caster, *rider, int32(std::min<uint64>(uint64(perTarget) * _hits, INT32_MAX)));
+        }
+    }
+
+    void Register() override
+    {
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_heartseed_ox_stomp::Widen, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
+        AfterHit += SpellHitFn(spell_heartseed_ox_stomp::HandleHit);
+    }
+
+    std::vector<Heartseed::GiftRider> _riders;
+    uint32 _hits = 0;
 };
 
 void AddSC_heartseed()
 {
     if (!CustomReload::Tables().RegisterGroup({ "heartseed", "heartseed_stage", "heartseed_glow", "heartseed_trait",
-        "heartseed_gift", "heartseed_essence_template", "heartseed_essence_source", "twink_item", "heartseed_shrine" }, "Heartseed world data (one coherent snapshot)", []
+        "heartseed_gift", "heartseed_gift_rider", "heartseed_essence_template", "heartseed_essence_source", "twink_item", "heartseed_shrine" }, "Heartseed world data (one coherent snapshot)", []
     {
         std::size_t rows = 0;
         bool success = sHeartseedMgr->LoadData(&rows);
@@ -1112,4 +1371,5 @@ void AddSC_heartseed()
     new spell_script<spell_heartseed_gift>("spell_heartseed_gift");
     new spell_script<spell_heartseed_celestial_breath>("spell_heartseed_celestial_breath");
     new spell_script<spell_heartseed_xuen_lightning>("spell_heartseed_xuen_lightning");
+    new spell_script<spell_heartseed_ox_stomp>("spell_heartseed_ox_stomp");
 }

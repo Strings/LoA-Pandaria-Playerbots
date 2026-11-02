@@ -1,0 +1,59 @@
+{
+  "name": "heartseed-riders",
+  "timeout_seconds": 180,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "2"
+  ],
+  "steps": [
+    "say .revive",
+    "say .go -9339.7 170.2 61.6 0",
+    "say .heartseed revoke",
+    "say .heartseed grant",
+    "say .character level Seedtest 85",
+    "say .cooldown",
+    "say .heartseed major 10 6",
+    "say .heartseed info",
+    "say .npc add temp 6",
+    "say .npc add temp 6",
+    "cast 119381",
+    "wait-for evt=never timeout=1",
+    "say .list auras",
+    "say .heartseed major 10 4",
+    "cast 115008",
+    "wait-for evt=never timeout=1",
+    "say .list auras",
+    "say .heartseed major 10 2",
+    "say .npc add temp 6",
+    "npcguid 6",
+    "cast 123904 npc",
+    "wait-for evt=never timeout=1",
+    "say .list auras",
+    "say .heartseed revoke",
+    "say .character level Seedtest 10"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "contains",
+      "text": "riders: stage 2 kind 5 amount -20, stage 3 kind 6 amount 5, stage 4 kind 7 amount 50."
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)step: cast 119381.*?11426.*?step: cast 115008.*?2983.*?step: cast 123904.*?26297"
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback"
+    }
+  ]
+}

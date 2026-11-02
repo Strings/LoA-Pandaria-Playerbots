@@ -82,6 +82,7 @@ The first playtest starts when the quick wins are merged. T-003, T-004 and T-031
 | T-050 | Commit the T-045 twink buff generator: regenerates `2026_10_31_codex_00_twink_gear.sql` (or a successor) with the target percentage, stat weights and brackets as arguments, so twink tuning can change after playtests without redoing the research | `tools/twink-tuning/` | gemini | done |
 | T-080 | Celestial Gifts: the level 10 major becomes an active ability per Celestial (Xuen, Chi-Ji, Niuzao, Yu'lon) reusing client spells, with Gift cooldowns and power as data; Heartseed panel redesign (mandala, castable Gift, major nodes, sounds) with art slots, prompt sheet and an art slicer tool | `src/server/scripts/Custom/Heartseed/`, `addons/Heartseed/`, `tools/art-slicer/`, `sql/updates/world/` | claude | done |
 | T-081 | Spawn thinning: at startup, leave hostile open-world spawns that crowd an older one (config radius) out of the grids, world data untouched; `.spawnthin` inspect commands; pure rule unit-tested | `src/server/scripts/Custom/SpawnThinning/`, `tests/spawn_thinning/` | claude | done |
+| T-082 | Celestial Gift riders: each Heartseed stage (Sapling, Bloom, Full Bloom) adds a data-driven rider to the Gift (decided list in DESIGN.md); Call of Xuen keeps up with a mounted owner | src/server/scripts/Custom/Heartseed/, sql/updates/world/ | claude | done |
 
 ### Tooling (v0.1, cheap first)
 
