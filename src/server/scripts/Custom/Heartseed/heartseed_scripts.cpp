@@ -93,11 +93,11 @@ public:
             return true;
 
         if (_owner->IsInCombat() || xuen->IsInCombat())
-            xuen->SetSpeedRate(MOVE_RUN, xuen->GetCreatureTemplate()->speed_run);
+            xuen->SetSpeed(MOVE_RUN, xuen->GetCreatureTemplate()->speed_run);
         else
         {
             float ownerRate = _owner->IsFlying() ? _owner->GetSpeedRate(MOVE_FLIGHT) : _owner->GetSpeedRate(MOVE_RUN);
-            xuen->SetSpeedRate(MOVE_RUN, std::max(ownerRate, xuen->GetCreatureTemplate()->speed_run));
+            xuen->SetSpeed(MOVE_RUN, std::max(ownerRate, xuen->GetCreatureTemplate()->speed_run));
             float catchUp = sHeartseedMgr->GetXuenCatchUpDistance();
             if (catchUp > 0.0f && (xuen->GetMapId() != _owner->GetMapId() || !xuen->IsWithinDist(_owner, catchUp)))
             {
@@ -401,6 +401,16 @@ public:
             uint32(sHeartseedMgr->GetGlowEnchant(target)), uint32(dominant), GetPathName(dominant), DescribeFlags(state).c_str(),
             uint32(time(nullptr)) - state.GrantedTime, sHeartseedMgr->IsEnabled() ? "" : " (Heartseed.Enabled = 0)");
         handler->PSendSysMessage("Loadout: %s.", DescribeLoadout(state, specId).c_str());
+
+        Heartseed::TraitInfo gift;
+        if (sHeartseedMgr->GetActiveGift(target, 0, gift))
+        {
+            std::string riders;
+            for (Heartseed::GiftRider const& rider : sHeartseedMgr->GetGiftRiders(target, gift))
+                riders += (riders.empty() ? "" : ", ") + std::string("stage ") + std::to_string(rider.Stage) + " kind " +
+                    std::to_string(uint32(rider.Kind)) + " amount " + std::to_string(rider.Amount);
+            handler->PSendSysMessage("Gift spell %u, riders: %s.", gift.GiftSpellId, riders.empty() ? "none yet" : riders.c_str());
+        }
 
         std::string auras;
         for (auto const& [spellId, amount] : state.AppliedAuras)
