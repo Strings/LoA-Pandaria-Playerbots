@@ -346,8 +346,13 @@ Later threads: Jaina's reconciliation when she sees the seed bloom in Pandaria; 
 
 **Progression (decided)**
 
-- **Growth** is the leveling currency: mostly from feeding weapons early, plus quests (small), rares and events (large) and first dungeon clears. Sha energy stays separate for the endgame and reincarnation.
-- **Rank is capped by character level**; awakening beats (story flags) raise the cap.
+- **Three tracks, no rank cap (decided 2026-11-02, replaces the level-capped rank):**
+  - **Growth XP** (per character): battleground wins and dungeon and raid boss kills near your level fill a bar; each
+    level of it grants a small permanent percentage stat point (stamina, main stat or a secondary). No cap.
+  - **Feeding** (account-wide): replaced weapons are consumed for essences, appearances and the seed's identity.
+  - **Character level** unlocks the stages and the major choices (10, 25, 40, 55, 70, 85).
+  - Low-level balance comes from scaling every Heartseed effect with the character's own health, damage or healing,
+    never flat numbers. Sha energy stays separate for the endgame and reincarnation.
 
 | Stage | Levels | Glow | Unlocks |
 | --- | --- | --- | --- |
@@ -362,13 +367,43 @@ Later threads: Jaina's reconciliation when she sees the seed bloom in Pandaria; 
 
 1. **Core passive:** bonus weapon damage plus one proc, both scaling with weapon item level.
 2. **Four Celestial paths** with minor traits that fill in automatically and a major choice at each major tier (10, 25, 40, 55, 70, 85, between MoP's talent tiers at 15, 30, 45, 60, 75, 90): Xuen the Tiger (offense and speed), Chi-Ji the Crane (healing and hope), Niuzao the Ox (endurance and defense), Yu'lon the Serpent (wisdom and spell power).
-   - **The Celestial Gift (decided, replaces the stat major at 10).** The major at 10 is an active ability, one per Celestial, on a 1.5 to 2 minute cooldown: Xuen calls a spectral tiger that fights beside you; Chi-Ji's Crane Rush dashes forward healing you and allies you pass; Niuzao's Ox Stomp knocks down nearby enemies; Yu'lon's Serpent Breath is a jade cone that damages and returns mana. Lesson from the Heart of Azeroth and Legion artifacts: the system orbits one button you press, and later unlocks change that button visibly.
+   - **The Celestial Gift (decided, replaces the stat major at 10).** The major at 10 is an active ability, one per Celestial. Lesson from the Heart of Azeroth and Legion artifacts: the system orbits one button you press, and later unlocks change that button visibly.
+   - **Active play, not big cooldowns (decided 2026-11-02, replaces the 1.5 to 2 minute Gifts).** Each path has a
+     meter or proc built by normal play of any class, and the Gift spends it. Cooldowns are moderate (20 to 60 s)
+     and play shortens them; majors change how the meter fills or what spending it does. Proc-gated buttons are
+     refused server-side until the proc is up, and the Heartseed addon glows the button (no client patch or hotfix).
+     Numbers are placeholders until playtests.
+
+     | Path | Builds from | Gift | Example majors |
+     | --- | --- | --- | --- |
+     | Xuen | Crits build Thunder (5 stacks) | Xuen's tiger (kept), 60 s; crits and kills shorten it | Pounce: 6 s after a kill, leap to a new enemy. Storm Fang: at 5 Thunder the next hit chains lightning |
+     | Chi-Ji | Healing done or received builds Hope (self-heals, potions, lifesteal count) | Crane's Plume, 2 charges, ~30 s recharge: heals you and nearby allies, more per Hope spent | Last Hope: a fatal blow leaves you at 30% health; take healing worth 40% of your health within 10 s or die (long internal cooldown that healing shortens). Kindred Flame: Plume splashes to the lowest ally |
+     | Niuzao | A hit over 8% of your health lights the Gift for 6 s | Niuzao's Retort, 20 s, only while lit: a shockwave that hits back and shields you for part of the damage taken in the last 5 s | Stand Firm: dodges and parries also light it. Unyielding: Retort taunts and adds brief damage reduction |
+     | Yu'lon | Spell casts build Coil (5 stacks) | Serpent's Breath (kept), 30 s, +20% per Coil spent; spell crits shorten it | Jade Rune: Breath leaves ground runes that grant haste while you stand in them. Second Breath: spending 5 Coil makes the next spell instant |
+
+   - **Nothing from the monk kit (decided 2026-11-02).** No Gift or major copies a monk ability, so a monk never
+     sees its own kit twice; Xuen's tiger is the one exception for now. Crane Rush (Chi Torpedo) and Ox Stomp (Leg
+     Sweep) are replaced by Crane's Plume and Niuzao's Retort. Minor traits stop being flat stats (Growth XP covers
+     stats) and become small procs that feed the path's meter.
+   - **Mechanics palette (decided 2026-11-02).** Majors draw on every mechanic the 5.4.8 client already has (class
+     skills, items, toys, enemy and boss abilities) when it fits the Celestial's fantasy: a borrowed mechanic and
+     visual, never another class's signature button as-is. Candidates to weigh per path:
+     - Ground-targeted zones: Yu'lon's jade runes, a Chi-Ji sanctuary circle, a Niuzao stone ring that holds enemies.
+     - Blooms (the seed's own fantasy, mushroom-style): kills or crits plant Heartseed sprouts that burst into healing,
+       lightning or jade fire when you or an ally steps on them or you call the Bloom.
+     - Placed anchors (totem mechanics without totems): a Celestial sigil or statue that pulses an effect, taunts or
+       links to you.
+     - Teleports and returns: leave a mark, recast to blink back (Yu'lon's coil); swap places with an ally.
+     - Leaps and high jumps: Xuen's pounce between enemies; Chi-Ji's ascent, a high jump with a slow fall that heals
+       where you land; Niuzao crashing down to knock enemies up.
+     - Pulls, tethers and beams: Niuzao hauls enemies in; Chi-Ji's beam links you to an ally and shares healing.
+     - Enemy-style tricks: orbs to collect, cone breaths, knock-up whirlwinds, chain lightning.
    - **The Gift grows with the seed:** each stage (Sapling, Bloom, Full Bloom) adds a rider to the Gift. Decided
      riders (2026-11-02, numbers placeholder): Xuen: haste while the tiger fights / lightning arcs to 2 more
      enemies / each kill cuts the cooldown by 1 s. Chi-Ji: heal 10% / a burst of speed / a killing blow resets it.
      Niuzao: stunned enemies deal 20% less damage / a shield per enemy hit / wider stomp and a longer stun.
      Yu'lon: heals for 30% of its damage / a jade-fire DoT / each enemy hit cuts the cooldown by 1.5 s. Xuen keeps
-     up with a mounted owner. Later majors (25 onward) favor choices that modify the Gift over flat percentages; the old stat bonuses become auto-filled minor traits.
+     up with a mounted owner. Chi-Ji's and Niuzao's riders are redrawn for their new Gifts (Active play, below). Later majors (25 onward) favor choices that modify the Gift over flat percentages; the old stat bonuses become auto-filled minor traits.
    - **Client spells (decided):** a Gift reuses an existing client spell with a fitting visual that normal play does not teach to that character, with its effect adjusted server-side, because the 5.4.8 client only casts spells it knows. Custom action-bar icons wait for a client patch; the Heartseed panel uses its own art from the addon folder.
 3. **Essence slots** (1 at 10, 2 at 40, 3 at 70): choose which collected essences are active.
 4. **Utility perks at awakenings**, e.g. Seedsense: nearby rares and treasures on the minimap.
@@ -380,7 +415,7 @@ Later threads: Jaina's reconciliation when she sees the seed bloom in Pandaria; 
 
 - **Shared on the account:** the "has a Heartseed" marker, rank and Growth (one pool), the essence collection and the morph gallery. Leveling a new class unlocks that class's Celestial Weapon variant as a collectible form, so alts become Heartseed content, not a regrind.
 - **Per character:** path loadouts (per spec, so they travel with the character's own spec switching), essence slotting, and the story flags for this body's own events (first dungeon, reached Pandaria, first world boss).
-- **The rank cap stays per character:** character level plus the awakenings this character has done itself. A character uses min(account rank, its own cap), so a fresh alt or a twink at 19 has exactly the balance it would have alone. Soul-level events (Theramore, later Celestial beats) live on the account and unlock lore, whispers and cosmetics, never cap. Low-level and twink balance is unchanged.
+- **Balance stays per character:** the rank cap is gone (see Progression); stages and majors follow this character's level, Growth XP stat points are this character's own, and every effect scales with this character's stats, so a fresh alt or a twink at 19 has exactly the balance it would have alone. Soul-level events (Theramore, later Celestial beats) live on the account and unlock lore, whispers and cosmetics, never cap. Low-level and twink balance is unchanged.
 - **Who earns:** the character you are playing earns Growth (feeding, quests, rares). Your own alts logged in as playerbots earn none; they show the shared seed and use it at their own cap. Feeding a twink alt's old weapons grows the shared seed, and that is intended.
 - **Fresh-seed run:** a character-creation toggle in the character challenges (Side fun), not a Heartseed feature. The character starts with no Heartseed, or a fresh one at rank 1 kept apart from the account's, for a seedless or fresh-start run; title and cosmetic reward on completion like the other challenges.
 - **Bots recognize the seed:** a bot with a relationship to another character on your account (a nemesis, a rival, a friend) recognizes the shared Heartseed on sight: a flag check plus the glow. A nemesis says "I know that light. You." The world tracks the soul, not the save slot. It is a high-priority context trigger in the reaction loop with its own line-library entries; at LLM levels, consciousness-file memories can name the other character.
