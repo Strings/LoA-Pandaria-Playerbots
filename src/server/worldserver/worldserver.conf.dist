@@ -5431,6 +5431,28 @@ Heartseed.Gift.XuenCatchUpDistance = 25
 Heartseed.Gift.XuenFollowInterval = 1000
 
 #
+#    Heartseed.Gift.PlumeRadius
+#        Description: Crane's Plume heals group members within this many yards of the caster.
+#        Default:     30
+
+Heartseed.Gift.PlumeRadius = 30
+
+#
+#    Heartseed.Gift.PlumeTargets
+#        Description: How many group members Crane's Plume heals besides the caster, the most wounded first
+#                     (stage riders add more). At least 1.
+#        Default:     3
+
+Heartseed.Gift.PlumeTargets = 3
+
+#
+#    Heartseed.Gift.RetortRadius
+#        Description: Niuzao's Retort strikes enemies within this many yards (stage riders widen it).
+#        Default:     8
+
+Heartseed.Gift.RetortRadius = 8
+
+#
 #    Heartseed.Proc.Chance
 #        Description: Chance in percent for damage the character deals to roll the core proc.
 #        Default:     10

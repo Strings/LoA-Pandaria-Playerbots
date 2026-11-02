@@ -16,11 +16,13 @@
 #include "Player.h"
 #include "QuestDef.h"
 #include "Random.h"
+#include "StringFormat.h"
 #include "SpellAuraEffects.h"
 #include "SpellAuras.h"
 #include "SpellInfo.h"
 #include "SpellMgr.h"
 #include "Timer.h"
+#include "WorldPacket.h"
 #include "WorldSession.h"
 
 #include <algorithm>
@@ -176,6 +178,9 @@ void HeartseedMgr::LoadConfig()
     _xuenLightningVisual = sConfigMgr->GetIntDefault("Heartseed.Gift.XuenLightningVisual", 36);
     _xuenCatchUpDistance = std::max(0.0f, sConfigMgr->GetFloatDefault("Heartseed.Gift.XuenCatchUpDistance", 25.0f));
     _xuenFollowInterval = std::max(250, sConfigMgr->GetIntDefault("Heartseed.Gift.XuenFollowInterval", 1000));
+    _plumeRadius = std::max(0.0f, sConfigMgr->GetFloatDefault("Heartseed.Gift.PlumeRadius", 30.0f));
+    _plumeTargets = uint32(std::max(1, sConfigMgr->GetIntDefault("Heartseed.Gift.PlumeTargets", 3)));
+    _retortRadius = std::max(0.0f, sConfigMgr->GetFloatDefault("Heartseed.Gift.RetortRadius", 8.0f));
     _procChance = sConfigMgr->GetFloatDefault("Heartseed.Proc.Chance", 10.0f);
     _procWeaponDamagePct = sConfigMgr->GetFloatDefault("Heartseed.Proc.WeaponDamagePct", 50.0f);
     _procCooldown = sConfigMgr->GetIntDefault("Heartseed.Proc.Cooldown", 3000);
@@ -417,6 +422,37 @@ bool HeartseedMgr::LoadData(std::size_t* loadedRows)
         } while (result->NextRow());
     }
 
+    std::map<uint8, Heartseed::MeterRule> meters;
+    {
+        QueryResult result = WorldDatabase.Query("SELECT `path`, `source`, `max_stacks`, `threshold_pct`, `lit_duration`, `decay`, `build_cooldown`, `spend_bonus_pct`, `crit_cooldown_cut`, `window`, NULL AS sentinel FROM `heartseed_meter` UNION ALL SELECT NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'end'");
+        if (!result)
+            return false;
+        do
+        {
+            Field* fields = result->Fetch();
+            if (!fields[10].IsNull())
+                continue;
+            uint8 path = fields[0].GetUInt8();
+            uint8 source = fields[1].GetUInt8();
+            if (!path || path >= Heartseed::MaxPaths || !source || source > Heartseed::MaxMeterSource)
+            {
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_meter`: path %u has an unknown path or source %u, reload aborted.", path, source);
+                return false;
+            }
+            Heartseed::MeterRule rule;
+            rule.Source = Heartseed::MeterSource(source);
+            rule.MaxStacks = fields[2].GetUInt8();
+            rule.ThresholdPct = fields[3].GetUInt32();
+            rule.LitMs = fields[4].GetUInt32();
+            rule.DecayMs = fields[5].GetUInt32();
+            rule.BuildCooldownMs = fields[6].GetUInt32();
+            rule.SpendBonusPct = fields[7].GetInt32();
+            rule.CritCooldownCutMs = fields[8].GetInt32();
+            rule.WindowMs = fields[9].GetUInt32();
+            meters[path] = rule;
+        } while (result->NextRow());
+    }
+
     std::map<uint32, Heartseed::EssenceInfo> essences;
     {
         QueryResult result = WorldDatabase.Query("SELECT `id`, `name`, `proc_spell_id`, `proc_chance`, `weapon_damage_pct`, `description`, NULL AS sentinel FROM `heartseed_essence_template` UNION ALL SELECT NULL, NULL, NULL, NULL, NULL, NULL, 'end'");
@@ -519,6 +555,8 @@ bool HeartseedMgr::LoadData(std::size_t* loadedRows)
 
     if (!sSpellMgr->GetSpellInfo(Heartseed::SPELL_CORE_WEAPON_BONUS))
         TC_LOG_ERROR("sql.sql", "Heartseed: core passive spell %u is missing from `spell_dbc`; no bonus weapon damage.", Heartseed::SPELL_CORE_WEAPON_BONUS);
+    if (!sSpellMgr->GetSpellInfo(Heartseed::SPELL_METER_PASSIVE))
+        TC_LOG_ERROR("sql.sql", "Heartseed: meter passive spell %u is missing from `spell_dbc`; crits build no meter.", Heartseed::SPELL_METER_PASSIVE);
     if (_procSpellId && !sSpellMgr->GetSpellInfo(_procSpellId))
         TC_LOG_ERROR("server.loading", "Heartseed.Proc.SpellId %u does not exist; the core proc stays off.", _procSpellId);
 
@@ -529,6 +567,7 @@ bool HeartseedMgr::LoadData(std::size_t* loadedRows)
     }
     auto stageCount = stages.size(), glowCount = glow.size(), traitCount = traits.size();
     auto essenceCount = essences.size(), sourceCount = essenceSources.size(), twinkCount = twinkItems.size(), shrineCount = shrines.size();
+    auto meterCount = meters.size();
     {
         std::lock_guard<std::mutex> guard(_lock);
         _stages.swap(stages);
@@ -539,12 +578,13 @@ bool HeartseedMgr::LoadData(std::size_t* loadedRows)
         _essenceSources.swap(essenceSources);
         _twinkItems.swap(twinkItems);
         _shrines.swap(shrines);
+        _meters.swap(meters);
     }
 
-    TC_LOG_INFO("server.loading", ">> Loaded %u Heartseed stages, %u glows, %u traits, %u essences, %u essence sources, %u twink items and %u shrines in %u ms", uint32(stageCount),
-        uint32(glowCount), uint32(traitCount), uint32(essenceCount), uint32(sourceCount), uint32(twinkCount), uint32(shrineCount), GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded %u Heartseed stages, %u glows, %u traits, %u essences, %u essence sources, %u twink items, %u shrines and %u meters in %u ms", uint32(stageCount),
+        uint32(glowCount), uint32(traitCount), uint32(essenceCount), uint32(sourceCount), uint32(twinkCount), uint32(shrineCount), uint32(meterCount), GetMSTimeDiffToNow(oldMSTime));
     if (loadedRows)
-        *loadedRows = stageCount + glowCount + traitCount + essenceCount + sourceCount + twinkCount + shrineCount;
+        *loadedRows = stageCount + glowCount + traitCount + essenceCount + sourceCount + twinkCount + shrineCount + meterCount;
     return true;
 }
 
@@ -1740,6 +1780,7 @@ void HeartseedMgr::RefreshTraits(Player* player)
         }
         state.LastSpecId = specId;
         state.HasLastSpec = true;
+        uint32 giftTraitId = 0;
 
         if (_enabled)
         {
@@ -1756,10 +1797,25 @@ void HeartseedMgr::RefreshTraits(Player* player)
                 if (trait.SpellId)
                     desired[trait.SpellId] += Heartseed::TraitAmount(trait.BaseAmount, trait.AmountPerItemLevel, itemLevel);
                 if (trait.GiftSpellId)
+                {
                     gifts.insert(trait.GiftSpellId);
+                    if (!giftTraitId)
+                        giftTraitId = traitId;
+                }
             }
             if (weaponBonus > 0)
                 desired[Heartseed::SPELL_CORE_WEAPON_BONUS] += weaponBonus;
+            if (giftTraitId)
+                desired[Heartseed::SPELL_METER_PASSIVE] = 0;
+        }
+
+        // A new Gift starts with an empty meter.
+        if (state.GiftTraitId != giftTraitId)
+        {
+            state.GiftTraitId = giftTraitId;
+            state.Meter = Heartseed::MeterState();
+            state.RecentHits.clear();
+            state.LastSpend = Heartseed::GiftSpend();
         }
 
         previous = std::move(state.AppliedAuras);
@@ -1846,9 +1902,13 @@ bool HeartseedMgr::GetActiveGift(Player const* player, uint32 spellId, Heartseed
 
 int32 HeartseedMgr::GetGiftAmount(Player const* player, Heartseed::TraitInfo const& gift) const
 {
+    // A share of the character's own power, so the Gift is as strong at 12 as at 90 relative to the character.
+    float attackPower = std::max(player->GetTotalAttackPowerValue(BASE_ATTACK), player->GetTotalAttackPowerValue(RANGED_ATTACK));
+    float spellPower = float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_ALL));
+    uint32 power = uint32(std::max(0.0f, std::max(attackPower, spellPower)));
     Item* weapon = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
     uint32 itemLevel = weapon && !weapon->IsBroken() && weapon->GetTemplate()->Class == ITEM_CLASS_WEAPON ? weapon->GetItemLevel() : 0;
-    return Heartseed::TraitAmount(gift.GiftBaseAmount, gift.GiftAmountPerItemLevel, itemLevel);
+    return int32(Heartseed::PercentOf(power, gift.GiftBaseAmount)) + Heartseed::TraitAmount(0, gift.GiftAmountPerItemLevel, itemLevel);
 }
 
 std::vector<Heartseed::GiftRider> HeartseedMgr::GetGiftRiders(Player const* player, Heartseed::TraitInfo const& gift) const
@@ -1877,6 +1937,157 @@ void HeartseedMgr::CutGiftCooldown(Player* player, uint32 spellId, int32 ms) con
     uint32 cut = Heartseed::CooldownCut(player->GetSpellCooldownDelay(spellId), ms);
     if (cut)
         player->ModifySpellCooldown(spellId, -int32(cut));
+}
+
+void HeartseedMgr::OnMeterEvent(Player* player, Heartseed::MeterSource source, uint32 amount, uint32 spellId)
+{
+    if (!_enabled)
+        return;
+
+    uint32 now = getMSTime();
+    uint32 giftSpellId = 0;
+    int32 cut = 0;
+    bool changed = false;
+    {
+        std::lock_guard<std::mutex> guard(_lock);
+        auto itr = _states.find(player->GetGUID().GetCounter());
+        if (itr == _states.end() || !itr->second.GiftTraitId)
+            return;
+        Heartseed::State& state = itr->second;
+        auto trait = _traits.find(state.GiftTraitId);
+        if (trait == _traits.end())
+            return;
+        auto meter = _meters.find(uint8(trait->second.TraitPath));
+        if (meter == _meters.end())
+            return;
+        Heartseed::MeterRule const& rule = meter->second;
+        giftSpellId = trait->second.GiftSpellId;
+        // The Gift's own heals and casts never feed the meter it just spent.
+        if (spellId && spellId == giftSpellId)
+            return;
+
+        switch (source)
+        {
+            case Heartseed::MeterSource::Crit:
+                cut = Heartseed::CritCut(state.Meter, rule, now);
+                if (rule.Source == source)
+                    changed = Heartseed::MeterBuild(state.Meter, rule, now);
+                break;
+            case Heartseed::MeterSource::Healing:
+                if (rule.Source == source)
+                    if (uint8 stacks = Heartseed::HealingStacks(state.Meter, rule, amount, player->GetMaxHealth()))
+                        changed = Heartseed::MeterBuild(state.Meter, rule, now, stacks);
+                break;
+            case Heartseed::MeterSource::BigHit:
+                if (rule.WindowMs)
+                {
+                    state.RecentHits.emplace_back(now, amount);
+                    Heartseed::RecentDamage(state.RecentHits, now, rule.WindowMs);
+                }
+                if (rule.Source == source && Heartseed::IsBigHit(rule, amount, player->GetMaxHealth()))
+                    changed = Heartseed::MeterBuild(state.Meter, rule, now);
+                break;
+            case Heartseed::MeterSource::SpellCast:
+                if (rule.Source == source)
+                    changed = Heartseed::MeterBuild(state.Meter, rule, now);
+                break;
+            default:
+                break;
+        }
+    }
+
+    if (cut)
+        CutGiftCooldown(player, giftSpellId, cut);
+    if (changed)
+        SendMeter(player);
+}
+
+bool HeartseedMgr::CanCastGift(Player const* player, uint32 spellId) const
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    auto itr = _states.find(player->GetGUID().GetCounter());
+    if (itr == _states.end() || !itr->second.GiftTraitId)
+        return true;
+    auto trait = _traits.find(itr->second.GiftTraitId);
+    if (trait == _traits.end() || trait->second.GiftSpellId != spellId)
+        return true;
+    auto meter = _meters.find(uint8(trait->second.TraitPath));
+    return meter == _meters.end() || Heartseed::MeterAllowsCast(itr->second.Meter, meter->second, getMSTime());
+}
+
+Heartseed::GiftSpend HeartseedMgr::SpendGiftMeter(Player* player, uint32 spellId)
+{
+    Heartseed::GiftSpend spend;
+    {
+        std::lock_guard<std::mutex> guard(_lock);
+        auto itr = _states.find(player->GetGUID().GetCounter());
+        if (itr == _states.end() || !itr->second.GiftTraitId)
+            return spend;
+        Heartseed::State& state = itr->second;
+        auto trait = _traits.find(state.GiftTraitId);
+        if (trait == _traits.end() || trait->second.GiftSpellId != spellId)
+            return spend;
+        auto meter = _meters.find(uint8(trait->second.TraitPath));
+        if (meter == _meters.end())
+            return spend;
+        uint32 now = getMSTime();
+        spend.Stacks = Heartseed::MeterSpend(state.Meter, meter->second, now);
+        spend.BonusPctPerStack = meter->second.SpendBonusPct;
+        if (meter->second.WindowMs)
+            spend.RecentDamage = Heartseed::RecentDamage(state.RecentHits, now, meter->second.WindowMs);
+        state.LastSpend = spend;
+    }
+    SendMeter(player);
+    return spend;
+}
+
+Heartseed::GiftSpend HeartseedMgr::GetLastSpend(Player const* player) const
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    auto itr = _states.find(player->GetGUID().GetCounter());
+    return itr == _states.end() ? Heartseed::GiftSpend() : itr->second.LastSpend;
+}
+
+bool HeartseedMgr::GetMeter(Player const* player, Heartseed::MeterRule& rule, Heartseed::MeterState& meter) const
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    auto itr = _states.find(player->GetGUID().GetCounter());
+    if (itr == _states.end() || !itr->second.GiftTraitId)
+        return false;
+    auto trait = _traits.find(itr->second.GiftTraitId);
+    if (trait == _traits.end())
+        return false;
+    auto found = _meters.find(uint8(trait->second.TraitPath));
+    if (found == _meters.end())
+        return false;
+    rule = found->second;
+    meter = itr->second.Meter;
+    Heartseed::MeterDecay(meter, rule, getMSTime());
+    return true;
+}
+
+void HeartseedMgr::SendMeter(Player* player) const
+{
+    if (player->GetSession()->IsBot())
+        return;
+    Heartseed::MeterRule rule;
+    Heartseed::MeterState meter;
+    uint32 giftSpellId = 0;
+    if (!GetMeter(player, rule, meter))
+        return;
+    {
+        std::lock_guard<std::mutex> guard(_lock);
+        auto itr = _states.find(player->GetGUID().GetCounter());
+        if (itr != _states.end())
+            if (auto trait = _traits.find(itr->second.GiftTraitId); trait != _traits.end())
+                giftSpellId = trait->second.GiftSpellId;
+    }
+    uint32 litLeft = meter.Lit ? rule.LitMs - std::min(rule.LitMs, getMSTimeDiff(meter.LitAt, getMSTime())) : 0;
+    std::string message = Trinity::StringFormat("P\t%u\t%u\t%u\t%u\t%u", uint32(meter.Stacks), uint32(rule.MaxStacks), litLeft,
+        rule.DecayMs, giftSpellId);
+    WorldPacket data;
+    ChatHandler::BuildChatPacket(data, CHAT_MSG_WHISPER, LANG_ADDON, player, player, message, 0, "", DEFAULT_LOCALE, "Heartseed");
+    player->SendDirectMessage(&data);
 }
 
 void HeartseedMgr::RemoveAuras(Player* player, std::map<uint32, int32> const& auras)

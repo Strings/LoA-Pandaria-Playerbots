@@ -5,6 +5,7 @@
 #include "Bag.h"
 #include "Chat.h"
 #include "Custom/Reload/ReloadRegistry.h"
+#include "Group.h"
 #include "HeartseedMgr.h"
 #include "Log.h"
 #include "ObjectAccessor.h"
@@ -12,6 +13,7 @@
 #include "Player.h"
 #include "RBAC.h"
 #include "ScriptMgr.h"
+#include "Spell.h"
 #include "SpellAuraEffects.h"
 #include "SpellAuras.h"
 #include "SpellInfo.h"
@@ -280,6 +282,15 @@ public:
         // Each specialization has its own loadout, and the glow follows its dominant path.
         sHeartseedMgr->Refresh(player);
     }
+
+    // Spells the player casts build Yu'lon's Coil; procs and passives don't.
+    void OnSpellCast(Player* player, Spell* spell, bool /*skipCheck*/) override
+    {
+        SpellInfo const* spellInfo = spell->GetSpellInfo();
+        if (spell->IsTriggered() || spellInfo->IsPassive() || spellInfo->IsAutoRepeatRangedSpell())
+            return;
+        sHeartseedMgr->OnMeterEvent(player, Heartseed::MeterSource::SpellCast, 0, spellInfo->Id);
+    }
 };
 
 class heartseed_unitscript : public UnitScript
@@ -289,10 +300,28 @@ public:
 
     void OnDamage(Unit* attacker, Unit* victim, uint32& damage) override
     {
-        if (!damage || !attacker || !victim || attacker->GetTypeId() != TYPEID_PLAYER)
+        if (!damage || !victim)
+            return;
+        // Damage taken feeds Niuzao's meter and Retort's window.
+        if (victim->GetTypeId() == TYPEID_PLAYER && attacker != victim)
+            sHeartseedMgr->OnMeterEvent(victim->ToPlayer(), Heartseed::MeterSource::BigHit, damage);
+        if (!attacker || attacker->GetTypeId() != TYPEID_PLAYER)
             return;
         // Alts logged in as bots proc too; a character without a Heartseed returns at the first lookup.
         sHeartseedMgr->OnDamageDealt(attacker->ToPlayer(), victim);
+    }
+
+    // Healing done or received builds Chi-Ji's Hope. This hook, unlike OnHeal, names the spell, so the Gift's own
+    // heals can be left out; overhealing counts.
+    void ModifyHealReceived(Unit* target, Unit* healer, uint32& heal, SpellInfo const* spellInfo) override
+    {
+        if (!heal || !target)
+            return;
+        uint32 spellId = spellInfo ? spellInfo->Id : 0;
+        if (healer && healer->GetTypeId() == TYPEID_PLAYER)
+            sHeartseedMgr->OnMeterEvent(healer->ToPlayer(), Heartseed::MeterSource::Healing, heal, spellId);
+        if (target->GetTypeId() == TYPEID_PLAYER && target != healer)
+            sHeartseedMgr->OnMeterEvent(target->ToPlayer(), Heartseed::MeterSource::Healing, heal, spellId);
     }
 };
 
@@ -410,6 +439,15 @@ public:
                 riders += (riders.empty() ? "" : ", ") + std::string("stage ") + std::to_string(rider.Stage) + " kind " +
                     std::to_string(uint32(rider.Kind)) + " amount " + std::to_string(rider.Amount);
             handler->PSendSysMessage("Gift spell %u, riders: %s.", gift.GiftSpellId, riders.empty() ? "none yet" : riders.c_str());
+            Heartseed::MeterRule rule;
+            Heartseed::MeterState meter;
+            if (sHeartseedMgr->GetMeter(target, rule, meter))
+            {
+                Heartseed::GiftSpend spend = sHeartseedMgr->GetLastSpend(target);
+                handler->PSendSysMessage("Meter: source %u, stacks %u/%u, lit %s, castable %s; last spend %u stacks, %u recent damage.",
+                    uint32(rule.Source), uint32(meter.Stacks), uint32(rule.MaxStacks), meter.Lit ? "yes" : "no",
+                    sHeartseedMgr->CanCastGift(target, gift.GiftSpellId) ? "yes" : "no", uint32(spend.Stacks), spend.RecentDamage);
+            }
         }
 
         std::string auras;
@@ -1108,21 +1146,46 @@ public:
 };
 
 // Celestial Gifts (heartseed_gift): the active spell a level 10 major teaches. The Gift's cooldown and summon
-// lifetime replace the client spell's, unless the character has the spell from its own talents (monks).
+// lifetime replace the client spell's, unless the character has the spell from its own talents (monks). Casting it
+// spends the path meter (heartseed_meter); a gated Gift (Niuzao's Retort) casts only while its meter is lit.
 class spell_heartseed_gift : public SpellScript
 {
     PrepareSpellScript(spell_heartseed_gift);
 
-    void HandleAfterCast()
+    // The character's Gift cast by the character, not a proc of the same spell (Spirit of Chi-Ji from the cloak).
+    Player* GiftCaster()
     {
         Player* player = GetCaster()->ToPlayer();
-        // The client casts the spellbook spell, but the server casts Chi Torpedo as 121828 in its place.
-        uint32 spellId = GetSpellInfo()->Id == SPELL_CHI_TORPEDO_CAST ? SPELL_CHI_TORPEDO : GetSpellInfo()->Id;
-        if (!player || player->HasTalent(spellId, player->GetActiveSpec()))
+        if (!player || GetSpell()->IsTriggered() || player->HasTalent(GetSpellInfo()->Id, player->GetActiveSpec()))
+            return nullptr;
+        return player;
+    }
+
+    SpellCastResult CheckMeter()
+    {
+        Player* player = GiftCaster();
+        if (player && !sHeartseedMgr->CanCastGift(player, GetSpellInfo()->Id))
+            return SPELL_FAILED_CASTER_AURASTATE;
+        return SPELL_CAST_OK;
+    }
+
+    // Before the Gift's effects land, so they read what it spent.
+    void HandleOnCast()
+    {
+        if (Player* player = GiftCaster())
+            sHeartseedMgr->SpendGiftMeter(player, GetSpellInfo()->Id);
+    }
+
+    void HandleAfterCast()
+    {
+        Player* player = GiftCaster();
+        if (!player)
             return;
+        uint32 spellId = GetSpellInfo()->Id;
         Heartseed::TraitInfo gift;
         if (!sHeartseedMgr->GetActiveGift(player, spellId, gift))
             return;
+        Heartseed::GiftSpend spend = sHeartseedMgr->GetLastSpend(player);
 
         if (gift.GiftCooldown)
         {
@@ -1134,12 +1197,14 @@ class spell_heartseed_gift : public SpellScript
         if (GetSpellInfo()->Effects[EFFECT_0].Effect == SPELL_EFFECT_SUMMON)
         {
             uint32 entry = uint32(GetSpellInfo()->Effects[EFFECT_0].MiscValue);
+            // Xuen: each Thunder spent keeps the tiger longer.
+            uint32 duration = Heartseed::SpendScaled(gift.GiftDuration, spend.Stacks, spend.BonusPctPerStack);
             for (TempSummon* summon : player->GetSummons())
             {
                 if (summon->GetEntry() != entry)
                     continue;
-                if (gift.GiftDuration && summon->GetTimer() > gift.GiftDuration)
-                    summon->UnSummon(gift.GiftDuration);
+                if (duration && summon->GetTimer() != duration)
+                    summon->UnSummon(duration);
                 player->m_Events.AddEventAtOffset(new HeartseedXuenFollowEvent(player, summon->GetGUID()), sHeartseedMgr->GetXuenFollowInterval());
             }
         }
@@ -1159,6 +1224,9 @@ class spell_heartseed_gift : public SpellScript
                 case Heartseed::GiftRiderKind::HealPct:
                     player->HealBySpell(player, GetSpellInfo(), Heartseed::PercentOf(player->GetMaxHealth(), rider.Amount));
                     break;
+                case Heartseed::GiftRiderKind::RecentDamageShield:
+                    ApplyRiderAura(player, player, rider, int32(Heartseed::PercentOf(spend.RecentDamage, rider.Amount)));
+                    break;
                 default:
                     break;
             }
@@ -1167,15 +1235,169 @@ class spell_heartseed_gift : public SpellScript
 
     void Register() override
     {
+        OnCheckCast += SpellCheckCastFn(spell_heartseed_gift::CheckMeter);
+        OnCast += SpellCastFn(spell_heartseed_gift::HandleOnCast);
         AfterCast += SpellCastFn(spell_heartseed_gift::HandleAfterCast);
     }
-
-    static constexpr uint32 SPELL_CHI_TORPEDO = 115008;
-    static constexpr uint32 SPELL_CHI_TORPEDO_CAST = 121828;
 };
 
-// 124947 - Celestial Breath tick. The creature spell's damage is replaced by the Gift's power, which grows with the
-// main-hand item level, when Yu'lon's Gift (117960) is the source.
+// 310009 - Heartseed meter passive. spell_proc_event makes it proc on critical hits and heals the character
+// deals; a crit builds Xuen's Thunder and cuts the Gift cooldown on paths that say so.
+class spell_heartseed_meter : public AuraScript
+{
+    PrepareAuraScript(spell_heartseed_meter);
+
+    void HandleProc(ProcEventInfo& eventInfo)
+    {
+        Player* player = GetTarget()->ToPlayer();
+        if (!player || !(eventInfo.GetHitMask() & PROC_EX_CRITICAL_HIT))
+            return;
+        uint32 spellId = eventInfo.GetSpellInfo() ? eventInfo.GetSpellInfo()->Id : 0;
+        sHeartseedMgr->OnMeterEvent(player, Heartseed::MeterSource::Crit, 0, spellId);
+    }
+
+    void Register() override
+    {
+        OnProc += AuraProcFn(spell_heartseed_meter::HandleProc);
+    }
+};
+
+// 148009 - Spirit of Chi-Ji as Chi-Ji's Gift (Crane's Plume): heals the caster and the most wounded group members
+// nearby for a share of the caster's health, more for each Hope spent. The cloak's own proc is left alone.
+class spell_heartseed_crane_plume : public SpellScript
+{
+    PrepareSpellScript(spell_heartseed_crane_plume);
+
+    bool Load() override
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (!player || GetSpell()->IsTriggered() || !sHeartseedMgr->GetActiveGift(player, GetSpellInfo()->Id, _gift))
+            return true;
+        _active = true;
+        for (Heartseed::GiftRider const& rider : sHeartseedMgr->GetGiftRiders(player, _gift))
+            if (rider.Kind == Heartseed::GiftRiderKind::ExtraTargets)
+                _extraTargets += std::max(0, rider.Amount);
+        return true;
+    }
+
+    void SelectAllies(std::list<WorldObject*>& targets)
+    {
+        if (!_active)
+            return;
+        Player* caster = GetCaster()->ToPlayer();
+        float radius = sHeartseedMgr->GetPlumeRadius();
+        std::vector<Unit*> allies;
+        if (Group* group = caster->GetGroup())
+        {
+            for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+            {
+                Player* member = ref->GetSource();
+                if (member && member != caster && member->IsAlive() && member->IsInMap(caster) && caster->IsWithinDist(member, radius)
+                    && caster->IsWithinLOSInMap(member))
+                    allies.push_back(member);
+            }
+        }
+        // The most wounded first.
+        std::sort(allies.begin(), allies.end(), [](Unit* a, Unit* b) { return a->GetHealthPct() < b->GetHealthPct(); });
+        uint32 count = sHeartseedMgr->GetPlumeTargets() + _extraTargets;
+        if (allies.size() > count)
+            allies.resize(count);
+
+        targets.clear();
+        targets.push_back(caster);
+        for (Unit* ally : allies)
+            targets.push_back(ally);
+    }
+
+    void HandleHeal(SpellEffIndex /*effIndex*/)
+    {
+        if (!_active)
+            return;
+        Player* caster = GetCaster()->ToPlayer();
+        Heartseed::GiftSpend spend = sHeartseedMgr->GetLastSpend(caster);
+        SetHitHeal(int32(Heartseed::SpendScaled(Heartseed::PercentOf(caster->GetMaxHealth(), _gift.GiftBaseAmount), spend.Stacks,
+            spend.BonusPctPerStack)));
+    }
+
+    void Register() override
+    {
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_heartseed_crane_plume::SelectAllies, EFFECT_0, TARGET_UNIT_DEST_AREA_ALLY);
+        OnEffectHitTarget += SpellEffectFn(spell_heartseed_crane_plume::HandleHeal, EFFECT_0, SPELL_EFFECT_HEAL);
+    }
+
+    Heartseed::TraitInfo _gift;
+    bool _active = false;
+    uint32 _extraTargets = 0;
+};
+
+// 116098 - Ox Charge as Niuzao's Gift (Niuzao's Retort), castable only for a short time after a big hit (the gift
+// script gates it): a shockwave around the caster deals a share of the damage taken in the meter window to each
+// enemy. Riders weaken the enemies hit, widen the shockwave and cut the cooldown per enemy hit; the shield is the
+// gift script's.
+class spell_heartseed_niuzao_retort : public SpellScript
+{
+    PrepareSpellScript(spell_heartseed_niuzao_retort);
+
+    bool Load() override
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (!player || GetSpell()->IsTriggered() || !sHeartseedMgr->GetActiveGift(player, GetSpellInfo()->Id, _gift))
+            return true;
+        _active = true;
+        _riders = sHeartseedMgr->GetGiftRiders(player, _gift);
+        return true;
+    }
+
+    Heartseed::GiftRider const* Rider(Heartseed::GiftRiderKind kind) const
+    {
+        for (Heartseed::GiftRider const& rider : _riders)
+            if (rider.Kind == kind)
+                return &rider;
+        return nullptr;
+    }
+
+    void SelectEnemies(std::list<WorldObject*>& targets)
+    {
+        if (!_active)
+            return;
+        Unit* caster = GetCaster();
+        float radius = sHeartseedMgr->GetRetortRadius();
+        if (Heartseed::GiftRider const* rider = Rider(Heartseed::GiftRiderKind::Widen))
+            radius *= (100.0f + float(std::max(0, rider->Amount))) / 100.0f;
+        std::list<Unit*> nearby;
+        caster->GetAttackableUnitListInRange(nearby, radius);
+        targets.clear();
+        for (Unit* unit : nearby)
+            if (unit != caster && caster->IsValidAttackTarget(unit) && caster->IsWithinLOSInMap(unit))
+                targets.push_back(unit);
+    }
+
+    void HandleDamage(SpellEffIndex /*effIndex*/)
+    {
+        if (!_active)
+            return;
+        Player* caster = GetCaster()->ToPlayer();
+        SetHitDamage(int32(Heartseed::PercentOf(sHeartseedMgr->GetLastSpend(caster).RecentDamage, _gift.GiftBaseAmount)));
+        if (Unit* target = GetHitUnit())
+            if (Heartseed::GiftRider const* rider = Rider(Heartseed::GiftRiderKind::TargetAura))
+                ApplyRiderAura(caster, target, *rider, rider->Amount);
+        if (Heartseed::GiftRider const* rider = Rider(Heartseed::GiftRiderKind::HitCooldown))
+            sHeartseedMgr->CutGiftCooldown(caster, _gift.GiftSpellId, rider->Amount);
+    }
+
+    void Register() override
+    {
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_heartseed_niuzao_retort::SelectEnemies, EFFECT_0, TARGET_UNIT_DEST_AREA_ENEMY);
+        OnEffectHitTarget += SpellEffectFn(spell_heartseed_niuzao_retort::HandleDamage, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
+    }
+
+    Heartseed::TraitInfo _gift;
+    std::vector<Heartseed::GiftRider> _riders;
+    bool _active = false;
+};
+
+// 124947 - Celestial Breath tick. The creature spell's damage is replaced by the Gift's power, a share of the caster's
+// attack or spell power raised by the Coil spent, when Yu'lon's Gift (117960) is the source.
 class spell_heartseed_celestial_breath : public SpellScript
 {
     PrepareSpellScript(spell_heartseed_celestial_breath);
@@ -1188,7 +1410,9 @@ class spell_heartseed_celestial_breath : public SpellScript
         Heartseed::TraitInfo gift;
         if (!sHeartseedMgr->GetActiveGift(player, GIFT_SPELL_CELESTIAL_BREATH, gift))
             return;
-        int32 power = sHeartseedMgr->GetGiftAmount(player, gift);
+        Heartseed::GiftSpend spend = sHeartseedMgr->GetLastSpend(player);
+        int32 power = int32(Heartseed::SpendScaled(uint32(std::max(sHeartseedMgr->GetGiftAmount(player, gift), 0)), spend.Stacks,
+            spend.BonusPctPerStack));
         SetHitDamage(power);
 
         Unit* target = GetHitUnit();
@@ -1277,86 +1501,10 @@ class spell_heartseed_xuen_lightning : public SpellScript
     static constexpr float CHAIN_RANGE = 15.0f;
 };
 
-// 119381 - Leg Sweep as Niuzao's Gift (Ox Stomp): stage riders weaken stunned enemies, shield the caster per enemy
-// hit, widen the stomp and lengthen the stun. A monk's own Leg Sweep is left alone.
-class spell_heartseed_ox_stomp : public SpellScript
-{
-    PrepareSpellScript(spell_heartseed_ox_stomp);
-
-    bool Load() override
-    {
-        Player* player = GetCaster()->ToPlayer();
-        Heartseed::TraitInfo gift;
-        if (!player || player->HasTalent(GetSpellInfo()->Id, player->GetActiveSpec())
-            || !sHeartseedMgr->GetActiveGift(player, GetSpellInfo()->Id, gift))
-            return true;
-        _riders = sHeartseedMgr->GetGiftRiders(player, gift);
-        return true;
-    }
-
-    Heartseed::GiftRider const* Rider(Heartseed::GiftRiderKind kind) const
-    {
-        for (Heartseed::GiftRider const& rider : _riders)
-            if (rider.Kind == kind)
-                return &rider;
-        return nullptr;
-    }
-
-    void Widen(std::list<WorldObject*>& targets)
-    {
-        Heartseed::GiftRider const* rider = Rider(Heartseed::GiftRiderKind::Widen);
-        if (!rider || rider->Amount <= 0)
-            return;
-        Unit* caster = GetCaster();
-        float radius = GetSpellInfo()->Effects[EFFECT_0].CalcRadius(caster) * (100.0f + float(rider->Amount)) / 100.0f;
-        std::list<Unit*> nearby;
-        caster->GetAttackableUnitListInRange(nearby, radius);
-        for (Unit* unit : nearby)
-            if (std::find(targets.begin(), targets.end(), unit) == targets.end() && caster->IsValidAttackTarget(unit)
-                && caster->IsWithinLOSInMap(unit))
-                targets.push_back(unit);
-    }
-
-    void HandleHit()
-    {
-        Unit* target = GetHitUnit();
-        if (_riders.empty() || !target)
-            return;
-        ++_hits;
-        if (Heartseed::GiftRider const* rider = Rider(Heartseed::GiftRiderKind::TargetAura))
-            ApplyRiderAura(GetCaster(), target, *rider, rider->Amount);
-        if (Heartseed::GiftRider const* rider = Rider(Heartseed::GiftRiderKind::Widen))
-        {
-            if (Aura* stun = GetHitAura())
-            {
-                stun->SetMaxDuration(stun->GetMaxDuration() + int32(rider->Duration));
-                stun->SetDuration(stun->GetDuration() + int32(rider->Duration));
-            }
-        }
-
-        // Targets are hit after the cast finishes, so the shield grows with each hit instead of being set once.
-        if (Heartseed::GiftRider const* rider = Rider(Heartseed::GiftRiderKind::AbsorbPerTarget))
-        {
-            Unit* caster = GetCaster();
-            uint32 perTarget = Heartseed::PercentOf(caster->GetMaxHealth(), rider->Amount);
-            ApplyRiderAura(caster, caster, *rider, int32(std::min<uint64>(uint64(perTarget) * _hits, INT32_MAX)));
-        }
-    }
-
-    void Register() override
-    {
-        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_heartseed_ox_stomp::Widen, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
-        AfterHit += SpellHitFn(spell_heartseed_ox_stomp::HandleHit);
-    }
-
-    std::vector<Heartseed::GiftRider> _riders;
-    uint32 _hits = 0;
-};
-
 void AddSC_heartseed()
 {
     if (!CustomReload::Tables().RegisterGroup({ "heartseed", "heartseed_stage", "heartseed_glow", "heartseed_trait",
-        "heartseed_gift", "heartseed_gift_rider", "heartseed_essence_template", "heartseed_essence_source", "twink_item", "heartseed_shrine" }, "Heartseed world data (one coherent snapshot)", []
+        "heartseed_gift", "heartseed_gift_rider", "heartseed_meter", "heartseed_essence_template", "heartseed_essence_source", "twink_item", "heartseed_shrine" }, "Heartseed world data (one coherent snapshot)", []
     {
         std::size_t rows = 0;
         bool success = sHeartseedMgr->LoadData(&rows);
@@ -1371,5 +1519,7 @@ void AddSC_heartseed()
     new spell_script<spell_heartseed_gift>("spell_heartseed_gift");
     new spell_script<spell_heartseed_celestial_breath>("spell_heartseed_celestial_breath");
     new spell_script<spell_heartseed_xuen_lightning>("spell_heartseed_xuen_lightning");
-    new spell_script<spell_heartseed_ox_stomp>("spell_heartseed_ox_stomp");
+    new aura_script<spell_heartseed_meter>("spell_heartseed_meter");
+    new spell_script<spell_heartseed_crane_plume>("spell_heartseed_crane_plume");
+    new spell_script<spell_heartseed_niuzao_retort>("spell_heartseed_niuzao_retort");
 }
