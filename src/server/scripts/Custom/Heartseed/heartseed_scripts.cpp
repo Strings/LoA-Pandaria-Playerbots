@@ -1116,7 +1116,8 @@ class spell_heartseed_gift : public SpellScript
     void HandleAfterCast()
     {
         Player* player = GetCaster()->ToPlayer();
-        uint32 spellId = GetSpellInfo()->Id;
+        // The client casts the spellbook spell, but the server casts Chi Torpedo as 121828 in its place.
+        uint32 spellId = GetSpellInfo()->Id == SPELL_CHI_TORPEDO_CAST ? SPELL_CHI_TORPEDO : GetSpellInfo()->Id;
         if (!player || player->HasTalent(spellId, player->GetActiveSpec()))
             return;
         Heartseed::TraitInfo gift;
@@ -1168,6 +1169,9 @@ class spell_heartseed_gift : public SpellScript
     {
         AfterCast += SpellCastFn(spell_heartseed_gift::HandleAfterCast);
     }
+
+    static constexpr uint32 SPELL_CHI_TORPEDO = 115008;
+    static constexpr uint32 SPELL_CHI_TORPEDO_CAST = 121828;
 };
 
 // 124947 - Celestial Breath tick. The creature spell's damage is replaced by the Gift's power, which grows with the
@@ -1329,23 +1333,20 @@ class spell_heartseed_ox_stomp : public SpellScript
                 stun->SetDuration(stun->GetDuration() + int32(rider->Duration));
             }
         }
-    }
 
-    void HandleAfterCast()
-    {
-        Heartseed::GiftRider const* rider = Rider(Heartseed::GiftRiderKind::AbsorbPerTarget);
-        if (!rider || !_hits)
-            return;
-        Unit* caster = GetCaster();
-        uint32 perTarget = Heartseed::PercentOf(caster->GetMaxHealth(), rider->Amount);
-        ApplyRiderAura(caster, caster, *rider, int32(std::min<uint64>(uint64(perTarget) * _hits, INT32_MAX)));
+        // Targets are hit after the cast finishes, so the shield grows with each hit instead of being set once.
+        if (Heartseed::GiftRider const* rider = Rider(Heartseed::GiftRiderKind::AbsorbPerTarget))
+        {
+            Unit* caster = GetCaster();
+            uint32 perTarget = Heartseed::PercentOf(caster->GetMaxHealth(), rider->Amount);
+            ApplyRiderAura(caster, caster, *rider, int32(std::min<uint64>(uint64(perTarget) * _hits, INT32_MAX)));
+        }
     }
 
     void Register() override
     {
         OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_heartseed_ox_stomp::Widen, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
         AfterHit += SpellHitFn(spell_heartseed_ox_stomp::HandleHit);
-        AfterCast += SpellCastFn(spell_heartseed_ox_stomp::HandleAfterCast);
     }
 
     std::vector<Heartseed::GiftRider> _riders;

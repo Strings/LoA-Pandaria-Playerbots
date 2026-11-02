@@ -29,6 +29,10 @@ INSERT INTO `heartseed_gift_rider` (`trait_id`, `stage`, `kind`, `amount`, `dura
 (8, 3,  9,   25,  4000, 118540, 'Serpent''s Breath, Bloom: jade fire burns each enemy hit for 25% of the Gift power per second for 4 s'),
 (8, 4, 10, 1500,     0,      0, 'Serpent''s Breath, Full Bloom: each enemy hit cuts the cooldown by 1.5 s');
 
-DELETE FROM `spell_script_names` WHERE `ScriptName` = 'spell_heartseed_ox_stomp';
+-- 121828: the server casts Chi Torpedo as 121828 when the client asks for 115008, so Crane Rush's cooldown and
+-- riders hook it too.
+DELETE FROM `spell_script_names` WHERE `ScriptName` = 'spell_heartseed_ox_stomp'
+    OR (`spell_id` = 121828 AND `ScriptName` = 'spell_heartseed_gift');
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
-(119381, 'spell_heartseed_ox_stomp');
+(119381, 'spell_heartseed_ox_stomp'),
+(121828, 'spell_heartseed_gift');
