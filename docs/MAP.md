@@ -94,6 +94,7 @@ something worth knowing.
 | `tools/bench/` | Startup profiling and benchmarking tools (`tools/bench/startup_profile.py`) |
 | `tools/live-server-mcp/` | MCP server adapter for live worldserver inspection |
 | `tools/backup/` | Save safety and database snapshot tooling (`tools/backup/save_safety.py`) |
+| `tools/art-slicer/` | Slices generated art into power-of-two TGA textures for addons (crop, circle mask, colour key) |
 | `tools/dbc/` | Shared MoP 5.4.8 `WDBC` and `WDB2` reader library and named schemas |
 | `tools/content-search/` | Content search MCP server and CLI for spells, visuals, weapon glows, items |
 | `tools/crash-triage/` | Automated crash triage and dump analysis tool |

@@ -1,0 +1,95 @@
+{
+  "name": "heartseed-gifts",
+  "timeout_seconds": 150,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "2"
+  ],
+  "steps": [
+    "say .heartseed revoke",
+    "say .heartseed grant",
+    "say .cooldown",
+    "say .npc add temp 6",
+    "npcguid 6",
+    "say .heartseed major 10 2",
+    "cast 123904 npc",
+    "say .seed sync",
+    "say .heartseed major 10 8",
+    "cast 117960",
+    "say .heartseed info",
+    "say .heartseed info",
+    "say .heartseed major 10 6",
+    "cast 119381",
+    "say .heartseed major 10 4",
+    "cast 115008",
+    "say .heartseed revoke"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "contains",
+      "text": "A Celestial Gift wakes: Invoke Xuen, the White Tiger"
+    },
+    {
+      "type": "contains",
+      "text": "msg=\"M"
+    },
+    {
+      "type": "contains",
+      "text": "fights at your side, crackling with lightning"
+    },
+    {
+      "type": "contains",
+      "text": "spell_candidates=484|123904"
+    },
+    {
+      "type": "contains",
+      "text": "|117960"
+    },
+    {
+      "type": "contains",
+      "text": "|119381"
+    },
+    {
+      "type": "contains",
+      "text": "A Celestial Gift wakes: Celestial Breath"
+    },
+    {
+      "type": "contains",
+      "text": "A Celestial Gift wakes: Leg Sweep"
+    },
+    {
+      "type": "contains",
+      "text": "A Celestial Gift wakes: Chi Torpedo"
+    },
+    {
+      "type": "not_contains",
+      "text": "SMSG_CAST_FAILED spell=123904"
+    },
+    {
+      "type": "not_contains",
+      "text": "SMSG_CAST_FAILED spell=117960"
+    },
+    {
+      "type": "not_contains",
+      "text": "SMSG_CAST_FAILED spell=119381"
+    },
+    {
+      "type": "not_contains",
+      "text": "SMSG_CAST_FAILED spell=115008"
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "source_dir": "C:/art/heartseed",
+  "output_dir": "addons/Heartseed/art",
+  "jobs": [
+    {"source": "background.png", "out": "background", "size": 512},
+    {"source": "seed.png", "out": "seed", "size": 128, "circle": true},
+    {"source": "ring.png", "out": "ring", "size": 128, "key": [255, 0, 255]},
+    {"source": "glow.png", "out": "glow", "size": 256},
+    {"source": "halo.png", "out": "halo", "size": 256},
+    {"source": "xuen.png", "out": "xuen", "size": 128, "circle": true},
+    {"source": "niuzao.png", "out": "niuzao", "size": 128, "circle": true},
+    {"source": "yulon.png", "out": "yulon", "size": 128, "circle": true},
+    {"source": "chiji.png", "out": "chiji", "size": 128, "circle": true}
+  ]
+}
