@@ -36,6 +36,7 @@
 #include "DBCStores.h"
 #include "InstanceScript.h"
 #include "Battleground.h"
+#include "TelemetryHooks.h"
 
 void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
 {
@@ -1184,7 +1185,11 @@ void WorldSession::HandleCancelCastOpcode(WorldPacket& recvPacket)
         recvPacket >> counter;
 
     if (_player->IsNonMeleeSpellCasted(false))
+    {
+        if (Spell const* spell = _player->GetCurrentSpell(CURRENT_GENERIC_SPELL))
+            TelemetryHooks::CastCancel(_player, spell);
         _player->InterruptNonMeleeSpells(false, spellId, false);
+    }
 }
 
 void WorldSession::HandleCancelAuraOpcode(WorldPacket& recvPacket)
@@ -1365,6 +1370,9 @@ void WorldSession::HandleCancelChanneling(WorldPacket& recvData)
     if (mover != _player && mover->GetTypeId() == TYPEID_PLAYER)
         return;
 
+    if (mover == _player)
+        if (Spell const* spell = _player->GetCurrentSpell(CURRENT_CHANNELED_SPELL))
+            TelemetryHooks::CastCancel(_player, spell);
     mover->InterruptSpell(CURRENT_CHANNELED_SPELL);
 }
 

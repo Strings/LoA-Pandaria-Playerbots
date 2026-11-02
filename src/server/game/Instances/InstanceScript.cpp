@@ -37,6 +37,7 @@
 #include "GuildMgr.h"
 #include "SpellHistory.h"
 #include "Config.h"
+#include "TelemetryHooks.h"
 
 InstanceScript::InstanceScript(Map* map) : instance(map), completedEncounters(0), resurrections(0)
 {
@@ -364,6 +365,7 @@ bool InstanceScript::SetBossState(uint32 id, EncounterState state)
 
             bossInfo->state = state;
             SaveToDB();
+            TelemetryHooks::BossState(instance, id, uint32(state));
         }
 
         // Clear resurrections count

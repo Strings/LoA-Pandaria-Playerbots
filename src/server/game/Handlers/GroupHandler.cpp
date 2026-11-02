@@ -33,6 +33,7 @@
 #include "WorldSession.h"
 #include "InstanceScript.h"
 #include "LFGMgr.h"
+#include "TelemetryHooks.h"
 
 class Aura;
 
@@ -669,6 +670,15 @@ void WorldSession::HandleLootRoll(WorldPacket& recvData)
     Group* group = GetPlayer()->GetGroup();
     if (!group)
         return;
+
+    // Before the vote: the last vote can end the roll and free it.
+    if (TelemetryHooks::Get().LootRoll)
+        for (Roll const* roll : group->GetRolls())
+            if (roll->lootGUID == lootGuid && roll->itemSlot == itemSlot)
+            {
+                TelemetryHooks::LootRoll(GetPlayer(), roll->itemid, rollType);
+                break;
+            }
 
     group->CountRollVote(lootGuid, GetPlayer()->GetGUID(), itemSlot, rollType);
 

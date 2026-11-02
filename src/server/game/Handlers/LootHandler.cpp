@@ -34,6 +34,7 @@
 #include "ScriptMgr.h"
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
+#include "TelemetryHooks.h"
 #ifdef ELUNA
 #include "HookMgr.h"
 #endif
@@ -374,6 +375,10 @@ void WorldSession::HandleLootOpcode(WorldPacket& recvData)
     WorldPacket data{ SMSG_AE_LOOT_TARGETS, 4 };
     data << uint32(corpses.size());
     SendPacket(&data);
+
+    if (TelemetryHooks::Get().LootOpen)
+        if (WorldObject const* source = ObjectAccessor::GetWorldObject(*_player, guid))
+            TelemetryHooks::LootOpen(_player, source);
 
     GetPlayer()->SendLoot(guid, LOOT_CORPSE);
 

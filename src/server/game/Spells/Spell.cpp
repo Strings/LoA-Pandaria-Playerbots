@@ -65,6 +65,7 @@
 #include "TradeData.h"
 #include "Random.h"
 #include "VMapManager2.h"
+#include "TelemetryHooks.h"
 
 extern pEffect SpellEffects[TOTAL_SPELL_EFFECTS];
 
@@ -3609,6 +3610,10 @@ void Spell::prepare(SpellCastTargets const* targets, AuraEffect const* triggered
         CallScriptOnSpellStartHandlers();
 
         SendSpellStart();
+
+        if (!IsTriggered())
+            if (Player* player = m_caster->ToPlayer())
+                TelemetryHooks::CastStart(player, this);
 
         // set target for proper facing
         if ((m_casttime || m_spellInfo->IsChanneled()) && !(_triggeredCastFlags & TRIGGERED_IGNORE_SET_FACING))
