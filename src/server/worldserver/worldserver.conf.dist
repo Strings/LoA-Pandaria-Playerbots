@@ -5595,7 +5595,7 @@ Heartseed.Story.WorldBosses = "60491 62346 69099 69161 71952 71953 71954 71955 7
 
 #
 #    Heartseed.Story.AwakeningSound
-#        Description: Sound kit played to the player when a story beat raises the rank cap (0 = none).
+#        Description: Sound kit played to the player when the Heartseed reaches a story beat (0 = none).
 #        Default:     0
 
 Heartseed.Story.AwakeningSound = 0

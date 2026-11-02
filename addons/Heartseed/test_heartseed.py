@@ -101,13 +101,15 @@ class HeartseedAddonTest(unittest.TestCase):
         self.assertTrue(self.g.HeartseedFrame.shown)
         self.assertEqual(self.g.sent[1], ".seed sync")
         self.assertEqual(self.g.sounds[1], "igSpellBookOpen")
-        for line in ["S	3	5	7	40	160	Sprout	Xuen	2	1	",
+        for line in ["S	3	2	40	450	Sprout	Xuen	2	1	",
                      "M	10	Call of Xuen	Xuen	123904	A spectral white tiger fights at your side.",
                      "M	25			0	", "M	40			0	",
-                     "X	Essence of Storms	2	1", "E"]:
+                     "X	Essence of Storms	2	1", "G	1	Stamina	1	1", "G	3	Critical strike	0	1", "E"]:
             self.g.addon(line)
         body = "\n".join(self.texts())
-        self.assertIn("Rank 3 of 7  (account 5)", body)
+        self.assertIn("Growth level 3", body)
+        self.assertIn("2 points to spend", body)
+        self.assertIn("+1%", body)
         self.assertIn("Call of Xuen", body)
         self.assertIn("A spectral white tiger fights at your side.", body)
         self.assertIn("Level 25", body)
@@ -115,19 +117,40 @@ class HeartseedAddonTest(unittest.TestCase):
         self.assertIn("Weapons fed: 2", body)
         self.assertEqual(self.g.HeartseedGiftButton.attributes["spell"], "Invoke Xuen, the White Tiger")
 
+    def stat_buttons(self):
+        found = self.lua.eval("function() local t = {} for _, w in pairs(widgets) do "
+                              "if type(w) == 'table' and rawget(w, 'stat') then t[#t + 1] = w end end return t end")()
+        return list(found.values())
+
+    def test_stat_button_spends_only_with_points(self):
+        self.lua.execute("HeartseedPanel_Toggle()")
+        for line in ["S	2	1	0	400	Sprout	none	0	1	", "G	1	Stamina	1	1", "G	2	Main stat	0	1", "E"]:
+            self.g.addon(line)
+        crit = [b for b in self.stat_buttons() if b.stat.id == 2][0]
+        crit.scripts.OnClick(crit)
+        self.assertIn(".seed spend 2", list(self.g.sent.values()))
+        sent = len(self.g.sent)
+        self.lua.execute("HeartseedPanel_Toggle(); HeartseedPanel_Toggle()")
+        for line in ["S	2	0	0	400	Sprout	none	0	1	", "G	1	Stamina	1	1", "G	2	Main stat	1	1", "E"]:
+            self.g.addon(line)
+        crit = [b for b in self.stat_buttons() if b.stat.id == 2][0]
+        before = len(self.g.sent)
+        crit.scripts.OnClick(crit)
+        self.assertEqual(len(self.g.sent), before)                 # nothing left to spend
+
     def test_new_gift_plays_sound(self):
         self.lua.execute("HeartseedPanel_Toggle()")
-        for line in ["S	1	1	10	0	100	Sprout	none	0	1	", "M	10			0	", "E"]:
+        for line in ["S	1	0	0	350	Sprout	none	0	1	", "M	10			0	", "E"]:
             self.g.addon(line)
         self.assertNotIn("LEVELUPSOUND", list(self.g.sounds.values()))
         self.lua.execute("HeartseedPanel_Toggle(); HeartseedPanel_Toggle()")
-        for line in ["S	1	1	10	0	100	Sprout	Xuen	0	1	", "M	10	Call of Xuen	Xuen	123904	", "E"]:
+        for line in ["S	1	0	0	350	Sprout	Xuen	0	1	", "M	10	Call of Xuen	Xuen	123904	", "E"]:
             self.g.addon(line)
         self.assertIn("LEVELUPSOUND", list(self.g.sounds.values()))
 
     def test_gift_waits_for_combat_to_end(self):
         self.lua.execute("InCombatLockdown = function() return true end; HeartseedPanel_Toggle()")
-        for line in ["S	1	1	10	0	100	Sprout	Xuen	0	1	", "M	10	Call of Xuen	Xuen	123904	", "E"]:
+        for line in ["S	1	0	0	350	Sprout	Xuen	0	1	", "M	10	Call of Xuen	Xuen	123904	", "E"]:
             self.g.addon(line)
         self.assertIsNone(self.g.HeartseedGiftButton.attributes["spell"])
         self.lua.execute('InCombatLockdown = function() return false end; fire("PLAYER_REGEN_ENABLED")')
@@ -177,11 +200,11 @@ class HeartseedAddonTest(unittest.TestCase):
         self.lua.execute('HeartseedPanel_Toggle()')
         self.lua.execute('fire("CHAT_MSG_ADDON", "Heartseed", "N", "WHISPER", "Someone")')
         self.lua.execute('fire("CHAT_MSG_ADDON", "Other", "N", "WHISPER", "Tester")')
-        self.g.addon("S	1	1	1	0	100	Seed	none	0	0	")
+        self.g.addon("S	1	0	0	350	Seed	none	0	0	")
         self.g.addon("E")
         texts = self.texts()
         self.assertNotIn("No Heartseed", texts)
-        self.assertIn("Rank 1 of 1", texts)
+        self.assertIn("Growth level 1", texts)
 
     def test_default_binding_only_when_free(self):
         self.lua.execute('fire("PLAYER_LOGIN")')

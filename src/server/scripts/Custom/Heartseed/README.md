@@ -7,8 +7,8 @@ The living jewel that rides on a character's main-hand weapon and grows with it.
 
 | File | What |
 |---|---|
-| `HeartseedRules.h` | Pure rules with no server dependencies (stage by level, dominant path, tier levels, minor activation, trait and core passive amounts, rank cap, Growth per rank, feeding Growth, essence slots). Unit-test these. |
-| `HeartseedMgr.h/.cpp` | State cache per character (account fields shared across the account's loaded characters), loading and saving, stage and glow lookup, traits, major choice, core and essence procs, Growth and rank-ups, feeding, essences. |
+| `HeartseedRules.h` | Pure rules with no server dependencies (stage by level, dominant path, tier levels, minor activation, trait and core passive amounts, Growth XP levels and stat points, main stat by spec, essence slots, meters). Unit-test these. |
+| `HeartseedMgr.h/.cpp` | State cache per character (account fields shared across the account's loaded characters), loading and saving, stage and glow lookup, traits, major choice, core and essence procs, Growth XP and stat points, feeding, essences. |
 | `heartseed_scripts.cpp` | World, player, unit and command scripts. |
 
 ## Data
@@ -16,9 +16,9 @@ The living jewel that rides on a character's main-hand weapon and grows with it.
 One seed per account (T-049, DESIGN.md "One seed per account"). Account tables
 (`sql/updates/characters/2026_10_31_claude_16_heartseed_account.sql`, which also migrates pre-T-049 rows):
 
-- `account_heartseed`: one row per account that has a Heartseed (shared rank, Growth, grant time). Having a
-  row is what "has a Heartseed" means to code, for every character of the account; the granting quest (T-025)
-  creates it.
+- `account_heartseed`: one row per account that has a Heartseed (grant time). Having a row is what "has a
+  Heartseed" means to code, for every character of the account; the granting quest (T-025) creates it. Its
+  `rank` and `growth` columns are retired (T-083) and keep their defaults.
 - `account_heartseed_essence`: essences the account has collected, and how many times.
 - `account_heartseed_fed_weapon`: every weapon entry the seed has eaten, how often and when first.
 
@@ -29,10 +29,13 @@ Character tables (`sql/updates/characters/2026_10_31_claude_00_heartseed_state.s
   (only slotted essences have a row; `count` repeats the account's).
 - `heartseed_story_flag`: story beats this character reached and when (`Heartseed::StoryFlag`).
 - `heartseed_state` and `heartseed_fed_weapon` (T-020, T-022) are no longer written; kept for the migration.
+- `character_heartseed_growth` and `character_heartseed_growth_point`
+  (`sql/updates/characters/2026_11_02_claude_03_heartseed_growth.sql`, T-083): Growth level and XP, and the
+  stat points spent, per character.
 
-Every loaded character of an account holds the same shared values (`State::AccountId`, rank, Growth,
-essence counts, weapons fed); a change through one is copied to the others under the manager's lock, so the
-player's alts logged in as playerbots see it at once.
+Every loaded character of an account holds the same shared values (`State::AccountId`, grant time, essence
+counts, weapons fed); a change through one is copied to the others under the manager's lock, so the player's
+alts logged in as playerbots see it at once.
 
 Characters database (`sql/updates/characters/2026_10_31_claude_08_weapon_appearance.sql`):
 
@@ -53,7 +56,8 @@ role 199 (Player Commands).
 
 World database (`sql/updates/world/2026_10_31_claude_03_heartseed_trait.sql`):
 
-- `heartseed_trait`: one row per trait: path, kind (1 minor, 2 major), major tier or minor rank, the
+- `heartseed_trait`: one row per trait: path, kind (1 minor, 2 major), major tier or the character level a
+  minor fills in at (column `min_rank`, a level since T-083), the
   passive aura spell it applies, and its amount (`base_amount + amount_per_ilvl * main-hand item level`,
   written to the spell's effect 0).
 - The aura spells are server-side rows in `spell_dbc`, `spellmisc_dbc` and `spelleffect_dbc`, in the
@@ -124,20 +128,30 @@ World database (`sql/updates/world/2026_10_31_claude_06_heartseed_feed_prompt.sq
 - `twink_item`: item entries that are twink gear (seeded from Codex's T-045 twink gear list). Not
   Heartseed-specific; other systems that consume gear should honor it too.
 
-## Growth, rank and the cap
+## Growth XP and stat points (T-083)
 
-- **Growth** is earned through `HeartseedMgr::AddGrowth` (feeding now; quests, rares, events and dungeons
-  later). It is spent on ranks: rank R to R + 1 costs `Heartseed.Rank.GrowthBase + GrowthPerRank * (R - 1)`.
-- **Rank cap** = `level * Heartseed.Rank.CapPerLevel + awakenings * Heartseed.Rank.CapPerAwakening`, at least
-  1. Awakenings are the story flags listed in `Heartseed.Rank.AwakeningFlags` that the character has.
-- Growth past the cap is **banked**. A level-up, a new awakening or a login spends it (`ApplyRankUps`).
-- GM `.heartseed rank` and a bare `.heartseed growth N` set values directly and ignore the cap.
-- **Rank and Growth are the account's**; a character uses `min(account rank, its own cap)` (`GetEffectiveRank`),
-  so an alt or a twink has the balance it would have alone. Growth is spent up to the cap of the character that
-  earns or logs in, so a higher-level alt can raise the shared rank further.
-- **Only the character being played earns.** The player's alts logged in as playerbots load the seed (the
-  account is in `account_heartseed`), use it at their cap and proc, but earn no Growth and get no story beats,
-  rank-ups or prompts. Random bots never load it.
+DESIGN.md Progression, "Three tracks, no rank cap". There is no rank and no cap any more: character level unlocks
+stages, majors and minors (`min_rank` is a level), feeding gives appearances and essences, and Growth XP gives
+power, each the character's own.
+
+- **Growth XP** comes from battleground wins (`Heartseed.Growth.BattlegroundWin`, arenas excluded) and dungeon
+  and raid boss kills (`.DungeonBoss`, `.RaidBoss`) at most `.LevelRange` levels below the character, for every
+  credited group member. Growth level L to L + 1 costs `.XpBase + .XpPerLevel * L`; no cap.
+  `HeartseedMgr::AddGrowthXp` is the one entry point for later sources (quests, rares, events).
+- The battleground result reaches the script through `BattlegroundHooks` (`src/server/game/Scripting/`), a
+  small dispatch the core calls from `Battleground::EndBattleground`, so `ScriptMgr.h` stays untouched.
+- **Only the character being played earns.** The player's alts logged in as playerbots keep their points but
+  earn nothing; random bots never load a seed. A character with XP gain turned off (a twink) earns nothing
+  unless `Heartseed.Growth.TwinksEarn = 1`, so its bracket's balance holds.
+- **Stat points**: one per Growth level. The player spends them in the addon panel (`.seed spend <stat>`) on a
+  row of `heartseed_growth_stat` (`sql/updates/world/2026_11_02_claude_04_heartseed_growth.sql`): Stamina,
+  Main stat, Critical strike, Haste, each `pct_per_point` percent per point. Each stat is a server-side passive
+  (310010 stamina, 310014 crit, 310015 haste; main stat 310011 strength, 310012 agility or 310013 intellect by
+  the specialization, or the class before one is chosen) whose effect 0 is points times the percentage,
+  applied by `RefreshTraits` like the trait auras.
+- `.seed reset` gives every point back, at a Celestial shrine unless `Heartseed.Growth.ResetAtShrineOnly = 0`.
+- The first Growth level shows a short introduction (notification plus a chat line) once per character
+  (story flag 1002, `hint_growth_points`).
 
 ## Choosing majors
 
@@ -169,8 +183,8 @@ however it is completed. The Theramore intro scenario will later complete the sa
 ## Story beats
 
 Simple hooks set the story flags until later quests take over (they can call
-`HeartseedMgr::ReachStoryBeat` with the same flags). A beat is set once; the player is told, and when it
-raises the cap (an awakening) banked Growth ranks the Heartseed up at once.
+`HeartseedMgr::ReachStoryBeat` with the same flags). A beat is set once and the player is told; beats unlock
+lore and cosmetics later, never power.
 
 | Flag | Set when | Hook |
 |---|---|---|
@@ -182,10 +196,9 @@ Dungeons whose instance has no script never call `UpdateEncounterState`, so they
 
 ## Feeding and essences
 
-- **Feeding** consumes a weapon from the bags for `(Heartseed.Feed.GrowthBase + GrowthPerItemLevel * item
-  level) * Heartseed.Feed.QualityPct[quality] / 100` Growth, and rolls each essence whose source matches it.
-  Fishing poles, miscellaneous weapons, quest items, refundable items and qualities worth 0 (legendary,
-  artifact, heirloom by default) are never fed. Each feed is logged in `heartseed_fed_weapon`.
+- **Feeding** consumes a weapon from the bags for its appearance and a roll on each essence whose source matches
+  it; it gives no power (T-083). Fishing poles, miscellaneous weapons, quest items, refundable items and
+  qualities outside `Heartseed.Feed.Qualities` (legendary, artifact, heirloom by default) are never fed. Each feed is logged in `heartseed_fed_weapon`.
 - **On replacement, with a prompt** (`Heartseed.Feed.OnReplace`): when a weapon gained since login goes into
   the main hand with a higher item level, the Heartseed asks, one update later, whether to feed the weapon it
   replaced (a gossip menu opened from the player, with a confirm box). Nothing is consumed until the player
@@ -194,7 +207,7 @@ Dungeons whose instance has no script never call `UpdateEncounterState`, so they
 - **Twink gear** (`twink_item`) is never offered on replacement. Deleting a twink weapon from the bags feeds
   it instead (`PlayerScript::OnItemDestroyedByPlayer`, a small core hook in `HandleDestroyItemOpcode`). The first
   time a character puts a twink weapon in the main hand, a notification and a chat message explain this
-  (remembered as story flag 1001, a hint that never counts as an awakening).
+  (remembered as story flag 1001, a hint).
 - **Appearances:** every weapon fed or deleted is recorded in `character_weapon_appearance`.
 - **Essences** fill the first free open slot when first collected (`Heartseed.Essence.AutoSlot`). Slots
   open at 10, 40 and 70; an essence in an open slot rolls its proc on damage the character deals, with its
@@ -205,8 +218,8 @@ Dungeons whose instance has no script never call `UpdateEncounterState`, so they
 
 - **Majors** are chosen, one per tier (levels 10, 25, 40, 55, 70, 85), into the loadout of the active
   specialization. `HeartseedMgr::ChooseMajor` validates the choice; the shrine gossip (T-023) calls it.
-- **Minors** fill in by rank on every path the active loadout has at least one major in (path 0 = every
-  Heartseed).
+- **Minors** fill in by character level on every path the active loadout has at least one major in (path 0 =
+  every Heartseed).
 - **Loadouts per specialization:** a specialization with no saved loadout starts from the one the
   character just left, so choosing a spec after the level 10 major, or adding a second spec, keeps it.
 - **Core passive**, every Heartseed:
@@ -239,10 +252,9 @@ worldserver.conf:
 - `Heartseed.Enabled` (default 1): off keeps state but shows no glow and applies no traits or core passive.
 - `Heartseed.Core.WeaponDamagePct` (5), `Heartseed.Proc.SpellId` (16614, placeholder look),
   `Heartseed.Proc.Chance` (10), `Heartseed.Proc.WeaponDamagePct` (50), `Heartseed.Proc.Cooldown` (3000 ms).
-- Cap and ranks: `Heartseed.Rank.CapPerLevel` (1), `.CapPerAwakening` (5), `.AwakeningFlags` ("1 2 3"),
-  `.GrowthBase` (100), `.GrowthPerRank` (20).
-- Feeding: `Heartseed.Feed.OnReplace` (1), `.GrowthBase` (20), `.GrowthPerItemLevel` (2), `.QualityPct`
-  ("50 100 150 250 400 0 0 0", poor to heirloom).
+- Growth XP (T-083): `Heartseed.Growth.XpBase` (300), `.XpPerLevel` (50), `.BattlegroundWin` (100),
+  `.DungeonBoss` (50), `.RaidBoss` (100), `.LevelRange` (5), `.TwinksEarn` (0), `.ResetAtShrineOnly` (1).
+- Feeding: `Heartseed.Feed.OnReplace` (1), `.Qualities` ("0 1 2 3 4", poor to epic).
 - Essences: `Heartseed.Essence.ProcCooldown` (3000 ms), `.AutoSlot` (1), `.SlotLevels` ("10 40 70").
 - Major tiers: `Heartseed.Majors.TierLevels` ("10 25 40 55 70 85"). The number of tiers and slots is fixed;
   saved loadouts keep their tier index.
@@ -258,16 +270,18 @@ worldserver.conf:
 
 Permission 90000 (`Command: heartseed`, Gamemaster role). Target is the selected player or yourself.
 
-- `.heartseed info`: rank, Growth, stage, loadout, essences, glow, story flags and the main hand's
+- `.heartseed info`: stage, Growth level, XP and points, loadout, essences, glow, story flags and the main hand's
   visible enchant field as the client receives it.
-- `.heartseed grant`: give a Heartseed (rank 1, no Growth).
+- `.heartseed grant`: give a Heartseed (no Growth).
 - `.heartseed revoke`: remove it with all its rows, and reset the granting quest.
 - `.heartseed offer`: show the granting quest now (no Heartseed and quest not done).
 - `.heartseed shrines`: list the Celestial shrines and say whether the target is at one.
-- `.seed` (player command, permission 90001): open your own choice window.
-- `.heartseed rank <1-255>`: set the rank. Ignores the level cap, so states can be tested without leveling.
-- `.heartseed growth <n> | +<n> | -<n>`: set Growth or take from it (never below 0); `+<n>` earns it,
-  ranking up to the cap like real Growth.
+- `.seed` (player command, permission 90001): open your own choice window. `.seed spend <stat> [count]` spends
+  stat points (stat id or name prefix), `.seed reset` takes them all back at a shrine; the addon uses both.
+- `.heartseed growth [+<xp> | <level> [xp]]`: show Growth; `+<xp>` earns XP as in play (the bot and twink rules
+  apply); `<level> [xp]` sets it, refunding points past the new level.
+- `.heartseed points [spend <stat> [count] | reset]`: list the stats with points, percentages and the aura each
+  uses; spend for the target, or reset anywhere.
 - `.heartseed flag list | set <name|id> | clear <name|id>`: story flags by name (`first_dungeon`,
   `reached_pandaria`, `first_world_boss`) or number. Setting keeps the first time a flag was set.
 - `.heartseed traits`: every trait, marking the ones active on the target.
@@ -275,11 +289,10 @@ Permission 90000 (`Command: heartseed`, Gamemaster role). Target is the selected
   loadout. Skips the level check.
 - `.heartseed meter [<stacks> | lit | hit <damage>]`: show the path meter, set its stacks, light it, or feed it
   a hit taken (Niuzao: records the damage and lights the meter if the hit is big enough).
-- `.heartseed reload`: reload stages, glows, traits, essences and shrines, and refresh the target.
-- `.heartseed cap`: the cap and how it is made up (level, awakening flags), rank, Growth, next rank cost.
+- `.heartseed reload`: reload stages, glows, traits, essences, shrines, meters and Growth stats, and refresh the target.
 - `.heartseed feed <item link | entry>`: feed one such weapon from the target's bags (no prompt, no upgrade
   check; twink items allowed).
-- `.heartseed feed preview <item link | entry>`: Growth and essence chances, whether it is twink gear, and
+- `.heartseed feed preview <item link | entry>`: essence chances, whether it is twink gear, and
   whether a carried copy can be fed on replacement and by command, without consuming anything.
 - `.heartseed essence list`: essence types, their sources and what the target holds.
 - `.heartseed essence add <id> [count]` / `remove <id>`: give or take an essence.
