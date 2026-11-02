@@ -35,6 +35,7 @@
 #include "SpellMgr.h"
 #include "ScriptMgr.h"
 #include "ChatLink.h"
+#include "TelemetryHooks.h"
 
 bool ChatHandler::load_command_table = true;
 
@@ -280,6 +281,8 @@ bool ChatHandler::ParseCommands(char const* text)
 
         SendSysMessage(LANG_NO_CMD);
     }
+    else if (m_session && m_session->GetPlayer())
+        TelemetryHooks::Command(m_session->GetPlayer(), fullcmd.c_str());
     return true;
 }
 

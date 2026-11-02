@@ -5763,6 +5763,97 @@ Capture.NearbyBotRadius = 100
 #
 ###################################################################################################
 
+###################################################################################################
+# PLAYER TELEMETRY (.telemetry)
+#
+# Logs how human characters play (movement, casts, targets, loot, emotes, outcomes) to JSON lines,
+# one file per session, for training human-like bots offline. Logs stay on this machine.
+#
+#    Telemetry.Enable
+#        Description: Log every human character from login.
+#        Default:     0 - (Off)
+
+Telemetry.Enable = 0
+
+#
+#    Telemetry.Directory
+#        Description: Where session files go (<dir>/<YYYY-MM-DD>/<session>.jsonl). Empty resolves to
+#                     <repo>/telemetry/; relative paths resolve against the repository source directory.
+#        Default:     ""
+
+Telemetry.Directory = ""
+
+#
+#    Telemetry.Chat
+#        Description: Also log chat lines (not addon messages) as decision events, text included.
+#        Default:     0 - (Off)
+
+Telemetry.Chat = 0
+
+#
+#    Telemetry.MovementSampleMs
+#        Description: Most frequent movement sample in milliseconds. Movement flag changes (strafe,
+#                     jump, stop) always log at once; standing still logs nothing. Minimum 50.
+#        Default:     200
+
+Telemetry.MovementSampleMs = 200
+
+#
+#    Telemetry.IdleTimeoutSeconds
+#        Description: Logging pauses after this long without a move, cast, target change, chat or
+#                     emote, and resumes on the next one.
+#        Default:     300
+
+Telemetry.IdleTimeoutSeconds = 300
+
+#
+#    Telemetry.IdleEpisodeSeconds
+#        Description: Seconds without input before the activity episode becomes idle.
+#        Default:     30
+
+Telemetry.IdleEpisodeSeconds = 30
+
+#
+#    Telemetry.EpisodeHoldMs
+#        Description: A new activity must last this long before the episode switches (fights and
+#                     map type changes switch at once).
+#        Default:     3000
+
+Telemetry.EpisodeHoldMs = 3000
+
+#
+#    Telemetry.DiscardWindowMinutes
+#        Description: Rows stay in memory this long before they are written, so .telemetry discard
+#                     can still drop them. A crash loses at most this much.
+#        Default:     15
+
+Telemetry.DiscardWindowMinutes = 15
+
+#
+#    Telemetry.FlushIntervalMs
+#        Description: How often rows older than the discard window are written. Minimum 1000.
+#        Default:     5000
+
+Telemetry.FlushIntervalMs = 5000
+
+#
+#    Telemetry.PackRadius
+#        Description: Group members within this many yards count toward the friendly pack (centroid
+#                     distance, angle and heading) on decision events.
+#        Default:     60
+
+Telemetry.PackRadius = 60
+
+#
+#    Telemetry.InterruptSpells
+#        Description: Interrupt spells checked, in order, for a target player's interrupt cooldown;
+#                     the first one the target knows is used.
+#        Default:     "6552 96231 147362 1766 15487 47528 57994 2139 116705 106839 78675 19647 119910"
+
+Telemetry.InterruptSpells = "6552 96231 147362 1766 15487 47528 57994 2139 116705 106839 78675 19647 119910"
+
+#
+###################################################################################################
 # Brief notice explaining all-profession access and the extra-profession addon. Shown at login until the
 # character knows a third primary profession.
 Professions.IntroOnLogin = 1

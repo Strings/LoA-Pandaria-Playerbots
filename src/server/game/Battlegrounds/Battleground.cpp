@@ -43,6 +43,7 @@
 #include "AchievementMgr.h"
 #include "BattlegroundTOK.h"
 #include "Realm.h"
+#include "TelemetryHooks.h"
 
 namespace Trinity
 {
@@ -919,6 +920,8 @@ void Battleground::UpdateWorldState(uint32 Field, uint32 Value)
     WorldPacket data;
     sBattlegroundMgr->BuildUpdateWorldStatePacket(&data, Field, Value);
     SendPacketToAll(&data);
+    if (Map* map = FindBgMap())
+        TelemetryHooks::WorldState(map, Field, Value);
 }
 
 void Battleground::UpdateWorldStateForPlayer(uint32 field, uint32 value, Player* player)
