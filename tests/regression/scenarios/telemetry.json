@@ -1,0 +1,97 @@
+{
+  "name": "telemetry",
+  "timeout_seconds": 120,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "1"
+  ],
+  "steps": [
+    "say .revive",
+    "walk -9336,172,61.6 -9339.7,170.2,61.6",
+    "say .telemetry flush",
+    "say .telemetry status",
+    "say .telemetry tag hunt-healer",
+    "say .telemetry tag Not An Intent",
+    "say .telemetry snapshot",
+    "say .telemetry pause",
+    "say .telemetry status",
+    "say .telemetry resume",
+    "say .telemetry discard 5",
+    "say .telemetry discard 999",
+    "say .telemetry tag",
+    "say .telemetry flush",
+    "say .telemetry track on"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "contains",
+      "text": "Telemetry: session "
+    },
+    {
+      "type": "contains",
+      "text": "Telemetry intent: hunt-healer"
+    },
+    {
+      "type": "contains",
+      "text": "An intent is one word of lowercase letters"
+    },
+    {
+      "type": "contains",
+      "text": "Telemetry snapshot of"
+    },
+    {
+      "type": "contains",
+      "text": "\\\"buffs\\\":["
+    },
+    {
+      "type": "contains",
+      "text": "Telemetry paused."
+    },
+    {
+      "type": "contains",
+      "text": "paused (manual"
+    },
+    {
+      "type": "contains",
+      "text": "Telemetry resumed."
+    },
+    {
+      "type": "contains",
+      "text": "Telemetry: dropped "
+    },
+    {
+      "type": "contains",
+      "text": "Only the last 15 minutes can be discarded"
+    },
+    {
+      "type": "contains",
+      "text": "Telemetry intent cleared."
+    },
+    {
+      "type": "contains",
+      "text": "Telemetry: wrote "
+    },
+    {
+      "type": "contains",
+      "text": "is not a playerbot"
+    },
+    {
+      "type": "not_contains",
+      "text": "No telemetry session"
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback (most recent call last)"
+    }
+  ]
+}

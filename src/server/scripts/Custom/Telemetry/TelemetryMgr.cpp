@@ -243,7 +243,7 @@ void TelemetryMgr::Input(Session& s, uint64 now)
     }
 }
 
-void TelemetryMgr::StartSession(Player* player, bool bot)
+TelemetryMgr::Lines TelemetryMgr::StartSession(Player* player, bool bot)
 {
     uint64 now = NowMs();
     Session& s = _sessions[player->GetGUID().GetCounter()];
@@ -262,18 +262,25 @@ void TelemetryMgr::StartSession(Player* player, bool bot)
     s.Dead = !player->IsAlive();
     s.Ghost = player->HasFlag(PLAYER_FIELD_PLAYER_FLAGS, PLAYER_FLAGS_GHOST);
 
-    Push(s, now, Row(s, "session_start", now).Add("aid", s.AccountId).Add("class", player->GetClass())
-        .Add("race", player->GetRace()).Add("lvl", player->GetLevel()).Add("build", GitRevision::GetHash()), true);
+    // Written at once rather than buffered, so a discard can never drop who the session belongs to.
+    std::string start = Row(s, "session_start", now).Add("aid", s.AccountId).Add("class", player->GetClass())
+        .Add("race", player->GetRace()).Add("lvl", player->GetLevel()).Add("build", GitRevision::GetHash()).Str();
+    ++s.RowsWritten;
     if (player->IsGameMaster())
         SetPause(s, Telemetry::PAUSE_GM_MODE, true, now);
+    return { { s.File, { start } } };
 }
 
 void TelemetryMgr::OnLogin(Player* player)
 {
     if (!_enabled || player->GetSession()->IsBot())
         return;
-    std::lock_guard<std::mutex> guard(_lock);
-    StartSession(player, false);
+    Lines lines;
+    {
+        std::lock_guard<std::mutex> guard(_lock);
+        lines = StartSession(player, false);
+    }
+    Write(lines);
 }
 
 void TelemetryMgr::OnLogout(Player* player)
@@ -1029,18 +1036,21 @@ bool TelemetryMgr::Track(Player* bot, bool on)
 {
     if (!_enabled || !bot->GetSession()->IsBot())
         return false;
+    Lines lines;
+    bool stop = false;
     {
         std::lock_guard<std::mutex> guard(_lock);
         bool tracked = Find(bot) != nullptr;
         if (on && !tracked)
         {
             ++_trackedBots;
-            StartSession(bot, true);
-            return true;
+            lines = StartSession(bot, true);
         }
-        if (on || !tracked)
-            return true;
+        stop = !on && tracked;
     }
-    OnLogout(bot);
+    if (stop)
+        OnLogout(bot);      // ends the session the way a logout does
+    else
+        Write(lines);
     return true;
 }

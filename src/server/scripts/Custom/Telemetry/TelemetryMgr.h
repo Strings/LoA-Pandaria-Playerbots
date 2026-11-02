@@ -105,7 +105,8 @@ private:
 
     bool Wanted(Player* player) const;
     Session* Find(Player* player);
-    void StartSession(Player* player, bool bot);
+    // Returns the session_start row to write once the lock is released.
+    Lines StartSession(Player* player, bool bot);
     Telemetry::JsonObject Row(Session const& s, char const* type, uint64 now) const;
     // Paused sessions keep only gap edges and session start and end (`always`).
     void Push(Session& s, uint64 now, Telemetry::JsonObject const& row, bool always = false);
