@@ -309,11 +309,10 @@ namespace
             Heartseed::State hsState{};
             if (sHeartseedMgr->GetState(player, hsState))
             {
-                snap.Heartseed.Rank = hsState.Rank;
-                snap.Heartseed.Growth = hsState.Growth;
+                snap.Heartseed.GrowthLevel = hsState.GrowthLevel;
+                snap.Heartseed.GrowthXp = hsState.GrowthXp;
+                snap.Heartseed.UnspentPoints = Heartseed::UnspentPoints(hsState.GrowthLevel, hsState.GrowthPoints);
             }
-            snap.Heartseed.EffectiveRank = sHeartseedMgr->GetEffectiveRank(player);
-            snap.Heartseed.RankCap = sHeartseedMgr->GetRankCap(player);
         }
 
         return snap;

@@ -39,35 +39,16 @@ void AddCheckpointHeartseedSteps()
         },
         [](Step const& /*step*/) { return std::string("Grant a Heartseed if there is none (the granting quest is left alone)."); });
 
-    sCheckpointMgr->RegisterStep("heartseed_rank",
-        [](ChatHandler* /*handler*/, Player* target, Step const& step, std::string& message)
-        {
-            if (!NeedsHeartseed(target, message))
-                return false;
-            // The rank is the account's: a checkpoint never lowers it, so a twink checkpoint leaves the main alone.
-            // The character uses it up to its own cap.
-            Heartseed::State state;
-            sHeartseedMgr->GetState(target, state);
-            uint8 rank = uint8(std::clamp(step.Arg1, 1, int32(Heartseed::MaxRank)));
-            if (state.Rank >= rank)
-            {
-                message = "account rank already " + std::to_string(state.Rank);
-                return true;
-            }
-            message = "account rank " + std::to_string(rank);
-            return sHeartseedMgr->SetRank(target, rank);
-        },
-        [](Step const& step) { return "Raise the account's Heartseed rank to at least " + std::to_string(step.Arg1) + " (the character uses it up to its cap)."; });
-
+    // Growth is the character's own (T-083): a checkpoint sets it, and points past the new level come back.
     sCheckpointMgr->RegisterStep("heartseed_growth",
         [](ChatHandler* /*handler*/, Player* target, Step const& step, std::string& message)
         {
             if (!NeedsHeartseed(target, message))
                 return false;
-            message = "Growth " + std::to_string(step.Arg1);
-            return sHeartseedMgr->SetGrowth(target, uint32(std::max(0, step.Arg1)));
+            message = "Growth level " + std::to_string(std::max(0, step.Arg1));
+            return sHeartseedMgr->SetGrowthLevel(target, uint32(std::max(0, step.Arg1)), 0);
         },
-        [](Step const& step) { return "Set the account's banked Growth to " + std::to_string(step.Arg1) + "."; });
+        [](Step const& step) { return "Set the character's Growth level to " + std::to_string(step.Arg1) + " (no XP toward the next)."; });
 
     sCheckpointMgr->RegisterStep("heartseed_major",
         [](ChatHandler* /*handler*/, Player* target, Step const& step, std::string& message)

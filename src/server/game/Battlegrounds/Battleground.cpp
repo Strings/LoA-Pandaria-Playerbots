@@ -17,6 +17,7 @@
 
 #include "ArenaTeam.h"
 #include "Battleground.h"
+#include "BattlegroundHooks.h"
 #include "BattlegroundMgr.h"
 #include "BattlePetMgr.h"
 #include "Creature.h"
@@ -1214,6 +1215,9 @@ void Battleground::EndBattleground(uint32 winner)
 
         if (!IsRatedBG() && !IsArena())
             player->AddTotalBGCount(team == winner);
+
+        if (!IsArena())
+            BattlegroundHooks::Dispatch(player, team == winner);
 
         player->ResetAllPowers();
         player->CombatStopWithPets(true);

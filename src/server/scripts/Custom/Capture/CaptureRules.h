@@ -50,10 +50,9 @@ namespace Capture
     {
         bool Enabled = false;
         bool HasSeed = false;
-        uint8_t Rank = 0;
-        uint8_t EffectiveRank = 0;
-        uint8_t RankCap = 0;
-        uint32_t Growth = 0;
+        uint32_t GrowthLevel = 0;
+        uint32_t GrowthXp = 0;
+        uint32_t UnspentPoints = 0;
     };
 
     struct TicketSnapshot

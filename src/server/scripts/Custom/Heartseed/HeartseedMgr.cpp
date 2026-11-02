@@ -11,6 +11,7 @@
 #include "DBCStores.h"
 #include "GossipDef.h"
 #include "Log.h"
+#include "Map.h"
 #include "ObjectMgr.h"
 #include "ObjectAccessor.h"
 #include "Player.h"
@@ -186,15 +187,17 @@ void HeartseedMgr::LoadConfig()
     _procCooldown = sConfigMgr->GetIntDefault("Heartseed.Proc.Cooldown", 3000);
 
     std::lock_guard<std::mutex> guard(_lock);
-    _capPerLevel = std::max(0.0f, sConfigMgr->GetFloatDefault("Heartseed.Rank.CapPerLevel", 1.0f));
-    _capPerAwakening = sConfigMgr->GetIntDefault("Heartseed.Rank.CapPerAwakening", 5);
-    _awakeningFlags = ParseList<uint16>(sConfigMgr->GetStringDefault("Heartseed.Rank.AwakeningFlags", "1 2 3"));
-    _rankGrowthBase = sConfigMgr->GetIntDefault("Heartseed.Rank.GrowthBase", 100);
-    _rankGrowthPerRank = sConfigMgr->GetIntDefault("Heartseed.Rank.GrowthPerRank", 20);
+    _growthXpBase = sConfigMgr->GetIntDefault("Heartseed.Growth.XpBase", 300);
+    _growthXpPerLevel = sConfigMgr->GetIntDefault("Heartseed.Growth.XpPerLevel", 50);
+    _growthBattlegroundWin = sConfigMgr->GetIntDefault("Heartseed.Growth.BattlegroundWin", 100);
+    _growthDungeonBoss = sConfigMgr->GetIntDefault("Heartseed.Growth.DungeonBoss", 50);
+    _growthRaidBoss = sConfigMgr->GetIntDefault("Heartseed.Growth.RaidBoss", 100);
+    _growthLevelRange = uint8(std::clamp(sConfigMgr->GetIntDefault("Heartseed.Growth.LevelRange", 5), 0, 255));
+    _growthTwinksEarn = sConfigMgr->GetBoolDefault("Heartseed.Growth.TwinksEarn", false);
+    _growthResetAtShrineOnly = sConfigMgr->GetBoolDefault("Heartseed.Growth.ResetAtShrineOnly", true);
     _feedOnReplace = sConfigMgr->GetBoolDefault("Heartseed.Feed.OnReplace", true);
-    _feedGrowthBase = sConfigMgr->GetIntDefault("Heartseed.Feed.GrowthBase", 20);
-    _feedGrowthPerItemLevel = sConfigMgr->GetFloatDefault("Heartseed.Feed.GrowthPerItemLevel", 2.0f);
-    _feedQualityPct = ParseList<float>(sConfigMgr->GetStringDefault("Heartseed.Feed.QualityPct", "50 100 150 250 400 0 0 0"));
+    std::vector<uint32> qualities = ParseList<uint32>(sConfigMgr->GetStringDefault("Heartseed.Feed.Qualities", "0 1 2 3 4"));
+    _feedQualities = std::set<uint32>(qualities.begin(), qualities.end());
     _essenceProcCooldown = sConfigMgr->GetIntDefault("Heartseed.Essence.ProcCooldown", 3000);
     _essenceAutoSlot = sConfigMgr->GetBoolDefault("Heartseed.Essence.AutoSlot", true);
     _storyHooks = sConfigMgr->GetBoolDefault("Heartseed.Story.Hooks", true);
@@ -320,7 +323,7 @@ bool HeartseedMgr::LoadData(std::size_t* loadedRows)
             uint8 path = fields[1].GetUInt8();
             uint8 kind = fields[2].GetUInt8();
             trait.Tier = fields[3].GetUInt8();
-            trait.MinRank = fields[4].GetUInt8();
+            trait.MinLevel = fields[4].GetUInt8();
             trait.SpellId = fields[5].GetUInt32();
             trait.BaseAmount = fields[6].GetInt32();
             trait.AmountPerItemLevel = fields[7].GetFloat();
@@ -553,6 +556,31 @@ bool HeartseedMgr::LoadData(std::size_t* loadedRows)
         } while (result->NextRow());
     }
 
+    std::map<uint8, Heartseed::GrowthStat> growthStats;
+    {
+        QueryResult result = WorldDatabase.Query("SELECT `id`, `name`, `main_stat`, `spell_id`, `pct_per_point`, NULL AS sentinel FROM `heartseed_growth_stat` UNION ALL SELECT NULL, NULL, NULL, NULL, NULL, 'end'");
+        if (!result)
+            return false;
+        do
+        {
+            Field* fields = result->Fetch();
+            if (!fields[5].IsNull())
+                continue;
+            Heartseed::GrowthStat stat;
+            stat.Id = fields[0].GetUInt8();
+            stat.Name = fields[1].GetString();
+            stat.MainStat = fields[2].GetUInt8() != 0;
+            stat.SpellId = fields[3].GetUInt32();
+            stat.PctPerPoint = fields[4].GetInt32();
+            if (!stat.Id || (!stat.MainStat && !sSpellMgr->GetSpellInfo(stat.SpellId)))
+            {
+                TC_LOG_ERROR("sql.sql", "Table `heartseed_growth_stat`: stat %u has id 0 or unknown spell %u; reload aborted.", uint32(stat.Id), stat.SpellId);
+                return false;
+            }
+            growthStats[stat.Id] = stat;
+        } while (result->NextRow());
+    }
+
     if (!sSpellMgr->GetSpellInfo(Heartseed::SPELL_CORE_WEAPON_BONUS))
         TC_LOG_ERROR("sql.sql", "Heartseed: core passive spell %u is missing from `spell_dbc`; no bonus weapon damage.", Heartseed::SPELL_CORE_WEAPON_BONUS);
     if (!sSpellMgr->GetSpellInfo(Heartseed::SPELL_METER_PASSIVE))
@@ -567,7 +595,7 @@ bool HeartseedMgr::LoadData(std::size_t* loadedRows)
     }
     auto stageCount = stages.size(), glowCount = glow.size(), traitCount = traits.size();
     auto essenceCount = essences.size(), sourceCount = essenceSources.size(), twinkCount = twinkItems.size(), shrineCount = shrines.size();
-    auto meterCount = meters.size();
+    auto meterCount = meters.size(), growthStatCount = growthStats.size();
     {
         std::lock_guard<std::mutex> guard(_lock);
         _stages.swap(stages);
@@ -579,12 +607,14 @@ bool HeartseedMgr::LoadData(std::size_t* loadedRows)
         _twinkItems.swap(twinkItems);
         _shrines.swap(shrines);
         _meters.swap(meters);
+        _growthStats.swap(growthStats);
     }
 
-    TC_LOG_INFO("server.loading", ">> Loaded %u Heartseed stages, %u glows, %u traits, %u essences, %u essence sources, %u twink items, %u shrines and %u meters in %u ms", uint32(stageCount),
-        uint32(glowCount), uint32(traitCount), uint32(essenceCount), uint32(sourceCount), uint32(twinkCount), uint32(shrineCount), uint32(meterCount), GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded %u Heartseed stages, %u glows, %u traits, %u essences, %u essence sources, %u twink items, %u shrines, %u meters and %u Growth stats in %u ms", uint32(stageCount),
+        uint32(glowCount), uint32(traitCount), uint32(essenceCount), uint32(sourceCount), uint32(twinkCount), uint32(shrineCount), uint32(meterCount),
+        uint32(growthStatCount), GetMSTimeDiffToNow(oldMSTime));
     if (loadedRows)
-        *loadedRows = stageCount + glowCount + traitCount + essenceCount + sourceCount + twinkCount + shrineCount + meterCount;
+        *loadedRows = stageCount + glowCount + traitCount + essenceCount + sourceCount + twinkCount + shrineCount + meterCount + growthStatCount;
     return true;
 }
 
@@ -602,8 +632,6 @@ void HeartseedMgr::LoadPlayer(Player* player)
         {
             if (otherGuid == guid || other.AccountId != account)
                 continue;
-            state.Rank = other.Rank;
-            state.Growth = other.Growth;
             state.GrantedTime = other.GrantedTime;
             state.FedWeapons = other.FedWeapons;
             for (auto const& [essenceId, held] : other.Essences)
@@ -616,16 +644,15 @@ void HeartseedMgr::LoadPlayer(Player* player)
     Field* fields = nullptr;
     if (!shared)
     {
-        QueryResult accountResult = CharacterDatabase.PQuery("SELECT `rank`, `growth`, `granted_time` FROM `account_heartseed` WHERE `account` = %u", account);
+        // The rank and growth columns are retired (T-083): Growth is the character's own now.
+        QueryResult accountResult = CharacterDatabase.PQuery("SELECT `granted_time` FROM `account_heartseed` WHERE `account` = %u", account);
         if (!accountResult)
         {
             UnloadPlayer(player);
             return;
         }
         fields = accountResult->Fetch();
-        state.Rank = fields[0].GetUInt8();
-        state.Growth = fields[1].GetUInt32();
-        state.GrantedTime = fields[2].GetUInt32();
+        state.GrantedTime = fields[0].GetUInt32();
 
         if (QueryResult result = CharacterDatabase.PQuery("SELECT `essence_id`, `count` FROM `account_heartseed_essence` WHERE `account` = %u", account))
         {
@@ -675,6 +702,23 @@ void HeartseedMgr::LoadPlayer(Player* player)
         } while (result->NextRow());
     }
 
+    if (QueryResult result = CharacterDatabase.PQuery("SELECT `level`, `xp` FROM `character_heartseed_growth` WHERE `guid` = %u", guid))
+    {
+        fields = result->Fetch();
+        state.GrowthLevel = fields[0].GetUInt32();
+        state.GrowthXp = fields[1].GetUInt32();
+    }
+
+    if (QueryResult result = CharacterDatabase.PQuery("SELECT `stat_id`, `points` FROM `character_heartseed_growth_point` WHERE `guid` = %u", guid))
+    {
+        do
+        {
+            fields = result->Fetch();
+            if (uint32 points = fields[1].GetUInt32())
+                state.GrowthPoints[fields[0].GetUInt8()] = points;
+        } while (result->NextRow());
+    }
+
     if (Item* weapon = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND))
         state.MainHand = weapon->GetGUID();
     state.FirstNewItemGuid = sObjectMgr->GetGenerator<HighGuid::Item>().GetNextAfterMaxUsed();
@@ -700,8 +744,8 @@ void HeartseedMgr::SavePlayer(Player* player)
     // shared values are the same in every loaded character, so whichever saves writes them.
     uint32 account = state.AccountId;
     CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
-    trans->PAppend("REPLACE INTO `account_heartseed` (`account`, `rank`, `growth`, `granted_time`) VALUES (%u, %u, %u, %u)",
-        account, uint32(state.Rank), state.Growth, state.GrantedTime);
+    trans->PAppend("INSERT INTO `account_heartseed` (`account`, `granted_time`) VALUES (%u, %u) ON DUPLICATE KEY UPDATE `granted_time` = VALUES(`granted_time`)",
+        account, state.GrantedTime);
     trans->PAppend("DELETE FROM `account_heartseed_essence` WHERE `account` = %u", account);
     for (auto const& [essenceId, essence] : state.Essences)
         trans->PAppend("INSERT INTO `account_heartseed_essence` (`account`, `essence_id`, `count`) VALUES (%u, %u, %u)",
@@ -725,6 +769,13 @@ void HeartseedMgr::SavePlayer(Player* player)
     for (auto const& [flagId, setTime] : state.StoryFlags)
         trans->PAppend("INSERT INTO `heartseed_story_flag` (`guid`, `flag_id`, `set_time`) VALUES (%u, %u, %u)",
             guid, uint32(flagId), setTime);
+
+    trans->PAppend("REPLACE INTO `character_heartseed_growth` (`guid`, `level`, `xp`) VALUES (%u, %u, %u)", guid, state.GrowthLevel, state.GrowthXp);
+    trans->PAppend("DELETE FROM `character_heartseed_growth_point` WHERE `guid` = %u", guid);
+    for (auto const& [statId, points] : state.GrowthPoints)
+        if (points)
+            trans->PAppend("INSERT INTO `character_heartseed_growth_point` (`guid`, `stat_id`, `points`) VALUES (%u, %u, %u)",
+                guid, uint32(statId), points);
 
     CharacterDatabase.CommitTransaction(trans);
 }
@@ -767,8 +818,6 @@ bool HeartseedMgr::Grant(Player* player)
         {
             if (otherGuid == itr->first || other.AccountId != account)
                 continue;
-            itr->second.Rank = other.Rank;
-            itr->second.Growth = other.Growth;
             itr->second.GrantedTime = other.GrantedTime;
             itr->second.FedWeapons = other.FedWeapons;
             for (auto const& [essenceId, held] : other.Essences)
@@ -815,7 +864,8 @@ bool HeartseedMgr::Revoke(Player* player)
     trans->PAppend("DELETE FROM `account_heartseed` WHERE `account` = %u", account);
     trans->PAppend("DELETE FROM `account_heartseed_essence` WHERE `account` = %u", account);
     trans->PAppend("DELETE FROM `account_heartseed_fed_weapon` WHERE `account` = %u", account);
-    for (char const* table : { "heartseed_state", "heartseed_loadout", "heartseed_essence", "heartseed_story_flag", "heartseed_fed_weapon" })
+    for (char const* table : { "heartseed_state", "heartseed_loadout", "heartseed_essence", "heartseed_story_flag", "heartseed_fed_weapon",
+        "character_heartseed_growth", "character_heartseed_growth_point" })
         trans->PAppend("DELETE FROM `%s` WHERE `guid` IN (%s)", table, characters.c_str());
     // The quest is the canonical marker, so revoking makes it available again on every character.
     trans->PAppend("DELETE FROM `character_queststatus_rewarded` WHERE `quest` = %u AND `guid` IN (%s)", _grantQuestId, characters.c_str());
@@ -854,31 +904,15 @@ bool HeartseedMgr::ModifyState(Player* player, std::function<void(Heartseed::Sta
     return true;
 }
 
-bool HeartseedMgr::SetRank(Player* player, uint8 rank)
-{
-    return ModifyState(player, [rank](Heartseed::State& state) { state.Rank = rank; });
-}
-
-bool HeartseedMgr::SetGrowth(Player* player, uint32 growth)
-{
-    return ModifyState(player, [growth](Heartseed::State& state) { state.Growth = growth; });
-}
-
 bool HeartseedMgr::SetStoryFlag(Player* player, uint16 flag, bool set)
 {
-    if (!ModifyState(player, [flag, set](Heartseed::State& state)
+    return ModifyState(player, [flag, set](Heartseed::State& state)
     {
         if (!set)
             state.StoryFlags.erase(flag);
         else if (!state.StoryFlags.count(flag))
             state.StoryFlags[flag] = uint32(time(nullptr));
-    }))
-        return false;
-
-    // An awakening raises the cap, and banked Growth ranks the Heartseed up at once.
-    if (set)
-        ApplyRankUps(player);
-    return true;
+    });
 }
 
 bool HeartseedMgr::HasUnchosenOpenTier(Player* player) const
@@ -1095,21 +1129,10 @@ bool HeartseedMgr::ReachStoryBeat(Player* player, uint16 flag)
     if (!GetState(player, state) || state.StoryFlags.count(flag))
         return false;
 
-    // Told before the flag is set, so the awakening reads before the rank-ups it causes.
-    std::vector<uint16> awakeningFlags = GetAwakeningFlags();
-    bool awakening = std::find(awakeningFlags.begin(), awakeningFlags.end(), flag) != awakeningFlags.end();
-    ChatHandler handler(player->GetSession());
-    if (awakening)
-    {
-        state.StoryFlags[flag] = 0;
-        uint8 newCap = Heartseed::RankCap(player->GetLevel(), _capPerLevel, GetAwakenings(state), _capPerAwakening);
-        handler.PSendSysMessage("Your Heartseed awakens (%s). It can grow to rank %u now.", GetStoryFlagName(flag), uint32(newCap));
-        if (_awakeningSound)
-            player->PlayDirectSound(_awakeningSound, player);
-    }
-    else
-        handler.PSendSysMessage("Your Heartseed remembers this (%s).", GetStoryFlagName(flag));
-
+    // Story beats unlock lore and cosmetics later, never power (DESIGN.md, Balance stays per character).
+    ChatHandler(player->GetSession()).PSendSysMessage("Your Heartseed awakens to this (%s).", GetStoryFlagName(flag));
+    if (_awakeningSound)
+        player->PlayDirectSound(_awakeningSound, player);
     return SetStoryFlag(player, flag, true);
 }
 
@@ -1131,46 +1154,21 @@ void HeartseedMgr::OnKillCredit(Player* player, Creature* killed)
 {
     if (_storyHooks && _worldBossEntries.count(killed->GetEntry()))
         ReachStoryBeat(player, Heartseed::STORY_FLAG_FIRST_WORLD_BOSS);
+
+    // Every credited group member earns for a dungeon or raid boss near its own level.
+    Map const* map = killed->GetMap();
+    if (!map || !map->IsDungeon() || !(killed->IsDungeonBoss() || killed->isWorldBoss()))
+        return;
+    if (!Heartseed::GrowthSourceNearLevel(player->GetLevel(), killed->GetLevel(), _growthLevelRange))
+        return;
+    AddGrowthXp(player, map->IsRaid() ? _growthRaidBoss : _growthDungeonBoss);
 }
 
-std::vector<uint16> HeartseedMgr::GetAwakeningFlags() const
+void HeartseedMgr::OnBattlegroundEnd(Player* player, bool won)
 {
-    std::lock_guard<std::mutex> guard(_lock);
-    return _awakeningFlags;
-}
-
-uint32 HeartseedMgr::GetAwakenings(Heartseed::State const& state) const
-{
-    std::lock_guard<std::mutex> guard(_lock);
-    return CountAwakenings(state);
-}
-
-uint32 HeartseedMgr::CountAwakenings(Heartseed::State const& state) const
-{
-    uint32 awakenings = 0;
-    for (uint16 flag : _awakeningFlags)
-        awakenings += state.StoryFlags.count(flag) ? 1 : 0;
-    return awakenings;
-}
-
-uint8 HeartseedMgr::GetRankCap(Player const* player) const
-{
-    Heartseed::State state;
-    if (!GetState(player, state))
-        return 1;
-    return Heartseed::RankCap(player->GetLevel(), _capPerLevel, GetAwakenings(state), _capPerAwakening);
-}
-
-uint8 HeartseedMgr::GetEffectiveRank(Player const* player) const
-{
-    std::lock_guard<std::mutex> guard(_lock);
-    auto itr = _states.find(player->GetGUID().GetCounter());
-    return itr != _states.end() ? EffectiveRank(player, itr->second) : 0;
-}
-
-uint8 HeartseedMgr::EffectiveRank(Player const* player, Heartseed::State const& state) const
-{
-    return Heartseed::EffectiveRank(state.Rank, Heartseed::RankCap(player->GetLevel(), _capPerLevel, CountAwakenings(state), _capPerAwakening));
+    // A battleground's bracket is the character's own, so a win is always near its level.
+    if (won)
+        AddGrowthXp(player, _growthBattlegroundWin);
 }
 
 void HeartseedMgr::ShareAccountState(uint32 guid, Heartseed::State const& from)
@@ -1179,8 +1177,6 @@ void HeartseedMgr::ShareAccountState(uint32 guid, Heartseed::State const& from)
     {
         if (otherGuid == guid || other.AccountId != from.AccountId)
             continue;
-        other.Rank = from.Rank;
-        other.Growth = from.Growth;
         other.GrantedTime = from.GrantedTime;
         other.FedWeapons = from.FedWeapons;
         // Counts follow the account; each character keeps its own slots, and loses an essence the account lost.
@@ -1194,86 +1190,151 @@ void HeartseedMgr::ShareAccountState(uint32 guid, Heartseed::State const& from)
     }
 }
 
-uint32 HeartseedMgr::GetGrowthForNextRank(uint8 rank) const
+uint32 HeartseedMgr::GetGrowthXpForLevel(uint32 level) const
 {
-    return Heartseed::GrowthForNextRank(rank, _rankGrowthBase, _rankGrowthPerRank);
+    return Heartseed::GrowthXpForLevel(level, _growthXpBase, _growthXpPerLevel);
 }
 
-uint8 HeartseedMgr::AddGrowth(Player* player, uint32 amount)
+uint32 HeartseedMgr::AddGrowthXp(Player* player, uint32 amount)
 {
-    // Only the character being played earns; the player's alts logged in as playerbots use the seed but never grow it.
-    if (!amount || player->GetSession()->IsBot() || !HasHeartseed(player))
+    // Only the character being played earns; the player's alts logged in as playerbots use their points but never
+    // grow. An XP-locked twink keeps the balance of its bracket unless Heartseed.Growth.TwinksEarn is on.
+    if (!amount || !_enabled || player->GetSession()->IsBot() || !HasHeartseed(player))
+        return 0;
+    if (!_growthTwinksEarn && player->HasFlag(PLAYER_FIELD_PLAYER_FLAGS, PLAYER_FLAGS_NO_XP_GAIN))
         return 0;
 
-    uint8 cap = GetRankCap(player);
-    uint8 oldRank = 0;
-    uint8 newRank = 0;
-    bool capNotice = false;
+    uint32 oldLevel = 0;
+    uint32 newLevel = 0;
+    uint32 unspent = 0;
+    bool firstPoint = false;
     ModifyState(player, [&](Heartseed::State& state)
     {
-        oldRank = state.Rank;
-        Heartseed::RankProgress progress = Heartseed::ApplyGrowth(state.Rank, Heartseed::AddCapped(state.Growth, amount), cap,
-            _rankGrowthBase, _rankGrowthPerRank);
-        state.Rank = progress.Rank;
-        state.Growth = progress.Growth;
-        newRank = state.Rank;
-
-        // Growth is banked at the cap; say once per session that the Heartseed waits on the character.
-        if (state.Rank >= cap && state.Growth >= GetGrowthForNextRank(state.Rank) && !state.CapNoticeSent)
+        oldLevel = state.GrowthLevel;
+        Heartseed::GrowthProgress progress = Heartseed::ApplyGrowthXp(state.GrowthLevel, Heartseed::AddCapped(state.GrowthXp, amount),
+            _growthXpBase, _growthXpPerLevel);
+        state.GrowthLevel = progress.Level;
+        state.GrowthXp = progress.Xp;
+        newLevel = state.GrowthLevel;
+        unspent = Heartseed::UnspentPoints(state.GrowthLevel, state.GrowthPoints);
+        if (newLevel > oldLevel && !state.StoryFlags.count(Heartseed::HINT_GROWTH_POINTS))
         {
-            state.CapNoticeSent = true;
-            capNotice = true;
+            state.StoryFlags[Heartseed::HINT_GROWTH_POINTS] = uint32(time(nullptr));
+            firstPoint = true;
         }
     });
 
-    if (newRank > oldRank)
-        SendRankUp(player, oldRank, newRank);
-    if (capNotice)
-        ChatHandler(player->GetSession()).SendSysMessage("Your Heartseed is full. It keeps what it is fed, and grows again as you do.");
-    return newRank > oldRank ? newRank - oldRank : 0;
-}
-
-uint8 HeartseedMgr::ApplyRankUps(Player* player)
-{
-    if (!HasHeartseed(player))
-        return 0;
-
-    uint8 cap = GetRankCap(player);
-    uint8 oldRank = 0;
-    uint8 newRank = 0;
+    ChatHandler handler(player->GetSession());
+    if (newLevel > oldLevel)
     {
-        std::lock_guard<std::mutex> guard(_lock);
-        auto itr = _states.find(player->GetGUID().GetCounter());
-        if (itr == _states.end())
-            return 0;
-        oldRank = itr->second.Rank;
-        Heartseed::RankProgress progress = Heartseed::ApplyGrowth(itr->second.Rank, itr->second.Growth, cap, _rankGrowthBase, _rankGrowthPerRank);
-        if (progress.Rank == oldRank)
-            return 0;
-        newRank = progress.Rank;
-        itr->second.Rank = progress.Rank;
-        itr->second.Growth = progress.Growth;
-        itr->second.CapNoticeSent = false;
-        itr->second.Dirty = true;
-        ShareAccountState(itr->first, itr->second);
+        handler.PSendSysMessage("Your Heartseed grows: Growth level %u. %u stat point%s to spend.", newLevel, unspent, unspent == 1 ? "" : "s");
+        TC_LOG_DEBUG("scripts", "Heartseed: %s Growth level %u -> %u.", player->GetName().c_str(), oldLevel, newLevel);
     }
-
-    SavePlayer(player);
-    Refresh(player);
-    SendRankUp(player, oldRank, newRank);
-    return newRank - oldRank;
+    if (firstPoint)
+    {
+        // The system's introduction: the first point is when it means something to the player.
+        player->GetSession()->SendNotification("Your Heartseed has grown. Spend its stat point in the Heartseed panel (/hs).");
+        handler.SendSysMessage("Battleground wins and dungeon and raid bosses near your level feed your Heartseed's Growth. Each Growth "
+            "level is a stat point for stamina, your main stat or a secondary: spend it in the Heartseed panel (/hs) or with .seed spend. "
+            "A Celestial shrine takes them back so you can spend them again.");
+    }
+    return newLevel - oldLevel;
 }
 
-void HeartseedMgr::SendRankUp(Player* player, uint8 oldRank, uint8 newRank)
+bool HeartseedMgr::SetGrowthLevel(Player* player, uint32 level, uint32 xp)
 {
-    ChatHandler(player->GetSession()).PSendSysMessage("Your Heartseed grows: rank %u.", uint32(newRank));
-    TC_LOG_DEBUG("scripts", "Heartseed: %s rank %u -> %u.", player->GetName().c_str(), uint32(oldRank), uint32(newRank));
+    return ModifyState(player, [level, xp](Heartseed::State& state)
+    {
+        state.GrowthLevel = level;
+        state.GrowthXp = xp;
+        // A lower level takes back the points it no longer pays for, from the most invested stat first.
+        uint64 spent = 0;
+        for (auto const& [statId, points] : state.GrowthPoints)
+            spent += points;
+        while (spent > level && !state.GrowthPoints.empty())
+        {
+            auto most = std::max_element(state.GrowthPoints.begin(), state.GrowthPoints.end(),
+                [](auto const& a, auto const& b) { return a.second < b.second; });
+            uint32 take = uint32(std::min<uint64>(most->second, spent - level));
+            most->second -= take;
+            spent -= take;
+            if (!most->second)
+                state.GrowthPoints.erase(most);
+        }
+    });
 }
 
-float HeartseedMgr::GetFeedQualityPct(uint32 quality) const
+Heartseed::GrowthResult HeartseedMgr::SpendGrowthPoints(Player* player, uint8 statId, uint32 count)
+{
+    Heartseed::GrowthStat stat;
+    if (!GetGrowthStat(statId, stat))
+        return Heartseed::GrowthResult::UnknownStat;
+
+    Heartseed::GrowthResult result = Heartseed::GrowthResult::NoHeartseed;
+    ModifyState(player, [&](Heartseed::State& state)
+    {
+        uint32 unspent = Heartseed::UnspentPoints(state.GrowthLevel, state.GrowthPoints);
+        if (!unspent || !count)
+        {
+            result = Heartseed::GrowthResult::NoPoints;
+            return;
+        }
+        uint32& points = state.GrowthPoints[statId];
+        points = Heartseed::AddCapped(points, std::min(count, unspent));
+        result = Heartseed::GrowthResult::Ok;
+    });
+    return result;
+}
+
+Heartseed::GrowthResult HeartseedMgr::ResetGrowthPoints(Player* player, bool anywhere)
+{
+    Heartseed::State state;
+    if (!GetState(player, state))
+        return Heartseed::GrowthResult::NoHeartseed;
+    if (state.GrowthPoints.empty())
+        return Heartseed::GrowthResult::NoPoints;
+    Heartseed::ShrineInfo shrine;
+    if (!anywhere && _growthResetAtShrineOnly && !GetShrineAt(player, shrine))
+        return Heartseed::GrowthResult::NotAtShrine;
+    ModifyState(player, [](Heartseed::State& s) { s.GrowthPoints.clear(); });
+    return Heartseed::GrowthResult::Ok;
+}
+
+std::vector<Heartseed::GrowthStat> HeartseedMgr::GetGrowthStats() const
 {
     std::lock_guard<std::mutex> guard(_lock);
-    return quality < _feedQualityPct.size() ? _feedQualityPct[quality] : 0.0f;
+    std::vector<Heartseed::GrowthStat> stats;
+    for (auto const& [statId, stat] : _growthStats)
+        stats.push_back(stat);
+    return stats;
+}
+
+bool HeartseedMgr::GetGrowthStat(uint8 statId, Heartseed::GrowthStat& out) const
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    auto itr = _growthStats.find(statId);
+    if (itr == _growthStats.end())
+        return false;
+    out = itr->second;
+    return true;
+}
+
+uint32 HeartseedMgr::GetGrowthStatSpell(Player const* player, Heartseed::GrowthStat const& stat)
+{
+    if (!stat.MainStat)
+        return stat.SpellId;
+    switch (Heartseed::MainStatFor(player->getClass(), player->GetTalentSpecialization()))
+    {
+        case Heartseed::MainStat::Strength: return Heartseed::SPELL_GROWTH_STRENGTH;
+        case Heartseed::MainStat::Agility:  return Heartseed::SPELL_GROWTH_AGILITY;
+        default:                            return Heartseed::SPELL_GROWTH_INTELLECT;
+    }
+}
+
+bool HeartseedMgr::CanFeedQuality(uint32 quality) const
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    return _feedQualities.count(quality) != 0;
 }
 
 bool HeartseedMgr::IsTwinkItem(uint32 entry) const
@@ -1305,9 +1366,9 @@ Heartseed::FeedResult HeartseedMgr::CanFeed(Player const* player, Item const* it
     ItemTemplate const* proto = item->GetTemplate();
     if (proto->Class != ITEM_CLASS_WEAPON || proto->SubClass == ITEM_SUBCLASS_WEAPON_FISHING_POLE || proto->SubClass == ITEM_SUBCLASS_WEAPON_MISCELLANEOUS)
         return Heartseed::FeedResult::NotWeapon;
-    if (proto->Bonding == BIND_QUEST || proto->StartQuest || GetFeedQualityPct(proto->Quality) <= 0.0f)
+    if (proto->Bonding == BIND_QUEST || proto->StartQuest || !CanFeedQuality(proto->Quality))
         return Heartseed::FeedResult::Excluded;
-    // A refundable weapon still buys back its price, which would make vendors a Growth shop.
+    // A refundable weapon still buys back its price, which would make vendors an essence shop.
     if (item->HasFlag(ITEM_FIELD_DYNAMIC_FLAGS, ITEM_FLAG_REFUNDABLE))
         return Heartseed::FeedResult::Refundable;
     if (item->IsEquipped())
@@ -1318,9 +1379,8 @@ Heartseed::FeedResult HeartseedMgr::CanFeed(Player const* player, Item const* it
     return Heartseed::FeedResult::Ok;
 }
 
-void HeartseedMgr::FeedPreview(ItemTemplate const* proto, uint32 itemLevel, Heartseed::FeedOutcome& out) const
+void HeartseedMgr::FeedPreview(ItemTemplate const* proto, uint32 /*itemLevel*/, Heartseed::FeedOutcome& out) const
 {
-    out.Growth = Heartseed::FeedGrowth(itemLevel, _feedGrowthBase, _feedGrowthPerItemLevel, GetFeedQualityPct(proto->Quality));
     out.EssenceChances.clear();
 
     std::string name = ToLower(proto->Name1);
@@ -1358,7 +1418,6 @@ Heartseed::FeedResult HeartseedMgr::Feed(Player* player, Item* item, Heartseed::
 
     Heartseed::State before;
     GetState(player, before);
-    out.OldRank = before.Rank;
 
     RecordAppearance(player, proto, Heartseed::APPEARANCE_FED);
     // Consumed first, so nothing below can leave the weapon behind after it has paid out. A deleted item is
@@ -1382,10 +1441,10 @@ Heartseed::FeedResult HeartseedMgr::Feed(Player* player, Item* item, Heartseed::
     }
 
     ChatHandler handler(player->GetSession());
-    handler.PSendSysMessage("Your Heartseed consumes %s: +%u Growth.", itemName.c_str(), out.Growth);
+    handler.PSendSysMessage("Your Heartseed consumes %s. Its look stays with the seed.", itemName.c_str());
     if (firstFeed)
         handler.SendSysMessage("The Heartseed feeds on the weapons you outgrow. When a better weapon replaces your main hand, it asks to eat "
-            "the old one and grows from it; essences of a weapon's origin may stay behind in it.");
+            "the old one and keeps its look; essences of a weapon's origin may stay behind in it.");
 
     for (uint32 essenceId : out.Essences)
     {
@@ -1395,10 +1454,6 @@ Heartseed::FeedResult HeartseedMgr::Feed(Player* player, Item* item, Heartseed::
             handler.PSendSysMessage("Something of its origin stays behind: %s.", essence.Name.c_str());
     }
 
-    AddGrowth(player, out.Growth);
-    Heartseed::State after;
-    GetState(player, after);
-    out.NewRank = after.Rank;
     return Heartseed::FeedResult::Ok;
 }
 
@@ -1469,7 +1524,7 @@ void HeartseedMgr::OfferReplacedFeed(Player* player, ObjectGuid oldWeapon)
     player->PlayerTalkClass->ClearMenus();
     GossipMenu& menu = player->PlayerTalkClass->GetGossipMenu();
     menu.SetMenuId(Heartseed::GOSSIP_MENU_FEED);
-    menu.AddMenuItem(-1, GOSSIP_ICON_CHAT, "Feed " + name + " to the Heartseed (+" + std::to_string(outcome.Growth) + " Growth).",
+    menu.AddMenuItem(-1, GOSSIP_ICON_CHAT, "Feed " + name + " to the Heartseed (keeps its look).",
         0, Heartseed::FEED_ACTION_FEED, "Your Heartseed will consume " + name + ". It cannot be undone.", 0);
     menu.AddMenuItem(-1, GOSSIP_ICON_CHAT, "Keep " + name + ".", 0, Heartseed::FEED_ACTION_KEEP, "", 0);
     player->PlayerTalkClass->SendGossipMenu(Heartseed::NPC_TEXT_FEED, player->GetGUID());
@@ -1618,6 +1673,7 @@ namespace
         { Heartseed::STORY_FLAG_REACHED_PANDARIA, "reached_pandaria" },
         { Heartseed::STORY_FLAG_FIRST_WORLD_BOSS, "first_world_boss" },
         { Heartseed::HINT_TWINK_WEAPON,           "hint_twink_weapon" },
+        { Heartseed::HINT_GROWTH_POINTS,          "hint_growth_points" },
     };
 }
 
@@ -1784,13 +1840,12 @@ void HeartseedMgr::RefreshTraits(Player* player)
 
         if (_enabled)
         {
-            uint8 rank = EffectiveRank(player, state);
             std::array<uint8, Heartseed::MaxPaths> majors = MajorsPerPath(state, specId);
             auto loadout = state.Loadouts.find(specId);
             for (auto const& [traitId, trait] : _traits)
             {
                 bool active = trait.Kind == Heartseed::TraitKind::Minor
-                    ? Heartseed::MinorActive(trait.TraitPath, trait.MinRank, rank, majors)
+                    ? Heartseed::MinorActive(trait.TraitPath, trait.MinLevel, player->GetLevel(), majors)
                     : loadout != state.Loadouts.end() && loadout->second[trait.Tier] == traitId;
                 if (!active)
                     continue;
@@ -1807,6 +1862,16 @@ void HeartseedMgr::RefreshTraits(Player* player)
                 desired[Heartseed::SPELL_CORE_WEAPON_BONUS] += weaponBonus;
             if (giftTraitId)
                 desired[Heartseed::SPELL_METER_PASSIVE] = 0;
+
+            // Growth points, as a percentage of the stat (T-083).
+            for (auto const& [statId, points] : state.GrowthPoints)
+            {
+                auto stat = _growthStats.find(statId);
+                if (stat == _growthStats.end())
+                    continue;
+                if (int32 amount = Heartseed::StatPointAmount(points, stat->second.PctPerPoint))
+                    desired[GetGrowthStatSpell(player, stat->second)] += amount;
+            }
         }
 
         // A new Gift starts with an empty meter.

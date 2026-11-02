@@ -3,6 +3,7 @@
  */
 
 #include "Bag.h"
+#include "BattlegroundHooks.h"
 #include "Chat.h"
 #include "Custom/Reload/ReloadRegistry.h"
 #include "Group.h"
@@ -29,6 +30,7 @@
 #include <map>
 #include <mutex>
 #include <set>
+#include <sstream>
 #include <string>
 
 // Heartseed block of docs/ID_RANGES.md; linked to role 197 by sql/updates/master/auth/2026_10_31_claude_02_heartseed_command.sql
@@ -172,8 +174,6 @@ public:
         sHeartseedMgr->Refresh(player);
         if (player->GetSession()->IsBot())
             return;
-        // The cap settings may have changed since the last session.
-        sHeartseedMgr->ApplyRankUps(player);
         // Characters that were already in Pandaria when the hook arrived.
         sHeartseedMgr->OnMapChanged(player);
         // No Heartseed yet: offer the granting quest. A choice waiting: open it.
@@ -213,8 +213,6 @@ public:
         sHeartseedMgr->Refresh(player);
         if (player->GetSession()->IsBot())
             return;
-        // A level raises the rank cap; Growth banked at the old cap is spent now.
-        sHeartseedMgr->ApplyRankUps(player);
 
         // A tier that opens with this level and has no major yet: tell the player and open the choice.
         uint16 specId = uint16(player->GetTalentSpecialization());
@@ -368,10 +366,9 @@ public:
             { "grant",  &HandleGrantCommand,  RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "revoke", &HandleRevokeCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "offer",  &HandleOfferCommand,  RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
-            { "rank",   &HandleRankCommand,   RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "growth", &HandleGrowthCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
+            { "points", &HandlePointsCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "flag",   flagCommandTable,     RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
-            { "cap",    &HandleCapCommand,    RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "feed",   feedCommandTable,     RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "essence", essenceCommandTable, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "traits", &HandleTraitsCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
@@ -383,6 +380,8 @@ public:
         static std::vector<ChatCommand> seedCommandTable =
         {
             { "sync", &HandleSeedSyncCommand, RBAC_PERM_COMMAND_SEED, Trinity::ChatCommands::Console::No },
+            { "spend", &HandleSeedSpendCommand, RBAC_PERM_COMMAND_SEED, Trinity::ChatCommands::Console::No },
+            { "reset", &HandleSeedResetCommand, RBAC_PERM_COMMAND_SEED, Trinity::ChatCommands::Console::No },
             { "",     &HandleSeedCommand,     RBAC_PERM_COMMAND_SEED, Trinity::ChatCommands::Console::No },
         };
         static std::vector<ChatCommand> commandTable =
@@ -432,10 +431,10 @@ public:
         for (auto const& essence : state.Essences)
             activeEssences += essence.second.second && essence.second.second <= openSlots ? 1 : 0;
 
-        handler->PSendSysMessage("Heartseed of %s (account %u): rank %u, account rank %u, cap %u. Growth %u of %u for the next rank, stage %u (%s) at level %u. %u weapons fed.",
-            target->GetName().c_str(), state.AccountId, uint32(sHeartseedMgr->GetEffectiveRank(target)), uint32(state.Rank),
-            uint32(sHeartseedMgr->GetRankCap(target)), state.Growth, sHeartseedMgr->GetGrowthForNextRank(state.Rank), uint32(stage),
-            sHeartseedMgr->GetStageName(stage).c_str(), uint32(target->GetLevel()), state.FedWeapons);
+        handler->PSendSysMessage("Heartseed of %s (account %u): stage %u (%s) at level %u. Growth level %u, %u of %u XP to the next, %u points unspent: %s. %u weapons fed.",
+            target->GetName().c_str(), state.AccountId, uint32(stage), sHeartseedMgr->GetStageName(stage).c_str(), uint32(target->GetLevel()),
+            state.GrowthLevel, state.GrowthXp, sHeartseedMgr->GetGrowthXpForLevel(state.GrowthLevel),
+            Heartseed::UnspentPoints(state.GrowthLevel, state.GrowthPoints), DescribeGrowthPoints(state).c_str(), state.FedWeapons);
         handler->PSendSysMessage("Spec %u: %u of %u majors chosen, %u loadouts saved. Essences: %u collected, %u active.",
             uint32(specId), majors, uint32(Heartseed::MaxMajorTiers), uint32(state.Loadouts.size()), uint32(state.Essences.size()), activeEssences);
         Heartseed::Path dominant = sHeartseedMgr->GetDominantPath(target);
@@ -509,7 +508,7 @@ public:
             bool active = hasState && state.AppliedAuras.count(trait.SpellId);
             std::string when = trait.Kind == Heartseed::TraitKind::Major
                 ? "major, level " + std::to_string(Heartseed::MajorTierLevel(trait.Tier))
-                : "minor, rank " + std::to_string(trait.MinRank);
+                : "minor, level " + std::to_string(trait.MinLevel);
             handler->PSendSysMessage("%s%u %s [%s, %s] spell %u, %d + %.3f per item level: %s", active ? "*" : " ", trait.Id, trait.Name.c_str(),
                 GetPathName(trait.TraitPath), when.c_str(), trait.SpellId, trait.BaseAmount, trait.AmountPerItemLevel, trait.Description.c_str());
         }
@@ -593,6 +592,52 @@ public:
         return text;
     }
 
+    static std::string DescribeGrowthPoints(Heartseed::State const& state)
+    {
+        std::string text;
+        for (auto const& [statId, points] : state.GrowthPoints)
+        {
+            Heartseed::GrowthStat stat;
+            text += (text.empty() ? "" : ", ") + (sHeartseedMgr->GetGrowthStat(statId, stat) ? stat.Name : "stat " + std::to_string(statId)) +
+                " " + std::to_string(points);
+        }
+        return text.empty() ? "none spent" : text;
+    }
+
+    static char const* DescribeGrowthResult(Heartseed::GrowthResult result)
+    {
+        switch (result)
+        {
+            case Heartseed::GrowthResult::Ok:          return "done";
+            case Heartseed::GrowthResult::NoHeartseed: return "no Heartseed";
+            case Heartseed::GrowthResult::UnknownStat: return "unknown stat";
+            case Heartseed::GrowthResult::NoPoints:    return "no points to move";
+            case Heartseed::GrowthResult::NotAtShrine: return "only at a Celestial shrine";
+        }
+        return "?";
+    }
+
+    // A stat id or a name prefix ("stam", "crit"); 0 if neither.
+    static uint8 ParseGrowthStat(char const* text)
+    {
+        if (!text || !*text)
+            return 0;
+        char* end = nullptr;
+        long id = strtol(text, &end, 10);
+        if (end != text && !*end)
+            return id > 0 && id < 256 ? uint8(id) : 0;
+        std::string wanted = text;
+        std::transform(wanted.begin(), wanted.end(), wanted.begin(), ::tolower);
+        for (Heartseed::GrowthStat const& stat : sHeartseedMgr->GetGrowthStats())
+        {
+            std::string name = stat.Name;
+            std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+            if (name.compare(0, wanted.size(), wanted) == 0)
+                return stat.Id;
+        }
+        return 0;
+    }
+
     // A known flag name or a positive number; 0 if neither.
     static uint16 ParseFlag(char const* args)
     {
@@ -657,35 +702,12 @@ public:
         return true;
     }
 
-    static bool HandleRankCommand(ChatHandler* handler, char const* args)
-    {
-        Player* target = GetTarget(handler);
-        if (!target || !args || !*args)
-            return false;
-
-        char* end = nullptr;
-        long rank = strtol(args, &end, 10);
-        if (end == args || rank < 1 || rank > 255)
-        {
-            handler->SendSysMessage("Usage: .heartseed rank <1-255>");
-            handler->SetSentErrorMessage(true);
-            return false;
-        }
-
-        // GM commands may go past the level cap (T-022), so states can be tested without leveling.
-        if (!sHeartseedMgr->SetRank(target, uint8(rank)))
-        {
-            handler->PSendSysMessage("%s has no Heartseed.", target->GetName().c_str());
-            return true;
-        }
-        handler->PSendSysMessage("Heartseed of %s is now rank %ld.", target->GetName().c_str(), rank);
-        return true;
-    }
-
+    // .heartseed growth: show; "+N" earns N Growth XP as in play (bots and the twink rule still apply); "<level>
+    // [xp]" sets the Growth level and XP directly.
     static bool HandleGrowthCommand(ChatHandler* handler, char const* args)
     {
         Player* target = GetTarget(handler);
-        if (!target || !args || !*args)
+        if (!target)
             return false;
 
         Heartseed::State state;
@@ -695,32 +717,110 @@ public:
             return true;
         }
 
-        // "+N" and "-N" change the current Growth, a bare number sets it.
-        bool relative = args[0] == '+' || args[0] == '-';
-        char* end = nullptr;
-        long long amount = strtoll(args, &end, 10);
-        if (end == args)
+        if (args && *args)
         {
-            handler->SendSysMessage("Usage: .heartseed growth <amount> | +<amount> | -<amount>");
+            char* end = nullptr;
+            bool earn = args[0] == '+';
+            long long first = strtoll(earn ? args + 1 : args, &end, 10);
+            long long second = 0;
+            if (end != (earn ? args + 1 : args) && !earn && *end)
+                second = strtoll(end, nullptr, 10);
+            if (end == (earn ? args + 1 : args) || first < 0 || second < 0)
+            {
+                handler->SendSysMessage("Usage: .heartseed growth [+<xp> | <level> [xp]]");
+                handler->SetSentErrorMessage(true);
+                return false;
+            }
+            if (earn)
+                sHeartseedMgr->AddGrowthXp(target, uint32(std::min(first, (long long)UINT32_MAX)));
+            else
+                sHeartseedMgr->SetGrowthLevel(target, uint32(std::min(first, (long long)UINT32_MAX)), uint32(std::min(second, (long long)UINT32_MAX)));
+            sHeartseedMgr->GetState(target, state);
+        }
+
+        handler->PSendSysMessage("Growth of %s: level %u, %u of %u XP to the next, %u points unspent (%s).", target->GetName().c_str(),
+            state.GrowthLevel, state.GrowthXp, sHeartseedMgr->GetGrowthXpForLevel(state.GrowthLevel),
+            Heartseed::UnspentPoints(state.GrowthLevel, state.GrowthPoints), DescribeGrowthPoints(state).c_str());
+        return true;
+    }
+
+    // .heartseed points: list the stats; "spend <stat> [n]" spends for the target; "reset" refunds anywhere.
+    static bool HandlePointsCommand(ChatHandler* handler, char const* args)
+    {
+        Player* target = GetTarget(handler);
+        if (!target)
+            return false;
+
+        std::string text = args ? args : "";
+        std::istringstream in(text);
+        std::string verb, statText;
+        uint32 count = 1;
+        in >> verb >> statText >> count;
+
+        if (verb == "spend")
+            handler->PSendSysMessage("Spend on %s: %s.", statText.c_str(),
+                DescribeGrowthResult(sHeartseedMgr->SpendGrowthPoints(target, ParseGrowthStat(statText.c_str()), count)));
+        else if (verb == "reset")
+            handler->PSendSysMessage("Reset: %s.", DescribeGrowthResult(sHeartseedMgr->ResetGrowthPoints(target, true)));
+        else if (!verb.empty())
+        {
+            handler->SendSysMessage("Usage: .heartseed points [spend <stat id or name> [count] | reset]");
             handler->SetSentErrorMessage(true);
             return false;
         }
 
-        // "+N" is Growth as if earned: it ranks the Heartseed up to the cap. A bare number or "-N" sets the raw value.
-        if (relative && amount > 0)
+        Heartseed::State state;
+        sHeartseedMgr->GetState(target, state);
+        for (Heartseed::GrowthStat const& stat : sHeartseedMgr->GetGrowthStats())
         {
-            sHeartseedMgr->AddGrowth(target, uint32(std::min(amount, (long long)UINT32_MAX)));
-            Heartseed::State after;
-            sHeartseedMgr->GetState(target, after);
-            handler->PSendSysMessage("Heartseed of %s earned %lld Growth: rank %u -> %u (cap %u), %u Growth toward the next rank.", target->GetName().c_str(),
-                amount, uint32(state.Rank), uint32(after.Rank), uint32(sHeartseedMgr->GetRankCap(target)), after.Growth);
-            return true;
+            auto spent = state.GrowthPoints.find(stat.Id);
+            uint32 points = spent != state.GrowthPoints.end() ? spent->second : 0;
+            handler->PSendSysMessage(" %u %s: %u points, +%d%% (spell %u)", uint32(stat.Id), stat.Name.c_str(), points,
+                Heartseed::StatPointAmount(points, stat.PctPerPoint), HeartseedMgr::GetGrowthStatSpell(target, stat));
+        }
+        handler->PSendSysMessage("%s: Growth level %u, %u points unspent.", target->GetName().c_str(), state.GrowthLevel,
+            Heartseed::UnspentPoints(state.GrowthLevel, state.GrowthPoints));
+        return true;
+    }
+
+    // Player: .seed spend <stat> [count], the Heartseed addon's stat buttons.
+    static bool HandleSeedSpendCommand(ChatHandler* handler, char const* args)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+        std::istringstream in(args ? args : "");
+        std::string statText;
+        uint32 count = 1;
+        in >> statText >> count;
+        uint8 statId = ParseGrowthStat(statText.c_str());
+        Heartseed::GrowthStat stat;
+        if (!sHeartseedMgr->GetGrowthStat(statId, stat))
+        {
+            std::string names;
+            for (Heartseed::GrowthStat const& known : sHeartseedMgr->GetGrowthStats())
+                names += (names.empty() ? "" : ", ") + known.Name;
+            handler->PSendSysMessage("Usage: .seed spend <stat> [count]. Stats: %s.", names.c_str());
+            handler->SetSentErrorMessage(true);
+            return false;
         }
 
-        long long growth = relative ? (long long)state.Growth + amount : amount;
-        growth = std::max(0LL, std::min(growth, (long long)UINT32_MAX));
-        sHeartseedMgr->SetGrowth(target, uint32(growth));
-        handler->PSendSysMessage("Heartseed of %s now has %u Growth (was %u).", target->GetName().c_str(), uint32(growth), state.Growth);
+        Heartseed::GrowthResult result = sHeartseedMgr->SpendGrowthPoints(player, statId, count);
+        if (result == Heartseed::GrowthResult::Ok)
+            handler->PSendSysMessage("Your Heartseed strengthens your %s.", stat.Name.c_str());
+        else
+            handler->PSendSysMessage("Your Heartseed has %s.", result == Heartseed::GrowthResult::NoPoints ? "no stat points to spend" : DescribeGrowthResult(result));
+        return true;
+    }
+
+    // Player: .seed reset takes every point back, at a Celestial shrine (Heartseed.Growth.ResetAtShrineOnly).
+    static bool HandleSeedResetCommand(ChatHandler* handler, char const* /*args*/)
+    {
+        Heartseed::GrowthResult result = sHeartseedMgr->ResetGrowthPoints(handler->GetSession()->GetPlayer(), false);
+        if (result == Heartseed::GrowthResult::Ok)
+            handler->SendSysMessage("Your Heartseed lets its strength go. Spend the points again as you like.");
+        else if (result == Heartseed::GrowthResult::NotAtShrine)
+            handler->SendSysMessage("Only a Celestial shrine can take your Heartseed's points back.");
+        else
+            handler->PSendSysMessage("Nothing to take back: %s.", DescribeGrowthResult(result));
         return true;
     }
 
@@ -859,38 +959,6 @@ public:
         return nullptr;
     }
 
-    static bool HandleCapCommand(ChatHandler* handler, char const* /*args*/)
-    {
-        Player* target = GetTarget(handler);
-        if (!target)
-            return false;
-
-        Heartseed::State state;
-        if (!sHeartseedMgr->GetState(target, state))
-        {
-            handler->PSendSysMessage("%s has no Heartseed.", target->GetName().c_str());
-            return true;
-        }
-
-        std::string flags;
-        for (uint16 flag : sHeartseedMgr->GetAwakeningFlags())
-        {
-            if (!flags.empty())
-                flags += ", ";
-            flags += std::to_string(flag) + " " + HeartseedMgr::GetStoryFlagName(flag) + (state.StoryFlags.count(flag) ? " (set)" : "");
-        }
-
-        uint8 cap = sHeartseedMgr->GetRankCap(target);
-        uint32 next = sHeartseedMgr->GetGrowthForNextRank(state.Rank);
-        handler->PSendSysMessage("Rank cap of %s: %u = level %u x %.2f + %u awakenings x %u. Awakening flags: %s.", target->GetName().c_str(), uint32(cap),
-            uint32(target->GetLevel()), sHeartseedMgr->GetCapPerLevel(), sHeartseedMgr->GetAwakenings(state), sHeartseedMgr->GetCapPerAwakening(),
-            flags.empty() ? "none" : flags.c_str());
-        handler->PSendSysMessage("Account rank %u (this character uses %u), Growth %u, next rank costs %u.%s", uint32(state.Rank),
-            uint32(Heartseed::EffectiveRank(state.Rank, cap)), state.Growth, next,
-            state.Rank >= cap ? (state.Growth >= next ? " At the cap: Growth is banked until the cap rises." : " At the cap.") : "");
-        return true;
-    }
-
     static bool HandleFeedPreviewCommand(ChatHandler* handler, char const* args)
     {
         Player* target = GetTarget(handler);
@@ -908,8 +976,8 @@ public:
         uint32 itemLevel = item ? item->GetItemLevel() : proto->ItemLevel;
         Heartseed::FeedOutcome outcome;
         sHeartseedMgr->FeedPreview(proto, itemLevel, outcome);
-        handler->PSendSysMessage("Feeding %u %s (item level %u, quality %u): +%u Growth. Essence chances: %s.", entry, proto->Name1.c_str(),
-            itemLevel, proto->Quality, outcome.Growth, DescribeEssenceChances(outcome).c_str());
+        handler->PSendSysMessage("Feeding %u %s (item level %u, quality %u): essence chances: %s.", entry, proto->Name1.c_str(),
+            itemLevel, proto->Quality, DescribeEssenceChances(outcome).c_str());
         if (sHeartseedMgr->IsTwinkItem(entry))
             handler->SendSysMessage("Twink item: never offered on replacement; fed when the player deletes it.");
         if (item)
@@ -953,8 +1021,7 @@ public:
         std::string gained;
         for (uint32 essenceId : outcome.Essences)
             gained += (gained.empty() ? "" : ", ") + std::to_string(essenceId);
-        handler->PSendSysMessage("Fed item %u to %s: +%u Growth, rank %u -> %u, essences gained: %s.", entry, target->GetName().c_str(), outcome.Growth,
-            uint32(outcome.OldRank), uint32(outcome.NewRank), gained.empty() ? "none" : gained.c_str());
+        handler->PSendSysMessage("Fed item %u to %s, essences gained: %s.", entry, target->GetName().c_str(), gained.empty() ? "none" : gained.c_str());
         return true;
     }
 
@@ -1100,9 +1167,10 @@ public:
     }
 
     // Answers the Heartseed addon (/hs) with addon messages, tab separated: "N" when the character has no
-    // Heartseed, else "S" <rank> <account rank> <cap> <growth> <growth for next rank> <stage name> <dominant path>
+    // Heartseed, else "S" <Growth level> <unspent points> <Growth XP> <XP for next level> <stage name> <dominant path>
     // <weapons fed> <open essence slots> <shrine here or empty>, then "M" <level> <trait name or empty> <path>
-    // per major tier of the current spec, "X" <name> <times collected> <slot or 0> per essence, then "E".
+    // per major tier of the current spec, "X" <name> <times collected> <slot or 0> per essence, "G" <stat id> <name>
+    // <points> <% per point> per Growth stat, then "E".
     static bool HandleSeedSyncCommand(ChatHandler* handler, char const* /*args*/)
     {
         Player* player = handler->GetSession()->GetPlayer();
@@ -1126,9 +1194,9 @@ public:
         Heartseed::ShrineInfo shrine;
         std::string shrineName = sHeartseedMgr->GetShrineAt(player, shrine) ? shrine.Name : "";
         uint8 stage = sHeartseedMgr->GetStage(player);
-        send("S	" + std::to_string(sHeartseedMgr->GetEffectiveRank(player)) + "	" + std::to_string(state.Rank) + "	" +
-            std::to_string(sHeartseedMgr->GetRankCap(player)) + "	" + std::to_string(state.Growth) + "	" +
-            std::to_string(sHeartseedMgr->GetGrowthForNextRank(state.Rank)) + "	" + sHeartseedMgr->GetStageName(stage) + "	" +
+        send("S	" + std::to_string(state.GrowthLevel) + "	" + std::to_string(Heartseed::UnspentPoints(state.GrowthLevel, state.GrowthPoints)) + "	" +
+            std::to_string(state.GrowthXp) + "	" + std::to_string(sHeartseedMgr->GetGrowthXpForLevel(state.GrowthLevel)) + "	" +
+            sHeartseedMgr->GetStageName(stage) + "	" +
             GetPathName(sHeartseedMgr->GetDominantPath(player)) + "	" + std::to_string(state.FedWeapons) + "	" +
             std::to_string(Heartseed::EssenceSlotsForLevel(player->GetLevel())) + "	" + shrineName);
 
@@ -1148,6 +1216,12 @@ public:
             Heartseed::EssenceInfo essence;
             send("X	" + (sHeartseedMgr->GetEssence(essenceId, essence) ? essence.Name : std::to_string(essenceId)) + "	" +
                 std::to_string(held.first) + "	" + std::to_string(held.second));
+        }
+        for (Heartseed::GrowthStat const& stat : sHeartseedMgr->GetGrowthStats())
+        {
+            auto spent = state.GrowthPoints.find(stat.Id);
+            send("G	" + std::to_string(stat.Id) + "	" + stat.Name + "	" + std::to_string(spent != state.GrowthPoints.end() ? spent->second : 0) +
+                "	" + std::to_string(stat.PctPerPoint));
         }
         send("E");
         return true;
@@ -1568,7 +1642,7 @@ class spell_heartseed_xuen_lightning : public SpellScript
 void AddSC_heartseed()
 {
     if (!CustomReload::Tables().RegisterGroup({ "heartseed", "heartseed_stage", "heartseed_glow", "heartseed_trait",
-        "heartseed_gift", "heartseed_gift_rider", "heartseed_meter", "heartseed_essence_template", "heartseed_essence_source", "twink_item", "heartseed_shrine" }, "Heartseed world data (one coherent snapshot)", []
+        "heartseed_gift", "heartseed_gift_rider", "heartseed_meter", "heartseed_essence_template", "heartseed_essence_source", "twink_item", "heartseed_shrine", "heartseed_growth_stat" }, "Heartseed world data (one coherent snapshot)", []
     {
         std::size_t rows = 0;
         bool success = sHeartseedMgr->LoadData(&rows);
@@ -1576,6 +1650,11 @@ void AddSC_heartseed()
             : "Heartseed data could not be loaded; previous cache retained (see server log)" };
     }))
         TC_LOG_ERROR("server", "Heartseed reload loader registration failed");
+    BattlegroundHooks::Register([](Player* player, bool won)
+    {
+        if (!player->GetSession()->IsBot())
+            sHeartseedMgr->OnBattlegroundEnd(player, won);
+    });
     new heartseed_worldscript();
     new heartseed_playerscript();
     new heartseed_unitscript();

@@ -313,10 +313,9 @@ namespace Capture
         out << "    \"heartseed\": {\n";
         out << "      \"enabled\": " << (snap.Heartseed.Enabled ? "true" : "false") << ",\n";
         out << "      \"has_seed\": " << (snap.Heartseed.HasSeed ? "true" : "false") << ",\n";
-        out << "      \"rank\": " << static_cast<unsigned int>(snap.Heartseed.Rank) << ",\n";
-        out << "      \"effective_rank\": " << static_cast<unsigned int>(snap.Heartseed.EffectiveRank) << ",\n";
-        out << "      \"rank_cap\": " << static_cast<unsigned int>(snap.Heartseed.RankCap) << ",\n";
-        out << "      \"growth\": " << snap.Heartseed.Growth << "\n";
+        out << "      \"growth_level\": " << snap.Heartseed.GrowthLevel << ",\n";
+        out << "      \"growth_xp\": " << snap.Heartseed.GrowthXp << ",\n";
+        out << "      \"unspent_points\": " << snap.Heartseed.UnspentPoints << "\n";
         out << "    }\n";
         out << "  },\n";
 
@@ -355,10 +354,9 @@ namespace Capture
             out << "- **Target:** none\n";
         }
         out << "- **Heartseed:** " << (snap.Heartseed.HasSeed ? "yes" : "no")
-            << " (rank " << static_cast<unsigned int>(snap.Heartseed.Rank)
-            << ", effective " << static_cast<unsigned int>(snap.Heartseed.EffectiveRank)
-            << "/" << static_cast<unsigned int>(snap.Heartseed.RankCap)
-            << ", growth " << snap.Heartseed.Growth << ")\n";
+            << " (Growth level " << snap.Heartseed.GrowthLevel
+            << ", " << snap.Heartseed.GrowthXp << " XP"
+            << ", " << snap.Heartseed.UnspentPoints << " points unspent)\n";
         out << "- **Nearby bots:** " << snap.NearbyBots.size() << "\n";
         for (auto const& b : snap.NearbyBots)
         {

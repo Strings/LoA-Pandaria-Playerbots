@@ -1,7 +1,7 @@
 /*
  * Heartseed state per account and per character (characters DB) and stage/glow data (world DB).
- * One seed per account (T-049): rank, Growth, the essence collection and the weapons fed are shared by every
- * character of the account; loadouts, essence slotting and story flags belong to each character.
+ * One seed per account (T-049): the essence collection and the weapons fed are shared by every character of the
+ * account; loadouts, essence slotting, story flags, Growth XP and stat points belong to each character (T-083).
  * See README.md in this folder and docs/DESIGN.md, "The Heartseed".
  */
 
@@ -34,6 +34,29 @@ namespace Heartseed
     constexpr uint32 SPELL_CORE_WEAPON_BONUS = 310008;
     // Server-side passive (spell_dbc) whose crit procs (spell_proc_event) feed the path meter.
     constexpr uint32 SPELL_METER_PASSIVE = 310009;
+    // Server-side passives (spell_dbc) for "main stat" Growth points, picked by the character's main stat.
+    constexpr uint32 SPELL_GROWTH_STRENGTH = 310011;
+    constexpr uint32 SPELL_GROWTH_AGILITY = 310012;
+    constexpr uint32 SPELL_GROWTH_INTELLECT = 310013;
+
+    // A stat Growth points can go to (world heartseed_growth_stat).
+    struct GrowthStat
+    {
+        uint8 Id = 0;
+        std::string Name;
+        bool MainStat = false;                        // spell picked by the character's main stat, not SpellId
+        uint32 SpellId = 0;                           // passive aura; effect 0 = points * PctPerPoint
+        int32 PctPerPoint = 0;
+    };
+
+    enum class GrowthResult
+    {
+        Ok,
+        NoHeartseed,
+        UnknownStat,
+        NoPoints,                                     // nothing unspent (spend) or nothing spent (reset)
+        NotAtShrine,
+    };
 
     // What casting the Gift spent from the path meter; the Gift's effects read it while they land.
     struct GiftSpend
@@ -82,9 +105,9 @@ namespace Heartseed
         STORY_FLAG_REACHED_PANDARIA = 2,
         STORY_FLAG_FIRST_WORLD_BOSS = 3,
 
-        // 1000 and up: hints the character has seen. Stored with the story flags so they persist, but never
-        // listed in Heartseed.Rank.AwakeningFlags, so they do not raise the cap.
+        // 1000 and up: hints the character has seen, stored with the story flags so they persist.
         HINT_TWINK_WEAPON           = 1001,
+        HINT_GROWTH_POINTS          = 1002,
     };
 
     struct State
@@ -92,8 +115,6 @@ namespace Heartseed
         // Shared by the account (account_heartseed*): every loaded character of the account holds the same
         // values, and a change to one is copied to the others.
         uint32 AccountId = 0;
-        uint8 Rank = 1;                               // the account's rank; a character uses EffectiveRank
-        uint32 Growth = 0;
         uint32 GrantedTime = 0;
         uint32 FedWeapons = 0;                        // weapons fed in total (account_heartseed_fed_weapon)
         // essence id -> (times collected: account, active slot or 0: this character)
@@ -104,6 +125,10 @@ namespace Heartseed
         std::map<uint16, std::array<uint32, MaxMajorTiers>> Loadouts;
         // story flag -> unix time it was set
         std::map<uint16, uint32> StoryFlags;
+        // character_heartseed_growth*: Growth level, XP toward the next one, stat id -> points spent.
+        uint32 GrowthLevel = 0;
+        uint32 GrowthXp = 0;
+        std::map<uint8, uint32> GrowthPoints;
         bool Dirty = false;
 
         // Runtime only, never saved: what RefreshTraits last applied to the character.
@@ -120,7 +145,6 @@ namespace Heartseed
         ObjectGuid PendingFeed;                       // replaced weapon the feed prompt is asking about
         std::set<ObjectGuid> DeclinedFeeds;           // weapons the player chose to keep this session
         uint64 FirstNewItemGuid = 0;                  // items from this counter on were created after login
-        bool CapNoticeSent = false;                   // "it needs you to grow" is said once per session
         uint32 GiftTraitId = 0;                       // the taught Gift's trait, whose path meter is built
         Heartseed::MeterState Meter;
         std::vector<std::pair<uint32, uint32>> RecentHits;   // (getMSTime(), damage) taken, for the meter window
@@ -154,7 +178,7 @@ namespace Heartseed
         NoHeartseed,
         Disabled,                                     // Heartseed.Enabled = 0
         NotWeapon,                                    // not a weapon, or a fishing pole or miscellaneous one
-        Excluded,                                     // quality worth no Growth (legendary, heirloom), quest item
+        Excluded,                                     // quality not in Heartseed.Feed.Qualities, quest item
         Twink,                                        // twink item: fed only when the player deletes it
         Refundable,                                   // can still go back to the vendor
         Equipped,                                     // only weapons in bags are fed
@@ -178,11 +202,8 @@ namespace Heartseed
     // What feeding a weapon gives; FeedPreview fills it without consuming anything.
     struct FeedOutcome
     {
-        uint32 Growth = 0;
         std::vector<std::pair<uint32, float>> EssenceChances;   // essence id -> percent
         std::vector<uint32> Essences;                           // essences gained (Feed only)
-        uint8 OldRank = 0;
-        uint8 NewRank = 0;
     };
 
     enum class EssenceResult
@@ -201,7 +222,7 @@ namespace Heartseed
         Path TraitPath = Path::None;
         TraitKind Kind = TraitKind::Minor;
         uint8 Tier = 0;                               // majors: major tier index
-        uint8 MinRank = 1;                            // minors: rank that fills it in
+        uint8 MinLevel = 1;                           // minors: character level that fills it in (column min_rank)
         uint32 SpellId = 0;                           // passive aura applied while the trait is active; 0 = none
         uint32 GiftSpellId = 0;                       // Celestial Gift: active spell taught while the trait is active
         uint32 GiftCooldown = 0;                      // Gift cooldown in ms, replacing the spell's own; 0 keeps it
@@ -260,22 +281,24 @@ public:
 
     // State changes for GM commands and later systems (feeding, story hooks). Each saves at once and
     // returns false when the character has no Heartseed.
-    bool SetRank(Player* player, uint8 rank);
-    bool SetGrowth(Player* player, uint32 growth);
     bool SetStoryFlag(Player* player, uint16 flag, bool set);
 
-    // Growth earned in play (feeding now; quests, rares, events and dungeons later). Spends it on ranks up to the
-    // cap and tells the player. Returns the ranks gained.
-    uint8 AddGrowth(Player* player, uint32 amount);
-    // Spends banked Growth after the cap rose (level, awakening). Returns the ranks gained.
-    uint8 ApplyRankUps(Player* player);
-    uint8 GetRankCap(Player const* player) const;
-    // The account rank held to this character's cap: what its traits use.
-    uint8 GetEffectiveRank(Player const* player) const;
-    uint32 GetAwakenings(Heartseed::State const& state) const;   // story flags that count toward the cap
-    uint32 GetGrowthForNextRank(uint8 rank) const;
-    float GetCapPerLevel() const { return _capPerLevel; }
-    uint32 GetCapPerAwakening() const { return _capPerAwakening; }
+    // Growth XP (T-083), this character's own: battleground wins and dungeon and raid bosses near its level. Only
+    // the character being played earns, and with Heartseed.Growth.TwinksEarn 0 not one with XP gain turned off.
+    // Levels up and tells the player; returns the levels gained.
+    uint32 AddGrowthXp(Player* player, uint32 amount);
+    // GM and checkpoints: sets the level and XP; points spent past the new level are refunded, highest stat first.
+    bool SetGrowthLevel(Player* player, uint32 level, uint32 xp);
+    uint32 GetGrowthXpForLevel(uint32 level) const;
+    void OnBattlegroundEnd(Player* player, bool won);
+    // Stat points: one per Growth level, spent by the player (.seed spend, the addon). Reset is free but only at a
+    // Celestial shrine unless Heartseed.Growth.ResetAtShrineOnly is 0; anywhere skips that (GM).
+    Heartseed::GrowthResult SpendGrowthPoints(Player* player, uint8 statId, uint32 count);
+    Heartseed::GrowthResult ResetGrowthPoints(Player* player, bool anywhere);
+    std::vector<Heartseed::GrowthStat> GetGrowthStats() const;
+    bool GetGrowthStat(uint8 statId, Heartseed::GrowthStat& out) const;
+    // The aura a stat's points go to for this character (main stat: by specialization). Takes no lock.
+    static uint32 GetGrowthStatSpell(Player const* player, Heartseed::GrowthStat const& stat);
 
     // Major choices (T-023). An open tier with no major can be chosen anywhere; changing a chosen major needs a
     // Celestial shrine unless Heartseed.Choice.ChangeAtShrineOnly is 0.
@@ -299,16 +322,15 @@ public:
     uint32 GetGrantOfferDelay() const { return _grantOfferDelay; }
     uint32 GetChoicePromptDelay() const { return _choicePromptDelay; }
 
-    // Story beats (T-026): simple hooks set the flags until later quests take over. Each sets its flag once,
-    // tells the player and, for an awakening flag, ranks the Heartseed up to the new cap.
+    // Story beats (T-026): simple hooks set the flags until later quests take over. Each sets its flag once and
+    // tells the player. Kill credit also pays Growth XP for dungeon and raid bosses.
     void OnDungeonCompleted(Player* player);
     void OnMapChanged(Player* player);
     void OnKillCredit(Player* player, Creature* killed);
     // Sets a story flag the first time it is reached in play. False if already set or no Heartseed.
     bool ReachStoryBeat(Player* player, uint16 flag);
-    std::vector<uint16> GetAwakeningFlags() const;
 
-    // Feeding: a weapon in the character's bags is consumed for Growth and a chance at an essence by origin.
+    // Feeding: a weapon in the character's bags is consumed for its appearance and a chance at an essence by origin.
     Heartseed::FeedResult CanFeed(Player const* player, Item const* item, Heartseed::FeedSource source) const;
     void FeedPreview(ItemTemplate const* proto, uint32 itemLevel, Heartseed::FeedOutcome& out) const;
     Heartseed::FeedResult Feed(Player* player, Item* item, Heartseed::FeedOutcome& out, Heartseed::FeedSource source);
@@ -409,14 +431,11 @@ private:
     // Callers hold _lock.
     // Copies the account's shared fields from one character's state to the account's other loaded characters.
     void ShareAccountState(uint32 guid, Heartseed::State const& from);
-    uint8 EffectiveRank(Player const* player, Heartseed::State const& state) const;
-    uint32 CountAwakenings(Heartseed::State const& state) const;
     std::array<uint8, Heartseed::MaxPaths> MajorsPerPath(Heartseed::State const& state, uint16 specId) const;
     static void RemoveAuras(Player* player, std::map<uint32, int32> const& auras);
     // Teaches the wanted Gift spells and unlearns the others, unless the character has them from its own talents.
     void SyncGifts(Player* player, std::set<uint32> const& wanted, bool announce);
-    float GetFeedQualityPct(uint32 quality) const;
-    void SendRankUp(Player* player, uint8 oldRank, uint8 newRank);
+    bool CanFeedQuality(uint32 quality) const;
 
     bool _enabled = true;
     uint32 _xuenLightningVisual = 0;
@@ -431,9 +450,6 @@ private:
     float _procChance = 0.0f;
     float _procWeaponDamagePct = 0.0f;
     uint32 _procCooldown = 0;
-    float _capPerLevel = 1.0f;
-    uint32 _capPerAwakening = 0;
-    std::vector<uint16> _awakeningFlags;
     bool _storyHooks = true;
     std::vector<uint32> _pandariaMaps;
     std::set<uint32> _worldBossEntries;
@@ -445,12 +461,17 @@ private:
     uint32 _choicePromptDelay = 0;
     bool _choiceShrineOnly = true;
     std::vector<Heartseed::ShrineInfo> _shrines;
-    uint32 _rankGrowthBase = 0;
-    uint32 _rankGrowthPerRank = 0;
+    uint32 _growthXpBase = 0;
+    uint32 _growthXpPerLevel = 0;
+    uint32 _growthBattlegroundWin = 0;
+    uint32 _growthDungeonBoss = 0;
+    uint32 _growthRaidBoss = 0;
+    uint8 _growthLevelRange = 0;
+    bool _growthTwinksEarn = false;
+    bool _growthResetAtShrineOnly = true;
+    std::map<uint8, Heartseed::GrowthStat> _growthStats; // stat id -> stat (heartseed_growth_stat)
     bool _feedOnReplace = true;
-    uint32 _feedGrowthBase = 0;
-    float _feedGrowthPerItemLevel = 0.0f;
-    std::vector<float> _feedQualityPct;                 // by item quality, 0 = never fed
+    std::set<uint32> _feedQualities;                    // item qualities that can be fed
     uint32 _essenceProcCooldown = 0;
     bool _essenceAutoSlot = true;
     std::vector<Heartseed::StageInfo> _stages;
