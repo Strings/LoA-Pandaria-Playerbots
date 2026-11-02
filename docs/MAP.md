@@ -63,6 +63,7 @@ something worth knowing.
 | `Custom/SoloConfig/` | `.solo` inspect and test commands |
 | `Custom/Reload/` | Hot-reload registry and `.reload rng` command |
 | `Custom/Capture/` | `.idea`, `.bug`, and `.capture` feedback ticket capture commands |
+| `Custom/Telemetry/` | Player telemetry for human-like bots: game-agnostic core, WoW adapter, `.telemetry` commands, schema README (core call sites in `game/Scripting/TelemetryHooks.h`) |
 | `Custom/Professions/` | All professions unlock and management commands (`.professions`) |
 | `ScriptLoader/ScriptLoader.cpp` | Script registration (shared hotspot) |
 | `Pandaria/` | MoP raids, dungeons, zones, world bosses; `Pandaria/Scenarios/` has 17 scenarios including `FallOfTheramoreAlliance` and `FallOfTheramoreHorde` (jewel intro candidates) |
