@@ -50,16 +50,16 @@ The first playtest starts when the quick wins are merged. T-003, T-004 and T-031
 | ID | Task | Owns | Owner | Status |
 |---|---|---|---|---|
 | T-010 | Double mounted movement speed via a config multiplier (default 2.0) in the core speed update; check ghost wolf and travel forms are untouched for now | codex | done |
-| T-011 | Apprentice Riding and a basic faction-appropriate mount at character creation; four 10-slot bags in the bag slots | `sql/updates/world/`, `src/server/scripts/Custom/PlayerStartScript.cpp` | codex | review |
+| T-011 | Apprentice Riding and a basic faction-appropriate mount at character creation; four 10-slot bags in the bag slots | `sql/updates/world/`, `src/server/scripts/Custom/PlayerStartScript.cpp` | codex | done |
 | T-012 | Raise rare mount drops to 10%: list every rare-drop mount item and update loot tables | `sql/updates/world/` | codex | done |
-| T-013 | Raid resets every 2 days instead of weekly; keep in-progress instances until finished or abandoned | `src/server/game/Instances/` | codex | review |
+| T-013 | Raid resets every 2 days instead of weekly; keep in-progress instances until finished or abandoned | `src/server/game/Instances/` | codex | done |
 | T-014 | All professions: raise `MaxPrimaryTradeSkill` (confirm the key exists); addon button bar for professions past the second | config, `addons/ProfessionBar/` | codex | done |
-| T-015 | No item binding: config-keyed hook that skips binding, keeping quest items and custom progression items bound; one-time soulbound-flag cleanup SQL; tooltip fix via item hotfixes. Check the transmog interaction | `src/server/scripts/Custom/NoBinding/`, `sql/updates/` | codex | open |
+| T-015 | No item binding: config-keyed hook that skips binding, keeping quest items and custom progression items bound; one-time soulbound-flag cleanup SQL; tooltip fix via item hotfixes. Check the transmog interaction | `src/server/scripts/Custom/NoBinding/`, `sql/updates/` | codex | done |
 | T-016 | Free talent and glyph changes (no gold, no reagents); spec switching from level 10 | `src/server/scripts/Custom/Respec/` | codex | done |
 | T-017 | Server-side spec loadouts (spec, talents, glyphs, action bars, Heartseed paths), one per spec by default plus named extras; addon picker | `src/server/scripts/Custom/Loadouts/`, `addons/Loadouts/` | claude | done |
 | T-018 | Gear pages per loadout: detached storage, page swap through the normal equip path, addon page panel | `src/server/scripts/Custom/Loadouts/`, `addons/Loadouts/` | claude | done |
 | T-019 | Config quick wins: cross-faction play (`AllowTwoSide.*`), all flight paths, guaranteed skill-ups, no weekly currency caps, lighter death penalties. Confirm each key exists in the fork | codex | done |
-| T-041 | Script and data quick wins: guild perks for everyone, unrestricted transmog (mixed types), bigger stacks via item hotfixes, free character services NPC, shorter hearthstone cooldown | `src/server/scripts/Custom/SoloQoL/`, `sql/updates/` | codex, flash | open |
+| T-041 | Script and data quick wins: guild perks for everyone, unrestricted transmog (mixed types), bigger stacks via item hotfixes, free character services NPC, shorter hearthstone cooldown | `src/server/scripts/Custom/SoloQoL/`, `sql/updates/` | codex, flash | done |
 | T-042 | 36-slot bags: expensive vendor (gold sink); hooks to plant them in rare loot later | `sql/updates/world/` | flash | done |
 | T-043 | Reagent bank in detached storage, with crafting drawing from it | `src/server/scripts/Custom/ReagentBank/` | claude | done |
 | T-044 | Free XP on/off toggle (command now, settings panel later); no separate battleground queue for XP-off characters | `src/server/scripts/Custom/Twinks/` | codex | open |
