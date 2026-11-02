@@ -1,0 +1,55 @@
+{
+  "name": "heartseed-xuen",
+  "timeout_seconds": 180,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "2"
+  ],
+  "steps": [
+    "say .heartseed revoke",
+    "say .heartseed grant",
+    "say .cooldown",
+    "say .npc add temp 6",
+    "npcguid 6",
+    "say .heartseed major 10 2",
+    "cast 123904 npc",
+    "wait-for evt=never timeout=3",
+    "npcguid 63508",
+    "cast 123904 npc",
+    "wait-for evt=never timeout=4",
+    "npcguid 63508",
+    "wait-for evt=never timeout=8",
+    "say .npc add temp 6",
+    "npcguid 6",
+    "cast 123904 npc",
+    "say .heartseed revoke"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)spell_candidates=\\d+\\|123904 .*SMSG_CAST_FAILED spell=123904 result=70.*spell_candidates=\\d+\\|123904 "
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)step: npcguid 63508.*?harness verb=npcguid guid=[1-9].*step: npcguid 63508.*?npcguid: no such creature nearby"
+    },
+    {
+      "type": "not_contains",
+      "text": "SMSG_CAST_FAILED spell=123904 result=13"
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback"
+    }
+  ]
+}

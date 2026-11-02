@@ -190,7 +190,8 @@ namespace Heartseed
         uint8 MinRank = 1;                            // minors: rank that fills it in
         uint32 SpellId = 0;                           // passive aura applied while the trait is active; 0 = none
         uint32 GiftSpellId = 0;                       // Celestial Gift: active spell taught while the trait is active
-        uint32 GiftCooldown = 0;                      // Gift cooldown in ms, applied when longer than the spell's own
+        uint32 GiftCooldown = 0;                      // Gift cooldown in ms, replacing the spell's own; 0 keeps it
+        uint32 GiftDuration = 0;                      // Gift summon lifetime in ms, replacing the spell's; 0 keeps it
         int32 GiftBaseAmount = 0;                     // Gift power (damage per hit for scaled gifts) at item level 0
         float GiftAmountPerItemLevel = 0.0f;
         int32 BaseAmount = 0;                         // effect 0 amount at item level 0
@@ -349,6 +350,7 @@ public:
     uint32 GetProcDamage(Player* player, float weaponDamagePct) const;
     uint32 GetProcDamage(Player* player) const { return GetProcDamage(player, _procWeaponDamagePct); }
     uint32 GetProcSpellId() const { return _procSpellId; }
+    uint32 GetXuenLightningVisual() const { return _xuenLightningVisual; }
 
     uint8 GetStage(Player const* player) const;
     std::string GetStageName(uint8 stage) const;
@@ -373,6 +375,7 @@ private:
     void SendRankUp(Player* player, uint8 oldRank, uint8 newRank);
 
     bool _enabled = true;
+    uint32 _xuenLightningVisual = 0;
     float _coreWeaponDamagePct = 0.0f;
     uint32 _procSpellId = 0;
     float _procChance = 0.0f;

@@ -173,6 +173,7 @@ void HeartseedMgr::LoadConfig()
     _enabled = sConfigMgr->GetBoolDefault("Heartseed.Enabled", true);
     _coreWeaponDamagePct = sConfigMgr->GetFloatDefault("Heartseed.Core.WeaponDamagePct", 5.0f);
     _procSpellId = sConfigMgr->GetIntDefault("Heartseed.Proc.SpellId", 16614);
+    _xuenLightningVisual = sConfigMgr->GetIntDefault("Heartseed.Gift.XuenLightningVisual", 36);
     _procChance = sConfigMgr->GetFloatDefault("Heartseed.Proc.Chance", 10.0f);
     _procWeaponDamagePct = sConfigMgr->GetFloatDefault("Heartseed.Proc.WeaponDamagePct", 50.0f);
     _procCooldown = sConfigMgr->GetIntDefault("Heartseed.Proc.Cooldown", 3000);
@@ -348,13 +349,13 @@ bool HeartseedMgr::LoadData(std::size_t* loadedRows)
     }
 
     {
-        QueryResult result = WorldDatabase.Query("SELECT `trait_id`, `spell_id`, `cooldown`, `base_amount`, `amount_per_ilvl`, NULL AS sentinel FROM `heartseed_gift` UNION ALL SELECT NULL, NULL, NULL, NULL, NULL, 'end'");
+        QueryResult result = WorldDatabase.Query("SELECT `trait_id`, `spell_id`, `cooldown`, `duration`, `base_amount`, `amount_per_ilvl`, NULL AS sentinel FROM `heartseed_gift` UNION ALL SELECT NULL, NULL, NULL, NULL, NULL, NULL, 'end'");
         if (!result)
             return false;
         do
         {
             Field* fields = result->Fetch();
-            if (!fields[5].IsNull())
+            if (!fields[6].IsNull())
                 continue;
             uint32 traitId = fields[0].GetUInt32();
             uint32 spellId = fields[1].GetUInt32();
@@ -371,8 +372,9 @@ bool HeartseedMgr::LoadData(std::size_t* loadedRows)
             }
             trait->second.GiftSpellId = spellId;
             trait->second.GiftCooldown = fields[2].GetUInt32();
-            trait->second.GiftBaseAmount = fields[3].GetInt32();
-            trait->second.GiftAmountPerItemLevel = fields[4].GetFloat();
+            trait->second.GiftDuration = fields[3].GetUInt32();
+            trait->second.GiftBaseAmount = fields[4].GetInt32();
+            trait->second.GiftAmountPerItemLevel = fields[5].GetFloat();
         } while (result->NextRow());
     }
 
