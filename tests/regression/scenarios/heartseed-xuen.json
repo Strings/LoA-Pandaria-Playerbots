@@ -8,6 +8,7 @@
     "2"
   ],
   "steps": [
+    "say .revive",
     "say .heartseed revoke",
     "say .heartseed grant",
     "say .cooldown",

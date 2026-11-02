@@ -1,0 +1,38 @@
+{
+  "name": "spawn-thinning",
+  "timeout_seconds": 90,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "2"
+  ],
+  "steps": [
+    "say .spawnthin",
+    "say .go -10022 635 39 0",
+    "wait-for evt=never timeout=3",
+    "say .spawnthin near 100"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "regex",
+      "pattern": "Spawn thinning: radius 10\\.0 yd, maps 0 1 530 571 870\\. [1-9]\\d* of \\d+ hostile spawns"
+    },
+    {
+      "type": "regex",
+      "pattern": "[1-9]\\d* thinned spawns within 100 yd"
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback"
+    }
+  ]
+}
