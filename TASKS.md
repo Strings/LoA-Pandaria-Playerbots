@@ -85,7 +85,7 @@ The first playtest starts when the quick wins are merged. T-003, T-004 and T-031
 | T-081 | Spawn thinning: at startup, leave hostile open-world spawns that crowd an older one (config radius) out of the grids, world data untouched; `.spawnthin` inspect commands; pure rule unit-tested | `src/server/scripts/Custom/SpawnThinning/`, `tests/spawn_thinning/` | claude | done |
 | T-082 | Celestial Gift riders: each Heartseed stage (Sapling, Bloom, Full Bloom) adds a data-driven rider to the Gift (decided list in DESIGN.md); Call of Xuen keeps up with a mounted owner | src/server/scripts/Custom/Heartseed/, sql/updates/world/ | claude | done |
 | T-083 | Heartseed active play (DESIGN.md "Active play, not big cooldowns"): path meters (Thunder, Hope, lit Retort, Coil), Gift cooldowns 20–60 s shortened by play, Crane's Plume and Niuzao's Retort replace Crane Rush and Ox Stomp, proc-gated casts plus addon button glow, Growth XP track with percentage stat points, rank cap removed, effects scale with the character's own stats | `src/server/scripts/Custom/Heartseed/`, `addons/Heartseed/`, `sql/updates/world/`, `sql/updates/characters/`, `tests/heartseed/` | claude | done (part A: meters, Gifts, glow; part B: Growth XP, stat points, rank cap removed) |
-| T-084 | Heartseed Growth from quests and rares near the character's level (repeatable non-daily quests excluded), config keys `Heartseed.Growth.Quest` and `.Rare` | `src/server/scripts/Custom/Heartseed/` | claude | review |
+| T-084 | Heartseed Growth from quests and rares near the character's level (repeatable non-daily quests excluded), config keys `Heartseed.Growth.Quest` and `.Rare` | `src/server/scripts/Custom/Heartseed/` | claude | done |
 
 ### Tooling (v0.1, cheap first)
 
