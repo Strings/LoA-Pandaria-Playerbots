@@ -3,7 +3,7 @@
 
 local PREFIX = "Heartseed"
 local DEFAULT_KEY = "SHIFT-H"
-local WIDTH, HEIGHT = 400, 556
+local WIDTH, HEIGHT = 400, 640
 local ICONS = "Interface\\Icons\\"
 
 -- Custom art goes in art/ (see art/README.md). Until it ships, built-in textures stand in: set USE_ART once the
@@ -139,7 +139,8 @@ subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -3)
 
 -- The mandala: the seed in the middle, the four Celestials around it -------------------------------------------
 
-local CENTER_Y, RADIUS = -150, 86
+-- Low enough that Niuzao's ring and name clear the subtitle.
+local CENTER_Y, RADIUS = -190, 86
 local mandala = CreateFrame("Frame", nil, frame)
 mandala:SetSize(1, 1)
 mandala:SetPoint("TOP", 0, CENTER_Y)
@@ -309,11 +310,13 @@ giftText:SetPoint("TOPLEFT", giftName, "BOTTOMLEFT", 0, -3)
 giftText:SetPoint("RIGHT", -8, 0)
 giftText:SetJustifyH("LEFT")
 
-local giftSpell, pendingGiftSpell
+local giftSpell, pendingGiftSpell, wantedGiftSpell
 local function SetGiftSpell(spellId)
     local name, icon
+    wantedGiftSpell = spellId
     if spellId and spellId > 0 and GetSpellInfo then
         name, _, icon = GetSpellInfo(spellId)
+        icon = icon or (GetSpellTexture and GetSpellTexture(spellId))
     end
     giftButton.icon:SetTexture(icon or ICONS .. "INV_Misc_QuestionMark")
     giftButton.icon:SetDesaturated(not name)
@@ -340,10 +343,18 @@ Tooltip(giftButton, function()
     if giftSpell and GameTooltip then
         GameTooltip:SetOwner(giftButton, "ANCHOR_RIGHT")
         GameTooltip:SetSpellByID(giftSpell)
+        GameTooltip:AddLine("Drag to an action bar.", 0.5, 0.5, 0.5)
         GameTooltip:Show()
         return nil
     end
     return { "Celestial Gift", "Choose a Celestial at level 10 to wake your Gift." }
+end)
+-- Dragging puts the Gift on the cursor the way the spellbook does, so it can go on any action bar.
+giftButton:RegisterForDrag("LeftButton")
+giftButton:SetScript("OnDragStart", function()
+    if giftSpell and not InCombatLockdown() then
+        PickupSpell(giftSpell)
+    end
 end)
 
 -- Majors: one node per tier ------------------------------------------------------------------------------------
@@ -376,13 +387,13 @@ for i = 1, 6 do
 end
 
 local essenceLine = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-essenceLine:SetPoint("TOPLEFT", nodesLabel, "BOTTOMLEFT", 0, -64)
+essenceLine:SetPoint("TOPLEFT", nodesLabel, "BOTTOMLEFT", 0, -80)
 essenceLine:SetPoint("RIGHT", -24, 0)
 essenceLine:SetJustifyH("LEFT")
 essenceLine:SetSpacing(2)
 
 local footer = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-footer:SetPoint("BOTTOMLEFT", 24, 44)
+footer:SetPoint("TOPLEFT", essenceLine, "BOTTOMLEFT", 0, -10)
 footer:SetPoint("RIGHT", -24, 0)
 footer:SetJustifyH("LEFT")
 
@@ -536,6 +547,12 @@ local function Layout()
         foot = foot .. "   |cff40ff40At " .. s.shrine .. ": majors can change here.|r"
     end
     footer:SetText(foot)
+
+    -- The essence list grows with every essence found, so the frame grows with it and keeps the buttons clear.
+    local top, bottom = frame:GetTop(), footer:GetBottom()
+    if top and bottom then
+        frame:SetHeight(math.max(HEIGHT, top - bottom + 52))
+    end
 end
 
 function HeartseedPanel_Toggle()
@@ -617,6 +634,7 @@ local function UpdateMeter()
         meterFrame:Hide()
     else
         local _, _, icon = GetSpellInfo(meter.spell)
+        icon = icon or (GetSpellTexture and GetSpellTexture(meter.spell))
         meterFrame.icon:SetTexture(icon or ICONS .. "INV_Misc_QuestionMark")
         meterFrame.icon:SetDesaturated(meter.max > 0 and meter.stacks == 0)
         meterFrame.count:SetText(meter.max > 0 and meter.stacks or "")
@@ -660,7 +678,7 @@ end
 local events = CreateFrame("Frame")
 for _, e in ipairs({ "ADDON_LOADED", "PLAYER_LOGIN", "CHAT_MSG_ADDON", "PLAYER_LEVEL_UP", "GOSSIP_CLOSED",
     "QUEST_FINISHED", "PLAYER_SPECIALIZATION_CHANGED", "ZONE_CHANGED", "ZONE_CHANGED_NEW_AREA", "LEARNED_SPELL_IN_TAB",
-    "SPELL_UPDATE_COOLDOWN", "PLAYER_REGEN_ENABLED" }) do
+    "SPELL_UPDATE_COOLDOWN", "PLAYER_REGEN_ENABLED", "SPELLS_CHANGED" }) do
     events:RegisterEvent(e)
 end
 events:SetScript("OnEvent", function(_, event, ...)
@@ -680,6 +698,10 @@ events:SetScript("OnEvent", function(_, event, ...)
     end
     if event == "SPELL_UPDATE_COOLDOWN" then
         if frame:IsShown() then UpdateGiftCooldown() end
+        return
+    end
+    if event == "SPELLS_CHANGED" then
+        if wantedGiftSpell and not giftSpell then SetGiftSpell(wantedGiftSpell) end
         return
     end
     if event == "PLAYER_REGEN_ENABLED" then
