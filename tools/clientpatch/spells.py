@@ -8,6 +8,7 @@ its Spell, SpellMisc and SpellEffect tables; the server gets the same spell as `
 Not copied: SpellPower (clones cost nothing), SpellEffectScaling (amounts come from base points; the server
 script sets real amounts) and server-side cooldowns (the core's `spell_dbc` has no cooldown column).
 """
+import bisect
 from typing import Dict, List
 
 from dbcfile import Dbc, as_float, as_int
@@ -42,6 +43,7 @@ SERVER_EFFECT = [('Id', 0), ('Effect', 2), ('EffectValueMultiplier', 3, FLOAT), 
 
 
 SLA_ID, SLA_LINE, SLA_SPELL = 0, 1, 2
+SORTED_ID, SORTED_SPELL = 0, 1
 
 
 def effect_id(spell_id: int, index: int) -> int:
@@ -50,8 +52,8 @@ def effect_id(spell_id: int, index: int) -> int:
 
 
 def clone(edit: dict, tables: Dict[str, Dbc]) -> Dict[str, List[List[int]]]:
-    """Appends the clone's rows to `tables` (Spell, SpellMisc, SpellEffect, and SkillLineAbility for a
-    `skill_line`) and returns them by table."""
+    """Appends the clone's rows to `tables` (Spell, SpellMisc, SpellEffect, and for a `skill_line` also
+    SkillLineAbility and SkillLineAbilitySortedSpell) and returns them by table."""
     spell_dbc, misc_dbc, effect_dbc = tables['Spell'], tables['SpellMisc'], tables['SpellEffect']
     new_id, source_id = edit['id'], edit['from']
     sources = spell_dbc.find(S_ID, source_id)
@@ -90,15 +92,20 @@ def clone(edit: dict, tables: Dict[str, Dbc]) -> Dict[str, List[List[int]]]:
         raise KeyError('spell %d: no effects to clone' % source_id)
 
     # The spellbook lists only spells with a SkillLineAbility row; without one the spell is known but has no tab,
-    # so it can't be found or dragged. The row copies one already on that line (183 is the General tab).
-    skill_rows = []
+    # so it can't be found or dragged. The row copies one already on that line (183 is the General tab). The client
+    # also keeps SkillLineAbilitySortedSpell, (ability id, spell) sorted by spell, which it walks by
+    # SkillLineAbility's row count: both tables must grow together or the client reads past the end and crashes.
+    # Rows on one skill line stay together, and the new row's id continues the table's own sequence.
+    skill_rows, skill_at = [], 0
     if 'skill_line' in edit:
         ability_dbc = tables['SkillLineAbility']
-        model = ability_dbc.find(SLA_LINE, edit['skill_line'])
-        if not model:
+        lines = [r[SLA_LINE] for r in ability_dbc.rows]
+        if edit['skill_line'] not in lines:
             raise KeyError('spell %d: no SkillLineAbility row on line %d to copy' % (new_id, edit['skill_line']))
-        row = list(model[0])
-        row[SLA_ID], row[SLA_SPELL] = new_id, new_id
+        skill_at = len(lines) - lines[::-1].index(edit['skill_line'])
+        row = list(ability_dbc.rows[skill_at - 1])
+        row[SLA_ID] = max(r[SLA_ID] for r in ability_dbc.rows) + 1
+        row[SLA_SPELL] = new_id
         skill_rows.append(row)
 
     spell_dbc.append(spell)
@@ -107,8 +114,12 @@ def clone(edit: dict, tables: Dict[str, Dbc]) -> Dict[str, List[List[int]]]:
         effect_dbc.append(row)
     rows = {'Spell': [spell], 'SpellMisc': [misc], 'SpellEffect': effects}
     if skill_rows:
-        tables['SkillLineAbility'].append(skill_rows[0])
+        tables['SkillLineAbility'].insert(skill_at, skill_rows[0])
+        sorted_dbc = tables['SkillLineAbilitySortedSpell']
+        pair = [skill_rows[0][SLA_ID], new_id]
+        sorted_dbc.insert(bisect.bisect_right([r[SORTED_SPELL] for r in sorted_dbc.rows], new_id), pair)
         rows['SkillLineAbility'] = skill_rows
+        rows['SkillLineAbilitySortedSpell'] = [pair]
     return rows
 
 

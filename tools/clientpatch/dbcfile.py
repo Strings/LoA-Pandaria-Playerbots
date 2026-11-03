@@ -33,11 +33,14 @@ class Dbc:
         return [row for row in self.rows if row[column] == value]
 
     def append(self, row: List[int]):
+        self.insert(len(self.rows), row)
+
+    def insert(self, index: int, row: List[int]):
         if len(row) != self.fields:
             raise ValueError('%s: row has %d cells, table has %d' % (self.name, len(row), self.fields))
         if self.find(0, row[0]):
             raise ValueError('%s: id %d already exists' % (self.name, row[0]))
-        self.rows.append(list(row))
+        self.rows.insert(index, list(row))
 
     def to_bytes(self) -> bytes:
         out = bytearray(struct.pack('<4sIIII', b'WDBC', len(self.rows), self.fields, self.fields * 4,
