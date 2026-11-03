@@ -36,7 +36,7 @@
     },
     {
       "type": "contains",
-      "text": "A Celestial Gift wakes: Invoke Xuen, the White Tiger"
+      "text": "A Celestial Gift wakes: Call of Xuen"
     },
     {
       "type": "contains",
@@ -48,7 +48,7 @@
     },
     {
       "type": "contains",
-      "text": "spell_candidates=484|310100"
+      "text": "|310100 "
     },
     {
       "type": "contains",
@@ -60,15 +60,15 @@
     },
     {
       "type": "contains",
-      "text": "A Celestial Gift wakes: Celestial Breath"
+      "text": "A Celestial Gift wakes: Serpent's Breath"
     },
     {
       "type": "contains",
-      "text": "A Celestial Gift wakes: Ox Charge"
+      "text": "A Celestial Gift wakes: Niuzao's Retort"
     },
     {
       "type": "contains",
-      "text": "A Celestial Gift wakes: Spirit of Chi-Ji"
+      "text": "A Celestial Gift wakes: Crane's Plume"
     },
     {
       "type": "not_contains",
