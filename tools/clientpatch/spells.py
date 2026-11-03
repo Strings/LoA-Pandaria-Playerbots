@@ -16,7 +16,10 @@ from dbcfile import Dbc, as_float, as_int
 # Column indexes, from tools/dbc/schemas.py.
 S_ID, S_NAME, S_RANK, S_DESC, S_AURA_DESC, S_MISC = 0, 1, 2, 3, 4, 24
 M_ID, M_SPELL, M_DIFFICULTY, M_ICON, M_ACTIVE_ICON = 0, 1, 2, 23, 24
+S_COOLDOWNS = 15
 E_ID, E_DIFFICULTY, E_SPELL = 0, 1, 27
+M_VISUAL = 21
+CD_ID, CD_SPELL, CD_RECOVERY = 0, 1, 4
 
 MISC_ATTRIBUTES = ['attributes'] + ['attributes_ex%s' % s for s in [''] + [str(n) for n in range(2, 14)]]
 
@@ -52,8 +55,8 @@ def effect_id(spell_id: int, index: int) -> int:
 
 
 def clone(edit: dict, tables: Dict[str, Dbc]) -> Dict[str, List[List[int]]]:
-    """Appends the clone's rows to `tables` (Spell, SpellMisc, SpellEffect, and for a `skill_line` also
-    SkillLineAbility and SkillLineAbilitySortedSpell) and returns them by table."""
+    """Appends the clone's rows to `tables` (Spell, SpellMisc, SpellEffect; SpellCooldowns for a `cooldown`;
+    SkillLineAbility and SkillLineAbilitySortedSpell for a `skill_line`) and returns them by table."""
     spell_dbc, misc_dbc, effect_dbc = tables['Spell'], tables['SpellMisc'], tables['SpellEffect']
     new_id, source_id = edit['id'], edit['from']
     sources = spell_dbc.find(S_ID, source_id)
@@ -73,6 +76,8 @@ def clone(edit: dict, tables: Dict[str, Dbc]) -> Dict[str, List[List[int]]]:
     spell[S_MISC] = new_id
 
     misc[M_ID], misc[M_SPELL] = new_id, new_id
+    if 'visual' in edit:
+        misc[M_VISUAL] = edit['visual']
     if 'icon' in edit:
         misc[M_ICON] = edit['icon']
         misc[M_ACTIVE_ICON] = 0
@@ -108,11 +113,27 @@ def clone(edit: dict, tables: Dict[str, Dbc]) -> Dict[str, List[List[int]]]:
         row[SLA_SPELL] = new_id
         skill_rows.append(row)
 
+    # The tooltip's cooldown comes from the SpellCooldowns row; the server sets the real one (heartseed_gift), so
+    # `cooldown` (ms) should match it. The row copies the source's, keeping its global cooldown.
+    cooldown_rows = []
+    if 'cooldown' in edit:
+        cooldown_dbc = tables['SpellCooldowns']
+        source = cooldown_dbc.find(CD_ID, spell[S_COOLDOWNS]) if spell[S_COOLDOWNS] else []
+        row = list(source[0]) if source else [0] * cooldown_dbc.fields
+        row[CD_ID] = max(r[CD_ID] for r in cooldown_dbc.rows) + 1
+        row[CD_SPELL], row[CD_RECOVERY], row[CD_RECOVERY - 1] = new_id, edit['cooldown'], 0
+        spell[S_COOLDOWNS] = row[CD_ID]
+        cooldown_rows.append(row)
+
     spell_dbc.append(spell)
     misc_dbc.append(misc)
+    for row in cooldown_rows:
+        tables['SpellCooldowns'].append(row)
     for row in effects:
         effect_dbc.append(row)
     rows = {'Spell': [spell], 'SpellMisc': [misc], 'SpellEffect': effects}
+    if cooldown_rows:
+        rows['SpellCooldowns'] = cooldown_rows
     if skill_rows:
         tables['SkillLineAbility'].insert(skill_at, skill_rows[0])
         sorted_dbc = tables['SkillLineAbilitySortedSpell']

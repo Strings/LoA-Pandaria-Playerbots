@@ -17,8 +17,9 @@
       "name": "Call of Xuen",
       "rank": "Celestial Gift",
       "icon": 6423,
+      "cooldown": 20000,
       "description": "Xuen's Gift. Call the spirit of Xuen, the White Tiger, to fight at your side, its claws crackling with lightning. Your critical strikes build Thunder, which keeps the tiger with you longer and brings the Gift back sooner.",
-      "why": "Heartseed Gift button (T-086): its own name, tooltip and icon instead of the borrowed spell's. Clone of Invoke Xuen, the White Tiger (monk talent)."
+      "why": "Heartseed Gift button (T-086): its own name, tooltip and icon instead of the borrowed spell's. Clone of Invoke Xuen, the White Tiger (monk talent). Cooldown as heartseed_gift sets it on the server, so the tooltip matches."
     },
     {
       "type": "spell",
@@ -28,13 +29,14 @@
       "name": "Crane's Plume",
       "rank": "Celestial Gift",
       "icon": 6359,
+      "cooldown": 15000,
       "attributes": {
         "attributes_ex2": {
           "set": 536870912
         }
       },
       "description": "Chi-Ji's Gift. The Red Crane's hope heals you and the most wounded members of your group. Healing you do or receive builds Hope, which makes the next Plume stronger.",
-      "why": "Heartseed Gift button (T-086): its own name, tooltip and icon instead of the borrowed spell's. Clone of Spirit of Chi-Ji (legendary cloak proc); cannot crit, as the core makes the source."
+      "why": "Heartseed Gift button (T-086): its own name, tooltip and icon instead of the borrowed spell's. Clone of Spirit of Chi-Ji (legendary cloak proc); cannot crit, as the core makes the source. Cooldown as heartseed_gift sets it on the server, so the tooltip matches."
     },
     {
       "type": "spell",
@@ -44,8 +46,40 @@
       "name": "Niuzao's Retort",
       "rank": "Celestial Gift",
       "icon": 6429,
+      "cooldown": 20000,
       "description": "Niuzao's Gift. After a heavy blow, answer with the Black Ox's charge, striking the enemies before you for a share of the damage you just took. Usable only for a few seconds after the blow.",
-      "why": "Heartseed Gift button (T-086): its own name, tooltip and icon instead of the borrowed spell's. Clone of Ox Charge (creature spell)."
+      "why": "Heartseed Gift button (T-086): its own name, tooltip and icon instead of the borrowed spell's. Clone of Ox Charge (creature spell). Cooldown as heartseed_gift sets it on the server, so the tooltip matches."
+    },
+    {
+      "type": "row",
+      "file": "SpellVisualKit.db2",
+      "id": 310103,
+      "from": 30429,
+      "set": {
+        "anim_id": 124
+      },
+      "why": "Serpent's Breath visual (T-086): a kit for the breath while the aura lasts, copied from Cleansing Breath's (jade dragon breath), with the directed channel animation."
+    },
+    {
+      "type": "row",
+      "file": "SpellVisualKitModelAttach.db2",
+      "id": 310103,
+      "from": 18040,
+      "set": {
+        "parent_spell_visual_kit_id": 310103
+      },
+      "why": "Serpent's Breath visual (T-086): the jade dragon breath model on the caster's breath point, so it comes from the mouth and scales with the caster's model."
+    },
+    {
+      "type": "row",
+      "file": "SpellVisual.db2",
+      "id": 310103,
+      "from": 25885,
+      "set": {
+        "state_kit": 310103,
+        "state_done_kit": 0
+      },
+      "why": "Serpent's Breath visual (T-086): Celestial Breath's visual played the breath only when the aura ended; this one loops the jade breath while it lasts."
     },
     {
       "type": "spell",
@@ -55,6 +89,8 @@
       "name": "Serpent's Breath",
       "rank": "Celestial Gift",
       "icon": 6335,
+      "cooldown": 30000,
+      "visual": 310103,
       "attributes": {
         "attributes_ex5": {
           "clear": 512
@@ -62,7 +98,7 @@
       },
       "description": "Yu'lon's Gift. Breathe jade fire in a cone, burning every enemy before you. Your spell casts build Coil, which makes the next Breath stronger.",
       "aura_description": "Breathing jade fire.",
-      "why": "Heartseed Gift button (T-086): its own name, tooltip and icon instead of the borrowed spell's. Clone of Celestial Breath (creature spell); ticks start after the first period, as the core makes the source."
+      "why": "Heartseed Gift button (T-086): its own name, tooltip and icon instead of the borrowed spell's. Clone of Celestial Breath (creature spell); ticks start after the first period, as the core makes the source. Cooldown as heartseed_gift sets it on the server, so the tooltip matches."
     },
     {
       "type": "spell",

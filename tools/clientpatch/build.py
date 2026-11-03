@@ -14,7 +14,9 @@ MOP_DBC_DIR, else <repo>/gamedata/dbc), which is the client's own latest data. A
 line in a client file (interface Lua and XML), read from the client's own archive chain with Blizzard's delta
 patches applied (`--client`, else MOP_CLIENT_DIR, else the mop-clean folder next to the repo). A `spell` edit
 clones a client spell to a new id with its own name, tooltip and icon (see spells.py); the server gets the same
-spell from the generated `server_sql`. Each edit names what it expects to replace, so a change in the source fails
+spell from the generated `server_sql`. A `row` edit copies a row of a table (WDBC, or WDB2 without an id index
+such as the spell visual tables) to a new id and sets named columns on the copy; rows are added in manifest order,
+so later ones can point at earlier ones. Each edit names what it expects to replace, so a change in the source fails
 the build instead of patching the wrong thing.
 """
 import argparse
@@ -33,7 +35,7 @@ sys.path.insert(0, str(HERE))
 import client  # noqa: E402
 import mpq  # noqa: E402
 import spells  # noqa: E402
-from dbcfile import Dbc  # noqa: E402
+from dbcfile import Dbc, to_cell  # noqa: E402
 from tools.dbc.schemas import get_schema  # noqa: E402
 
 MANIFEST = HERE / 'edits.json'
@@ -106,6 +108,29 @@ def group_edits(manifest: dict, kinds) -> dict:
     return by_file
 
 
+def table_path(dbc_dir: Path, filename: str, locale: str) -> Path:
+    """The extracted game data keeps DB2 files in a locale folder."""
+    path = dbc_dir / filename
+    return path if path.exists() else dbc_dir / locale / filename
+
+
+def add_rows(raw: bytes, schema, edits) -> bytes:
+    table = Dbc(raw, schema.filename)
+    kinds = {f.name: f.kind for f in schema.fields}
+    for edit in edits:
+        source = table.find(0, edit['from'])
+        if not source:
+            raise KeyError('%s: no row %d to copy' % (schema.filename, edit['from']))
+        row = list(source[0])
+        row[0] = edit['id']
+        for field, value in edit.get('set', {}).items():
+            if field not in kinds:
+                raise KeyError('%s: no column %s' % (schema.filename, field))
+            row[schema.field_names.index(field)] = to_cell(value, kinds[field])
+        table.append(row)
+    return table.to_bytes()
+
+
 def build_tables(manifest: dict, dbc_dir: Path):
     """Table file name -> patched bytes, and the rows each spell clone added (for the server SQL)."""
     raws = {}
@@ -114,6 +139,12 @@ def build_tables(manifest: dict, dbc_dir: Path):
         if not schema:
             raise KeyError('no schema for ' + filename)
         raws[filename] = patch_dbc((dbc_dir / filename).read_bytes(), schema, edits)
+    for (_, filename), edits in group_edits(manifest, ('row',)).items():
+        schema = get_schema(filename)
+        if not schema:
+            raise KeyError('no schema for ' + filename)
+        raw = raws.get(filename) or table_path(dbc_dir, filename, manifest['locale']).read_bytes()
+        raws[filename] = add_rows(raw, schema, edits)
     clones = [edit for edit in manifest['edits'] if edit.get('type') == 'spell']
     clone_rows = []
     if clones:
@@ -121,6 +152,8 @@ def build_tables(manifest: dict, dbc_dir: Path):
         names = ['Spell', 'SpellMisc', 'SpellEffect']
         if any('skill_line' in edit for edit in clones):
             names += ['SkillLineAbility', 'SkillLineAbilitySortedSpell']
+        if any('cooldown' in edit for edit in clones):
+            names.append('SpellCooldowns')
         for name in names:
             filename = name + '.dbc'
             tables[name] = Dbc(raws.get(filename) or (dbc_dir / filename).read_bytes(), filename)
