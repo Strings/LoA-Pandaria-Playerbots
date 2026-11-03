@@ -41,13 +41,17 @@ SERVER_EFFECT = [('Id', 0), ('Effect', 2), ('EffectValueMultiplier', 3, FLOAT), 
                  ('EffectImplicitTargetB', 26), ('EffectSpellId', 27), ('EffectIndex', 28), ('EffectAttributes', 29)]
 
 
+SLA_ID, SLA_LINE, SLA_SPELL = 0, 1, 2
+
+
 def effect_id(spell_id: int, index: int) -> int:
     """Clone effect rows get ids far above the client's own (about 230000)."""
     return spell_id * 10 + index
 
 
 def clone(edit: dict, tables: Dict[str, Dbc]) -> Dict[str, List[List[int]]]:
-    """Appends the clone's rows to `tables` (Spell, SpellMisc, SpellEffect) and returns them by table."""
+    """Appends the clone's rows to `tables` (Spell, SpellMisc, SpellEffect, and SkillLineAbility for a
+    `skill_line`) and returns them by table."""
     spell_dbc, misc_dbc, effect_dbc = tables['Spell'], tables['SpellMisc'], tables['SpellEffect']
     new_id, source_id = edit['id'], edit['from']
     sources = spell_dbc.find(S_ID, source_id)
@@ -85,11 +89,27 @@ def clone(edit: dict, tables: Dict[str, Dbc]) -> Dict[str, List[List[int]]]:
     if not effects:
         raise KeyError('spell %d: no effects to clone' % source_id)
 
+    # The spellbook lists only spells with a SkillLineAbility row; without one the spell is known but has no tab,
+    # so it can't be found or dragged. The row copies one already on that line (183 is the General tab).
+    skill_rows = []
+    if 'skill_line' in edit:
+        ability_dbc = tables['SkillLineAbility']
+        model = ability_dbc.find(SLA_LINE, edit['skill_line'])
+        if not model:
+            raise KeyError('spell %d: no SkillLineAbility row on line %d to copy' % (new_id, edit['skill_line']))
+        row = list(model[0])
+        row[SLA_ID], row[SLA_SPELL] = new_id, new_id
+        skill_rows.append(row)
+
     spell_dbc.append(spell)
     misc_dbc.append(misc)
     for row in effects:
         effect_dbc.append(row)
-    return {'Spell': [spell], 'SpellMisc': [misc], 'SpellEffect': effects}
+    rows = {'Spell': [spell], 'SpellMisc': [misc], 'SpellEffect': effects}
+    if skill_rows:
+        tables['SkillLineAbility'].append(skill_rows[0])
+        rows['SkillLineAbility'] = skill_rows
+    return rows
 
 
 def _value(row, column, kind=None):

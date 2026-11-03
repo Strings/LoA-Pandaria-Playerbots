@@ -52,6 +52,15 @@ class CloneTests(unittest.TestCase):
         # The source stays as it was.
         self.assertEqual(tables['Spell'].string(tables['Spell'].find(0, 500)[0][1]), 'Old')
 
+    def test_skill_line_puts_clone_in_spellbook(self):
+        tables = source_tables()
+        tables['SkillLineAbility'] = Dbc(table(13, [[27083, 183, 125439, 0, 0, 1] + [0] * 7]), 'SkillLineAbility.dbc')
+        rows = spells.clone(dict(EDIT, skill_line=183), tables)
+        self.assertEqual(rows['SkillLineAbility'], [[310100, 183, 310100, 0, 0, 1] + [0] * 7])
+        self.assertEqual(len(tables['SkillLineAbility'].rows), 2)
+        with self.assertRaises(KeyError):
+            spells.clone(dict(EDIT, id=310101, skill_line=999), tables)
+
     def test_round_trip(self):
         tables = source_tables()
         spells.clone(EDIT, tables)

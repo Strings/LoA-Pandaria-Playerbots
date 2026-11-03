@@ -1,0 +1,23 @@
+{
+  "name": "heartseed-change",
+  "timeout_seconds": 120,
+  "args": ["--cmd", "play", "--hold", "2"],
+  "steps": [
+    "say .revive",
+    "say .heartseed revoke",
+    "say .heartseed grant",
+    "say .heartseed major 10 8",
+    "say .seed",
+    "gossip-select text=Level 10",
+    "gossip-select text=Xuen",
+    "say .heartseed info"
+  ],
+  "assertions": [
+    {"type": "contains", "text": "LOGIN-OK map="},
+    {"type": "contains", "text": "Change it."},
+    {"type": "contains", "text": "Your Heartseed turns toward Xuen"},
+    {"type": "not_contains", "text": "Visit a Celestial shrine"},
+    {"type": "not_contains", "text": "SESSION-TIMEOUT"},
+    {"type": "not_contains", "text": "Traceback"}
+  ]
+}
