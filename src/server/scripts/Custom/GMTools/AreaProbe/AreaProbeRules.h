@@ -92,11 +92,13 @@ namespace AreaProbe
         uint32_t Misses = 0;
         uint32_t Rays = 0;
         uint32_t RaysHit = 0;
-        bool FullCircle = false;    // every spoke was hit
+        bool FullCircle = false;    // every spoke was hit beyond half the reach
         bool Gaps = false;          // a spoke missed closer in than its farthest hit
-        float Center = 0.0f;        // direction of the hit spokes, radians from facing
-        Range HalfAngle;            // radians either side of Center
-        Range Reach;                // yards from the caster along the hit spokes
+        float Center = 0.0f;        // direction of the spokes hit beyond half the reach, radians from facing
+        Range HalfAngle;            // radians either side of Center, from the spokes hit beyond half the reach
+        float CloseHalfAngle = 0.0f;    // the widest hit spoke at any distance: wider when close targets count
+        float CloseReach = 0.0f;        // how far out the hits wider than HalfAngle go
+        Range Reach;                // yards from the caster
         Point CircleCenter{ 0.0f, 0.0f };   // centroid of the hits, for areas not centered on the caster
         Range Radius;               // around CircleCenter
     };
@@ -127,10 +129,9 @@ namespace AreaProbe
         struct Spoke
         {
             float Angle;
-            bool Hit;
+            float Farthest;     // -1 when nothing on it was hit
         };
         std::vector<Spoke> spokes;
-        float dirX = 0.0f, dirY = 0.0f;
         for (auto const& [ray, members] : rays)
         {
             float x = 0.0f, y = 0.0f, farthest = -1.0f;
@@ -141,42 +142,64 @@ namespace AreaProbe
                 if (sample->Hit)
                     farthest = std::max(farthest, Length(sample->At));
             }
-            float angle = std::atan2(y, x);
-            spokes.push_back({ angle, farthest >= 0.0f });
+            spokes.push_back({ std::atan2(y, x), farthest });
             if (farthest < 0.0f)
                 continue;
 
             ++fit.RaysHit;
-            dirX += std::cos(angle);
-            dirY += std::sin(angle);
             fit.Reach.Low = std::max(fit.Reach.Low, farthest);
             for (Sample const* sample : members)
-            {
-                if (sample->Hit)
-                    continue;
-                float distance = Length(sample->At);
-                if (distance < farthest)
+                if (!sample->Hit && Length(sample->At) < farthest)
                     fit.Gaps = true;
-                else
-                    fit.Reach.High = std::min(fit.Reach.High, distance);
-            }
         }
+        // The angle comes from spokes hit beyond half the reach: close in, a target's size (and some cores' melee
+        // allowance) widens it.
+        float farFrom = fit.Reach.Low / 2.0f;
+        float dirX = 0.0f, dirY = 0.0f;
+        uint32_t farSpokes = 0;
+        for (Spoke const& spoke : spokes)
+            if (spoke.Farthest >= farFrom)
+            {
+                ++farSpokes;
+                dirX += std::cos(spoke.Angle);
+                dirY += std::sin(spoke.Angle);
+            }
 
-        fit.FullCircle = fit.RaysHit == fit.Rays;
+        fit.FullCircle = farSpokes == fit.Rays;
         if (fit.FullCircle)
             fit.HalfAngle = { Pi, Pi };
         else
         {
             fit.Center = std::atan2(dirY, dirX);
-            for (Spoke const& spoke : spokes)
-                if (spoke.Hit)
-                    fit.HalfAngle.Low = std::max(fit.HalfAngle.Low, std::fabs(Normalize(spoke.Angle - fit.Center)));
             fit.HalfAngle.High = Pi;
+            for (Spoke const& spoke : spokes)
+                if (spoke.Farthest >= farFrom)
+                    fit.HalfAngle.Low = std::max(fit.HalfAngle.Low, std::fabs(Normalize(spoke.Angle - fit.Center)));
             for (Spoke const& spoke : spokes)
             {
                 float offset = std::fabs(Normalize(spoke.Angle - fit.Center));
-                if (!spoke.Hit && offset > fit.HalfAngle.Low)
+                if (spoke.Farthest < farFrom && offset > fit.HalfAngle.Low)
                     fit.HalfAngle.High = std::min(fit.HalfAngle.High, offset);
+            }
+        }
+        // Only misses past the farthest hit, on spokes inside the angle, bound the reach; the others missed for their
+        // angle.
+        for (Sample const& sample : samples)
+        {
+            float distance = Length(sample.At);
+            float offset = std::fabs(Normalize(std::atan2(sample.At.Y, sample.At.X) - fit.Center));
+            if (!sample.Hit && distance > fit.Reach.Low + 1e-3f && offset <= fit.HalfAngle.Low + 1e-3f)
+                fit.Reach.High = std::min(fit.Reach.High, distance);
+        }
+
+        fit.CloseHalfAngle = fit.HalfAngle.Low;
+        for (Spoke const& spoke : spokes)
+        {
+            float offset = std::fabs(Normalize(spoke.Angle - fit.Center));
+            if (spoke.Farthest >= 0.0f && offset > fit.HalfAngle.Low + 1e-4f)
+            {
+                fit.CloseHalfAngle = std::max(fit.CloseHalfAngle, offset);
+                fit.CloseReach = std::max(fit.CloseReach, spoke.Farthest);
             }
         }
 

@@ -1,0 +1,30 @@
+{
+  "name": "areaprobe-breath",
+  "timeout_seconds": 150,
+  "args": ["--cmd", "play", "--hold", "2"],
+  "steps": [
+    "say .revive",
+    "say .go -9339.7 170.2 61.6 0",
+    "say .heartseed revoke",
+    "say .heartseed grant",
+    "say .heartseed major 10 8",
+    "say .cooldown",
+    "say .areaprobe place 2 10 25",
+    "cast 310103",
+    "wait-for evt=areaprobe_settle timeout=8",
+    "say .areaprobe report 124947",
+    "say .areaprobe clear",
+    "say .heartseed revoke"
+  ],
+  "assertions": [
+    {"type": "contains", "text": "LOGIN-OK map="},
+    {"type": "contains", "text": "Area probe: placed 250 hostile probes"},
+    {"type": "regex", "pattern": "Area probe: spell 124947 \\(.*\\) hit \\d+ of 250 probes"},
+    {"type": "regex", "pattern": "Cone: centered -?\\d deg from facing, half-angle 57\\.6-72\\.0 deg"},
+    {"type": "contains", "text": "reach 14.0-16.0 yd"},
+    {"type": "contains", "text": "Area probe: removed 250 probes."},
+    {"type": "not_contains", "text": "SMSG_CAST_FAILED spell=310103"},
+    {"type": "not_contains", "text": "SESSION-TIMEOUT"},
+    {"type": "not_contains", "text": "Traceback"}
+  ]
+}

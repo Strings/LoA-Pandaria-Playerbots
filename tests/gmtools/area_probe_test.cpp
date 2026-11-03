@@ -50,6 +50,20 @@ namespace
         UMP_CHECK(Near(fit.HalfAngle.Low, Pi / 4.0f) && Near(fit.HalfAngle.High, Pi / 3.0f));
     }
 
+    void IgnoresCloseWidening()
+    {
+        // The same cone, plus anything within 3 yards in the front half (a player caster's allowance): the cone keeps
+        // its angle and reach, and the wider close hits are reported apart.
+        Fit fit = Analyze(Probe(1.0f, 20, 24, [](float d, float a, Point)
+        {
+            return (d <= 12.0f && std::fabs(a) <= Pi / 4.0f + 1e-3f) || (d <= 3.0f && std::fabs(a) <= Pi / 2.0f + 1e-3f);
+        }));
+        UMP_CHECK(Near(fit.Reach.Low, 12.0f) && Near(fit.Reach.High, 13.0f));
+        UMP_CHECK(Near(fit.HalfAngle.Low, Pi / 4.0f) && Near(fit.HalfAngle.High, Pi / 3.0f));
+        UMP_CHECK(Near(fit.CloseHalfAngle, Pi / 2.0f) && Near(fit.CloseReach, 3.0f));
+        UMP_CHECK(!fit.Gaps);
+    }
+
     void FitsRearCone()
     {
         Fit fit = Analyze(Probe(1.0f, 10, 24, [](float d, float a, Point) { return d <= 5.0f && std::fabs(a) >= 3.0f * Pi / 4.0f - 1e-3f; }));
@@ -88,6 +102,7 @@ void RunTests()
     Layouts();
     LocalFrame();
     FitsCone();
+    IgnoresCloseWidening();
     FitsRearCone();
     FitsCircleAroundCaster();
     FitsCircleAwayFromCaster();

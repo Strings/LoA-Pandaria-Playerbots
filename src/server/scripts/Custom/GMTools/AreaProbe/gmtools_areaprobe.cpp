@@ -216,10 +216,14 @@ public:
     static void ReportSpell(ChatHandler* handler, Player* player, ProbeField const& field, uint32 spellId, SpellRecord const& record)
     {
         std::vector<AreaProbe::Sample> samples;
+        float size = 0.0f;
         for (auto const& [probe, ray] : field.Rays)
             if (Creature* creature = ObjectAccessor::GetCreature(*player, probe))
+            {
+                size = creature->GetObjectSize();
                 samples.push_back({ AreaProbe::ToLocal(record.CasterX, record.CasterY, record.CasterO, creature->GetPositionX(), creature->GetPositionY()),
                     ray, record.Probes.count(probe) > 0 });
+            }
         AreaProbe::Fit fit = AreaProbe::Analyze(samples);
 
         SpellInfo const* info = sSpellMgr->GetSpellInfo(spellId);
@@ -232,8 +236,15 @@ public:
         else
             handler->PSendSysMessage("  Cone: centered %.0f deg from facing, half-angle %s, reach %s.", fit.Center * Degrees,
                 RangeText(fit.HalfAngle, Degrees, "deg").c_str(), RangeText(fit.Reach, 1.0f, "yd").c_str());
-        handler->PSendSysMessage("  Free circle: center %.1f yd ahead, %.1f yd left; radius %s.", fit.CircleCenter.X, fit.CircleCenter.Y,
-            RangeText(fit.Radius, 1.0f, "yd").c_str());
+        if (fit.CloseHalfAngle > fit.HalfAngle.Low + 0.001f)
+            handler->PSendSysMessage("  Close in: hits reach %.0f deg from center out to %.1f yd (target size, or a close-range allowance).",
+                fit.CloseHalfAngle * Degrees, fit.CloseReach);
+        AreaProbe::Range edge{ std::max(0.0f, fit.Reach.Low - size), fit.Reach.High - size };
+        handler->PSendSysMessage("  Reach to the probe's near edge: %s (probe size %.2f yd).", RangeText(edge, 1.0f, "yd").c_str(), size);
+        // Only an area placed away from the caster (it misses close in: gaps) is worth a free circle; a cone's hits fit none.
+        if (fit.Gaps && fit.Radius.High > fit.Radius.Low)
+            handler->PSendSysMessage("  Free circle: center %.1f yd ahead, %.1f yd left; radius %s.", fit.CircleCenter.X, fit.CircleCenter.Y,
+                RangeText(fit.Radius, 1.0f, "yd").c_str());
         if (fit.Gaps)
             handler->SendSysMessage("  Gaps: a spoke missed inside its farthest hit (minimum range, line of sight, a target cap, or an area away from the caster).");
     }
