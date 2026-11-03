@@ -12,6 +12,7 @@
     {
       "type": "spell",
       "id": 310100,
+      "skill_line": 183,
       "from": 123904,
       "name": "Call of Xuen",
       "rank": "Celestial Gift",
@@ -22,6 +23,7 @@
     {
       "type": "spell",
       "id": 310101,
+      "skill_line": 183,
       "from": 148009,
       "name": "Crane's Plume",
       "rank": "Celestial Gift",
@@ -37,6 +39,7 @@
     {
       "type": "spell",
       "id": 310102,
+      "skill_line": 183,
       "from": 116098,
       "name": "Niuzao's Retort",
       "rank": "Celestial Gift",
@@ -47,6 +50,7 @@
     {
       "type": "spell",
       "id": 310103,
+      "skill_line": 183,
       "from": 117960,
       "name": "Serpent's Breath",
       "rank": "Celestial Gift",

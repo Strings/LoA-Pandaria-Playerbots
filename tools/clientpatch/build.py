@@ -118,7 +118,10 @@ def build_tables(manifest: dict, dbc_dir: Path):
     clone_rows = []
     if clones:
         tables = {}
-        for name in ('Spell', 'SpellMisc', 'SpellEffect'):
+        names = ['Spell', 'SpellMisc', 'SpellEffect']
+        if any('skill_line' in edit for edit in clones):
+            names.append('SkillLineAbility')
+        for name in names:
             filename = name + '.dbc'
             tables[name] = Dbc(raws.get(filename) or (dbc_dir / filename).read_bytes(), filename)
         clone_rows = [spells.clone(edit, tables) for edit in clones]

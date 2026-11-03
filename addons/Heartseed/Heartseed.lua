@@ -385,6 +385,12 @@ for i = 1, 6 do
     n.level = n:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     n.level:SetPoint("TOP", n, "BOTTOM", 0, -6)
     Tooltip(n, function(self) return self.lines end)
+    n:SetScript("OnClick", function(self)
+        if self.state == "chosen" or self.state == "open" then
+            Sound("click")
+            Command(".seed")
+        end
+    end)
     nodes[i] = n
 end
 
@@ -509,7 +515,7 @@ local function Layout()
                 n.pulse:Stop()
                 n.glow:SetAlpha(0)
                 n.state = "chosen"
-                n.lines = { (p and Hex(p.color) or "") .. m.name .. "|r", m.description }
+                n.lines = { (p and Hex(p.color) or "") .. m.name .. "|r", m.description, "|cff00ff00Click to change it.|r" }
             elseif level >= m.level then
                 n.icon:SetTexture(ICONS .. "INV_Misc_QuestionMark")
                 n.icon:SetDesaturated(false)
@@ -517,7 +523,7 @@ local function Layout()
                 n.glow:SetAlpha(1)
                 n.pulse:Play()
                 n.state = "open"
-                n.lines = { "Level " .. m.level .. " major", "|cff40ff40Ready to choose.|r Visit a Celestial shrine and press Choose paths." }
+                n.lines = { "Level " .. m.level .. " major", "|cff40ff40Ready to choose.|r Click to choose a path." }
             else
                 n.icon:SetTexture(ICONS .. "INV_Misc_QuestionMark")
                 n.icon:SetDesaturated(true)
