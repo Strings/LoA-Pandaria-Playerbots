@@ -1,0 +1,43 @@
+{
+  "name": "neutral-aggro",
+  "timeout_seconds": 90,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "2"
+  ],
+  "steps": [
+    "say .gm off",
+    "say .revive",
+    "say .character level Seedtest 3",
+    "say .modify faction 116",
+    "say .go 330 -4700 12 1",
+    "say .npc add temp 3098",
+    "npcguid 3098",
+    "say .go 330 -4680 12 1",
+    "target npc",
+    "say .damage 10",
+    "wait-for evt=never timeout=3",
+    "say .npc info",
+    "say .character level Seedtest 10"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)step: say .damage 10.*?SMSG_ATTACKSTART.*?step: say .npc info.*?UNIT_FLAG_IN_COMBAT"
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback"
+    }
+  ]
+}

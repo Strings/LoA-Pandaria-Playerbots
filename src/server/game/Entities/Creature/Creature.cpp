@@ -2324,7 +2324,9 @@ bool Creature::_IsTargetAcceptable(const Unit* target) const
     const Unit* targetVictim = target->getAttackerForHelper();
 
     // if I'm already fighting target, or I'm hostile towards the target, the target is acceptable
-    if (myVictim == target || targetVictim == this || IsHostileTo(target))
+    // IsEngagedBy as in TC master: a player who only casts at a neutral mob has no victim, so without it the new threat
+    // reference went offline at once (ThreatReference::ShouldBeOffline) and the mob evaded instead of fighting back.
+    if (myVictim == target || targetVictim == this || IsEngagedBy(target) || IsHostileTo(target))
         return true;
 
     // if the target's victim is friendly, and the target is neutral, the target is acceptable
