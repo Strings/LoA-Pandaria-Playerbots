@@ -73,15 +73,19 @@ World database (`sql/updates/world/2026_11_01_claude_06_heartseed_gifts.sql`, T-
   Niuzao's Retort deals that % of the damage taken in its window to each enemy. `amount_per_ilvl` adds flat power
   per main-hand item level (0 in shipped data). The tier-0 majors (traits 2, 4, 6, 8) are the four Gifts; their
   old stat auras are minors 9 to 12. A trait with `spell_id` 0 applies no aura.
-- Gifts reuse client spells, because the 5.4.8 client only casts spells it knows, and never a monk ability (T-083):
-  Invoke Xuen (123904, the one exception for now), Spirit of Chi-Ji (148009, a legendary cloak proc) as Crane's
-  Plume, Ox Charge (116098, a creature spell) as Niuzao's Retort, and Celestial Breath (117960). `RefreshTraits`
-  teaches the active Gift and unlearns the others, except a spell the character has from its own talents (monks).
+- Gifts are their own spells (T-086): clones of client spells with the source's effects and visuals but their own
+  name, tooltip and icon, defined in `tools/clientpatch/edits.json`. The client patch adds them to the client and
+  the generated `2026_11_03_claude_00_heartseed_gift_spells.sql` to the server. Call of Xuen (310100) clones Invoke
+  Xuen (123904), Crane's Plume (310101) Spirit of Chi-Ji (148009), Niuzao's Retort (310102) Ox Charge (116098),
+  and Serpent's Breath (310103) Celestial Breath (117960); the rider auras are 310110 to 310114. The sources stay
+  untouched, so monks, trolls, rogues and mages keep their own abilities. `RefreshTraits` teaches the active Gift
+  and unlearns the others; it also takes back the client spells Gifts used to be (`RETIRED_GIFT_SPELLS`), except a
+  talent a monk took. A new Gift or rider aura is a new `spell` edit plus `build.py sql`.
   `spell_heartseed_gift` adds the Gift cooldown, gates and spends the meter; `spell_heartseed_celestial_breath`
   (124947) replaces the creature spell's damage; `spell_heartseed_crane_plume` picks the caster plus the most
   wounded group members in `Heartseed.Gift.PlumeRadius` (`Heartseed.Gift.PlumeTargets` of them) and heals through
-  `GiftHeal`; `spell_heartseed_niuzao_retort` strikes enemies in `Heartseed.Gift.RetortRadius`. Triggered casts of
-  the same spells (the cloak's own proc) are left alone.
+  `GiftHeal`; `spell_heartseed_niuzao_retort` strikes enemies in `Heartseed.Gift.RetortRadius`. The class scripts
+  the sources use (`spell_monk_invoke_xuen`, `spell_item_spirit_of_chi_ji_heal`) are bound to the clones too.
   `spell_heartseed_xuen_lightning` (123996) plays `Heartseed.Gift.XuenLightningVisual` (default Chain Lightning's
   visual) from Xuen to each target his lightning hits, for monks' Xuen too.
 - `.seed sync` M lines carry the Gift spell id and the trait description, so the addon can show and cast it.
