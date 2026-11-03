@@ -47,8 +47,9 @@ namespace Heartseed
         uint8 Id = 0;
         std::string Name;
         bool MainStat = false;                        // spell picked by the character's main stat, not SpellId
-        uint32 SpellId = 0;                           // passive aura; effect 0 = points * PctPerPoint
-        int32 PctPerPoint = 0;
+        uint32 SpellId = 0;                           // passive aura; effect 0 = StatPointAmount
+        int32 MaxPct = 0;                             // the ceiling the bonus approaches
+        uint32 HalfPoints = 0;                        // points that give half of MaxPct
     };
 
     enum class GrowthResult

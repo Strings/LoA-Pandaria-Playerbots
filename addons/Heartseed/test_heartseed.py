@@ -104,7 +104,7 @@ class HeartseedAddonTest(unittest.TestCase):
         for line in ["S	3	2	40	450	Sprout	Xuen	2	1	",
                      "M	10	Call of Xuen	Xuen	123904	A spectral white tiger fights at your side.",
                      "M	25			0	", "M	40			0	",
-                     "X	Essence of Storms	2	1", "G	1	Stamina	1	1", "G	3	Critical strike	0	1", "E"]:
+                     "X	Essence of Storms	2	1", "G	1	Stamina	1	1	2	30", "G	3	Critical strike	0	0	1	10", "E"]:
             self.g.addon(line)
         body = "\n".join(self.texts())
         self.assertIn("Growth level 3", body)
@@ -124,14 +124,14 @@ class HeartseedAddonTest(unittest.TestCase):
 
     def test_stat_button_spends_only_with_points(self):
         self.lua.execute("HeartseedPanel_Toggle()")
-        for line in ["S	2	1	0	400	Sprout	none	0	1	", "G	1	Stamina	1	1", "G	2	Main stat	0	1", "E"]:
+        for line in ["S	2	1	0	400	Sprout	none	0	1	", "G	1	Stamina	1	1	2	30", "G	2	Main stat	0	0	1	20", "E"]:
             self.g.addon(line)
         crit = [b for b in self.stat_buttons() if b.stat.id == 2][0]
         crit.scripts.OnClick(crit)
         self.assertIn(".seed spend 2", list(self.g.sent.values()))
         sent = len(self.g.sent)
         self.lua.execute("HeartseedPanel_Toggle(); HeartseedPanel_Toggle()")
-        for line in ["S	2	0	0	400	Sprout	none	0	1	", "G	1	Stamina	1	1", "G	2	Main stat	1	1", "E"]:
+        for line in ["S	2	0	0	400	Sprout	none	0	1	", "G	1	Stamina	1	1	2	30", "G	2	Main stat	1	1	1	20", "E"]:
             self.g.addon(line)
         crit = [b for b in self.stat_buttons() if b.stat.id == 2][0]
         before = len(self.g.sent)
@@ -154,6 +154,25 @@ class HeartseedAddonTest(unittest.TestCase):
             self.g.addon(line)
         self.assertIsNone(self.g.HeartseedGiftButton.attributes["spell"])
         self.lua.execute('InCombatLockdown = function() return false end; fire("PLAYER_REGEN_ENABLED")')
+        self.assertEqual(self.g.HeartseedGiftButton.attributes["spell"], "Invoke Xuen, the White Tiger")
+
+    def test_gift_drags_to_action_bar(self):
+        self.lua.execute("picked = nil; PickupSpell = function(id) picked = id end; HeartseedPanel_Toggle()")
+        for line in ["S	1	0	0	350	Sprout	Xuen	0	1	", "M	10	Call of Xuen	Xuen	123904	", "E"]:
+            self.g.addon(line)
+        self.lua.execute("InCombatLockdown = function() return true end")
+        self.lua.execute("HeartseedGiftButton.scripts.OnDragStart(HeartseedGiftButton)")
+        self.assertIsNone(self.g.picked)
+        self.lua.execute("InCombatLockdown = function() return false end")
+        self.lua.execute("HeartseedGiftButton.scripts.OnDragStart(HeartseedGiftButton)")
+        self.assertEqual(self.g.picked, 123904)
+
+    def test_gift_icon_retried_when_spells_load(self):
+        self.lua.execute("realInfo = GetSpellInfo; GetSpellInfo = function() end; HeartseedPanel_Toggle()")
+        for line in ["S	1	0	0	350	Sprout	Xuen	0	1	", "M	10	Call of Xuen	Xuen	123904	", "E"]:
+            self.g.addon(line)
+        self.assertIsNone(self.g.HeartseedGiftButton.attributes["spell"])
+        self.lua.execute('GetSpellInfo = realInfo; fire("SPELLS_CHANGED")')
         self.assertEqual(self.g.HeartseedGiftButton.attributes["spell"], "Invoke Xuen, the White Tiger")
 
     def tick(self, seconds):

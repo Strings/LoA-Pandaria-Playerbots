@@ -80,7 +80,7 @@
     },
     {
       "type": "regex",
-      "pattern": "(?s)step: say .seed spend crit.*?no stat points to spend.*?step: say .seed reset.*?Only a Celestial shrine.*?step: say .heartseed points reset.*?Reset: done\\."
+      "pattern": "(?s)step: say .seed spend crit.*?no stat points to spend.*?step: say .seed reset.*?lets its strength go.*?step: say .heartseed points reset.*?Reset: "
     },
     {
       "type": "contains",

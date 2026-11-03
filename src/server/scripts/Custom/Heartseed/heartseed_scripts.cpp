@@ -776,7 +776,7 @@ public:
             auto spent = state.GrowthPoints.find(stat.Id);
             uint32 points = spent != state.GrowthPoints.end() ? spent->second : 0;
             handler->PSendSysMessage(" %u %s: %u points, +%d%% (spell %u)", uint32(stat.Id), stat.Name.c_str(), points,
-                Heartseed::StatPointAmount(points, stat.PctPerPoint), HeartseedMgr::GetGrowthStatSpell(target, stat));
+                Heartseed::StatPointAmount(points, stat.MaxPct, stat.HalfPoints), HeartseedMgr::GetGrowthStatSpell(target, stat));
         }
         handler->PSendSysMessage("%s: Growth level %u, %u points unspent.", target->GetName().c_str(), state.GrowthLevel,
             Heartseed::UnspentPoints(state.GrowthLevel, state.GrowthPoints));
@@ -1220,8 +1220,11 @@ public:
         for (Heartseed::GrowthStat const& stat : sHeartseedMgr->GetGrowthStats())
         {
             auto spent = state.GrowthPoints.find(stat.Id);
-            send("G	" + std::to_string(stat.Id) + "	" + stat.Name + "	" + std::to_string(spent != state.GrowthPoints.end() ? spent->second : 0) +
-                "	" + std::to_string(stat.PctPerPoint));
+            uint32 points = spent != state.GrowthPoints.end() ? spent->second : 0;
+            int32 now = Heartseed::StatPointAmount(points, stat.MaxPct, stat.HalfPoints);
+            send("G	" + std::to_string(stat.Id) + "	" + stat.Name + "	" + std::to_string(points) + "	" + std::to_string(now) +
+                "	" + std::to_string(Heartseed::StatPointAmount(points + 1, stat.MaxPct, stat.HalfPoints) - now) + "	" +
+                std::to_string(stat.MaxPct));
         }
         send("E");
         return true;

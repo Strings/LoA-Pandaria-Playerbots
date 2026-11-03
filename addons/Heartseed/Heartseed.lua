@@ -3,7 +3,7 @@
 
 local PREFIX = "Heartseed"
 local DEFAULT_KEY = "SHIFT-H"
-local WIDTH, HEIGHT = 400, 556
+local WIDTH, HEIGHT = 400, 640
 local ICONS = "Interface\\Icons\\"
 
 -- Custom art goes in art/ (see art/README.md). Until it ships, built-in textures stand in: set USE_ART once the
@@ -139,7 +139,8 @@ subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -3)
 
 -- The mandala: the seed in the middle, the four Celestials around it -------------------------------------------
 
-local CENTER_Y, RADIUS = -150, 86
+-- Low enough that Niuzao's ring and name clear the subtitle.
+local CENTER_Y, RADIUS = -190, 86
 local mandala = CreateFrame("Frame", nil, frame)
 mandala:SetSize(1, 1)
 mandala:SetPoint("TOP", 0, CENTER_Y)
@@ -229,7 +230,7 @@ local statButtons = {}
 for i = 1, 4 do
     local b = CreateFrame("Button", nil, statRow)
     b:SetSize(22, 22)
-    b:SetPoint("LEFT", (i - 1) * 62, 0)
+    b:SetPoint("LEFT", (i - 1) * 66, 0)
     b.icon = b:CreateTexture(nil, "ARTWORK")
     b.icon:SetAllPoints()
     b.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
@@ -246,8 +247,8 @@ for i = 1, 4 do
     Tooltip(b, function(self)
         local st = self.stat
         if not st then return nil end
-        local lines = { st.name, "+" .. st.points * st.pct .. "% from " .. st.points .. " point" .. (st.points == 1 and "" or "s"),
-            "+" .. st.pct .. "% per point" }
+        local lines = { st.name, "+" .. st.pct .. "% from " .. st.points .. " point" .. (st.points == 1 and "" or "s"),
+            "Next point: +" .. st.next .. "%", "Approaches +" .. st.max .. "%: each point adds a little less." }
         if data and data.state and data.state.unspent > 0 then
             lines[#lines + 1] = "|cff00ff00Click to spend a point.|r"
         end
@@ -260,7 +261,7 @@ statReset:SetSize(56, 20)
 statReset:SetPoint("RIGHT", 0, 0)
 statReset:SetText("Reset")
 statReset:SetScript("OnClick", function() Sound("click"); Command(".seed reset"); SyncSoon() end)
-Tooltip(statReset, { "Take back every point", "Spend them again as you like. A Celestial shrine has to be near." })
+Tooltip(statReset, { "Take back every point", "Spend them again as you like." })
 
 -- The Celestial Gift: the level 10 major's active spell, castable from the panel ------------------------------
 
@@ -308,12 +309,16 @@ local giftText = giftBox:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmal
 giftText:SetPoint("TOPLEFT", giftName, "BOTTOMLEFT", 0, -3)
 giftText:SetPoint("RIGHT", -8, 0)
 giftText:SetJustifyH("LEFT")
+giftText:SetJustifyV("TOP")
+giftText:SetWordWrap(true)
 
-local giftSpell, pendingGiftSpell
+local giftSpell, pendingGiftSpell, wantedGiftSpell
 local function SetGiftSpell(spellId)
     local name, icon
+    wantedGiftSpell = spellId
     if spellId and spellId > 0 and GetSpellInfo then
         name, _, icon = GetSpellInfo(spellId)
+        icon = icon or (GetSpellTexture and GetSpellTexture(spellId))
     end
     giftButton.icon:SetTexture(icon or ICONS .. "INV_Misc_QuestionMark")
     giftButton.icon:SetDesaturated(not name)
@@ -340,10 +345,18 @@ Tooltip(giftButton, function()
     if giftSpell and GameTooltip then
         GameTooltip:SetOwner(giftButton, "ANCHOR_RIGHT")
         GameTooltip:SetSpellByID(giftSpell)
+        GameTooltip:AddLine("Drag to an action bar.", 0.5, 0.5, 0.5)
         GameTooltip:Show()
         return nil
     end
     return { "Celestial Gift", "Choose a Celestial at level 10 to wake your Gift." }
+end)
+-- Dragging puts the Gift on the cursor the way the spellbook does, so it can go on any action bar.
+giftButton:RegisterForDrag("LeftButton")
+giftButton:SetScript("OnDragStart", function()
+    if giftSpell and not InCombatLockdown() then
+        PickupSpell(giftSpell)
+    end
 end)
 
 -- Majors: one node per tier ------------------------------------------------------------------------------------
@@ -376,13 +389,13 @@ for i = 1, 6 do
 end
 
 local essenceLine = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-essenceLine:SetPoint("TOPLEFT", nodesLabel, "BOTTOMLEFT", 0, -64)
+essenceLine:SetPoint("TOPLEFT", nodesLabel, "BOTTOMLEFT", 0, -80)
 essenceLine:SetPoint("RIGHT", -24, 0)
 essenceLine:SetJustifyH("LEFT")
 essenceLine:SetSpacing(2)
 
 local footer = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-footer:SetPoint("BOTTOMLEFT", 24, 44)
+footer:SetPoint("TOPLEFT", essenceLine, "BOTTOMLEFT", 0, -10)
 footer:SetPoint("RIGHT", -24, 0)
 footer:SetJustifyH("LEFT")
 
@@ -454,7 +467,7 @@ local function Layout()
             b:Show()
             b.icon:SetTexture(STAT_ICONS[st.id] or ICONS .. "INV_Misc_QuestionMark")
             b.icon:SetDesaturated(st.points == 0 and s.unspent == 0)
-            b.count:SetText(st.points > 0 and ("+" .. st.points * st.pct .. "%") or "")
+            b.count:SetText((st.points > 0 and "" or "|cff808080") .. "+" .. st.pct .. "%")
             spent = spent + st.points
         else
             b:Hide()
@@ -475,6 +488,7 @@ local function Layout()
             or "Wakes at level " .. (gift and gift.level or 10) .. ".")
         SetGiftSpell(nil)
     end
+    giftBox:SetHeight(math.max(64, giftName:GetStringHeight() + giftText:GetStringHeight() + 20))
     UpdateGiftCooldown()
     if gift and gift.gift > 0 and lastGift ~= nil and lastGift ~= gift.gift then
         Sound("gift")
@@ -536,6 +550,12 @@ local function Layout()
         foot = foot .. "   |cff40ff40At " .. s.shrine .. ": majors can change here.|r"
     end
     footer:SetText(foot)
+
+    -- The essence list grows with every essence found, so the frame grows with it and keeps the buttons clear.
+    local top, bottom = frame:GetTop(), footer:GetBottom()
+    if top and bottom then
+        frame:SetHeight(math.max(HEIGHT, top - bottom + 52))
+    end
 end
 
 function HeartseedPanel_Toggle()
@@ -617,6 +637,7 @@ local function UpdateMeter()
         meterFrame:Hide()
     else
         local _, _, icon = GetSpellInfo(meter.spell)
+        icon = icon or (GetSpellTexture and GetSpellTexture(meter.spell))
         meterFrame.icon:SetTexture(icon or ICONS .. "INV_Misc_QuestionMark")
         meterFrame.icon:SetDesaturated(meter.max > 0 and meter.stacks == 0)
         meterFrame.count:SetText(meter.max > 0 and meter.stacks or "")
@@ -660,7 +681,7 @@ end
 local events = CreateFrame("Frame")
 for _, e in ipairs({ "ADDON_LOADED", "PLAYER_LOGIN", "CHAT_MSG_ADDON", "PLAYER_LEVEL_UP", "GOSSIP_CLOSED",
     "QUEST_FINISHED", "PLAYER_SPECIALIZATION_CHANGED", "ZONE_CHANGED", "ZONE_CHANGED_NEW_AREA", "LEARNED_SPELL_IN_TAB",
-    "SPELL_UPDATE_COOLDOWN", "PLAYER_REGEN_ENABLED" }) do
+    "SPELL_UPDATE_COOLDOWN", "PLAYER_REGEN_ENABLED", "SPELLS_CHANGED" }) do
     events:RegisterEvent(e)
 end
 events:SetScript("OnEvent", function(_, event, ...)
@@ -680,6 +701,10 @@ events:SetScript("OnEvent", function(_, event, ...)
     end
     if event == "SPELL_UPDATE_COOLDOWN" then
         if frame:IsShown() then UpdateGiftCooldown() end
+        return
+    end
+    if event == "SPELLS_CHANGED" then
+        if wantedGiftSpell and not giftSpell then SetGiftSpell(wantedGiftSpell) end
         return
     end
     if event == "PLAYER_REGEN_ENABLED" then
@@ -714,7 +739,7 @@ events:SetScript("OnEvent", function(_, event, ...)
         }
     elseif f[1] == "G" then
         incoming.stats[#incoming.stats + 1] = { id = tonumber(f[2]) or 0, name = f[3] or "?", points = tonumber(f[4]) or 0,
-            pct = tonumber(f[5]) or 0 }
+            pct = tonumber(f[5]) or 0, next = tonumber(f[6]) or 0, max = tonumber(f[7]) or 0 }
     elseif f[1] == "M" then
         incoming.majors[#incoming.majors + 1] = { level = tonumber(f[2]) or 0, name = f[3] or "", path = f[4] or "",
             gift = tonumber(f[5]) or 0, description = f[6] or "" }

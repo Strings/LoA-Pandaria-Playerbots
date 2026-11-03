@@ -202,13 +202,17 @@ namespace Heartseed
         return total >= level ? 0 : uint32_t(level - total);
     }
 
-    // The stat aura's amount: points times percent per point, saturating at INT32_MAX.
-    inline int32_t StatPointAmount(uint32_t points, int32_t pctPerPoint)
+    // The stat aura's amount: maxPct * points / (points + halfPoints), to the nearest whole percent. Stats differ in
+    // how much a percent is worth and crit or haste break when uncapped, so each approaches its own ceiling: every
+    // point still helps, halfPoints points give half of it, and points never stop counting. The core's percent
+    // auras take whole numbers, so halfPoints should keep maxPct / (1 + halfPoints) at 0.5 or more.
+    inline int32_t StatPointAmount(uint32_t points, int32_t maxPct, uint32_t halfPoints)
     {
-        if (pctPerPoint <= 0)
+        if (maxPct <= 0 || points == 0)
             return 0;
-        int64_t amount = int64_t(points) * pctPerPoint;
-        return amount > INT32_MAX ? INT32_MAX : int32_t(amount);
+        uint64_t p = points > 100000000u ? 100000000u : points;
+        uint64_t denominator = p + halfPoints;
+        return int32_t((2 * uint64_t(maxPct) * p + denominator) / (2 * denominator));
     }
 
     // The main stat a "main stat" point raises: the specialization's, or the class's usual one before a spec is

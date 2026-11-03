@@ -196,7 +196,7 @@ void HeartseedMgr::LoadConfig()
     _growthRare = sConfigMgr->GetIntDefault("Heartseed.Growth.Rare", 40);
     _growthLevelRange = uint8(std::clamp(sConfigMgr->GetIntDefault("Heartseed.Growth.LevelRange", 5), 0, 255));
     _growthTwinksEarn = sConfigMgr->GetBoolDefault("Heartseed.Growth.TwinksEarn", false);
-    _growthResetAtShrineOnly = sConfigMgr->GetBoolDefault("Heartseed.Growth.ResetAtShrineOnly", true);
+    _growthResetAtShrineOnly = sConfigMgr->GetBoolDefault("Heartseed.Growth.ResetAtShrineOnly", false);
     _feedOnReplace = sConfigMgr->GetBoolDefault("Heartseed.Feed.OnReplace", true);
     std::vector<uint32> qualities = ParseList<uint32>(sConfigMgr->GetStringDefault("Heartseed.Feed.Qualities", "0 1 2 3 4"));
     _feedQualities = std::set<uint32>(qualities.begin(), qualities.end());
@@ -213,7 +213,7 @@ void HeartseedMgr::LoadConfig()
     _grantOfferDelay = sConfigMgr->GetIntDefault("Heartseed.Grant.OfferDelay", 5000);
     _choicePromptOnLogin = sConfigMgr->GetBoolDefault("Heartseed.Choice.PromptOnLogin", true);
     _choicePromptDelay = sConfigMgr->GetIntDefault("Heartseed.Choice.PromptDelay", 6000);
-    _choiceShrineOnly = sConfigMgr->GetBoolDefault("Heartseed.Choice.ChangeAtShrineOnly", true);
+    _choiceShrineOnly = sConfigMgr->GetBoolDefault("Heartseed.Choice.ChangeAtShrineOnly", false);
 
     Heartseed::UnlockLevels& unlocks = Heartseed::Unlocks();
     if (!Heartseed::SetLevels(unlocks.MajorTiers, ParseList<uint32>(sConfigMgr->GetStringDefault("Heartseed.Majors.TierLevels", "10 25 40 55 70 85"))))
@@ -560,20 +560,21 @@ bool HeartseedMgr::LoadData(std::size_t* loadedRows)
 
     std::map<uint8, Heartseed::GrowthStat> growthStats;
     {
-        QueryResult result = WorldDatabase.Query("SELECT `id`, `name`, `main_stat`, `spell_id`, `pct_per_point`, NULL AS sentinel FROM `heartseed_growth_stat` UNION ALL SELECT NULL, NULL, NULL, NULL, NULL, 'end'");
+        QueryResult result = WorldDatabase.Query("SELECT `id`, `name`, `main_stat`, `spell_id`, `max_pct`, `half_points`, NULL AS sentinel FROM `heartseed_growth_stat` UNION ALL SELECT NULL, NULL, NULL, NULL, NULL, NULL, 'end'");
         if (!result)
             return false;
         do
         {
             Field* fields = result->Fetch();
-            if (!fields[5].IsNull())
+            if (!fields[6].IsNull())
                 continue;
             Heartseed::GrowthStat stat;
             stat.Id = fields[0].GetUInt8();
             stat.Name = fields[1].GetString();
             stat.MainStat = fields[2].GetUInt8() != 0;
             stat.SpellId = fields[3].GetUInt32();
-            stat.PctPerPoint = fields[4].GetInt32();
+            stat.MaxPct = fields[4].GetInt32();
+            stat.HalfPoints = fields[5].GetUInt32();
             if (!stat.Id || (!stat.MainStat && !sSpellMgr->GetSpellInfo(stat.SpellId)))
             {
                 TC_LOG_ERROR("sql.sql", "Table `heartseed_growth_stat`: stat %u has id 0 or unknown spell %u; reload aborted.", uint32(stat.Id), stat.SpellId);
@@ -1885,7 +1886,7 @@ void HeartseedMgr::RefreshTraits(Player* player)
                 auto stat = _growthStats.find(statId);
                 if (stat == _growthStats.end())
                     continue;
-                if (int32 amount = Heartseed::StatPointAmount(points, stat->second.PctPerPoint))
+                if (int32 amount = Heartseed::StatPointAmount(points, stat->second.MaxPct, stat->second.HalfPoints))
                     desired[GetGrowthStatSpell(player, stat->second)] += amount;
             }
         }

@@ -150,12 +150,14 @@ power, each the character's own.
   earn nothing; random bots never load a seed. A character with XP gain turned off (a twink) earns nothing
   unless `Heartseed.Growth.TwinksEarn = 1`, so its bracket's balance holds.
 - **Stat points**: one per Growth level. The player spends them in the addon panel (`.seed spend <stat>`) on a
-  row of `heartseed_growth_stat` (`sql/updates/world/2026_11_02_claude_04_heartseed_growth.sql`): Stamina,
-  Main stat, Critical strike, Haste, each `pct_per_point` percent per point. Each stat is a server-side passive
-  (310010 stamina, 310014 crit, 310015 haste; main stat 310011 strength, 310012 agility or 310013 intellect by
-  the specialization, or the class before one is chosen) whose effect 0 is points times the percentage,
-  applied by `RefreshTraits` like the trait auras.
-- `.seed reset` gives every point back, at a Celestial shrine unless `Heartseed.Growth.ResetAtShrineOnly = 0`.
+  row of `heartseed_growth_stat` (`sql/updates/world/2026_11_03_claude_02_heartseed_growth_curve.sql`): Stamina,
+  Main stat, Critical strike, Haste. Points have diminishing returns: the bonus is
+  `max_pct * points / (points + half_points)` to the nearest percent (`Heartseed::StatPointAmount`), so each
+  stat approaches its own ceiling (stamina 30%, main stat 20%, crit and haste 10%) and points never stop
+  counting. Each stat is a server-side passive (310010 stamina, 310014 crit, 310015 haste; main stat 310011
+  strength, 310012 agility or 310013 intellect by the specialization, or the class before one is chosen) whose
+  effect 0 is that bonus, applied by `RefreshTraits` like the trait auras.
+- `.seed reset` gives every point back anywhere; `Heartseed.Growth.ResetAtShrineOnly = 1` limits it to a Celestial shrine.
 - The first Growth level shows a short introduction (notification plus a chat line) once per character
   (story flag 1002, `hint_growth_points`).
 
@@ -167,9 +169,8 @@ confirm box. Picking one calls `HeartseedMgr::ChooseMajor` for the active specia
 
 - **Opens** when a level opens a tier with no major, at login when one is waiting
   (`Heartseed.Choice.PromptOnLogin`, after `.PromptDelay`), and with the player command `.seed`.
-- **A tier with no major yet can be chosen anywhere.** Changing a chosen major needs a Celestial shrine
-  (`heartseed_shrine`: the four Celestial temples and the Celestial Court) unless
-  `Heartseed.Choice.ChangeAtShrineOnly = 0`.
+- **Majors can be chosen and changed anywhere.** `Heartseed.Choice.ChangeAtShrineOnly = 1` limits changing a
+  chosen major to a Celestial shrine (`heartseed_shrine`: the four Celestial temples and the Celestial Court).
 - A tier with no major rows says the Celestials are silent there and never prompts.
 - C++, not a Lua prototype: the window calls `ChooseMajor`, which Eluna cannot reach without new bindings.
   The texts are `npc_text` rows and the shrines are data, so both change without a rebuild.
@@ -259,13 +260,13 @@ worldserver.conf:
 - `Heartseed.Core.WeaponDamagePct` (5), `Heartseed.Proc.SpellId` (16614, placeholder look),
   `Heartseed.Proc.Chance` (10), `Heartseed.Proc.WeaponDamagePct` (50), `Heartseed.Proc.Cooldown` (3000 ms).
 - Growth XP (T-083): `Heartseed.Growth.XpBase` (300), `.XpPerLevel` (50), `.BattlegroundWin` (100),
-  `.DungeonBoss` (50), `.RaidBoss` (100), `.Quest` (15, T-084), `.Rare` (40, T-084), `.LevelRange` (5), `.TwinksEarn` (0), `.ResetAtShrineOnly` (1).
+  `.DungeonBoss` (50), `.RaidBoss` (100), `.Quest` (15, T-084), `.Rare` (40, T-084), `.LevelRange` (5), `.TwinksEarn` (0), `.ResetAtShrineOnly` (0).
 - Feeding: `Heartseed.Feed.OnReplace` (1), `.Qualities` ("0 1 2 3 4", poor to epic).
 - Essences: `Heartseed.Essence.ProcCooldown` (3000 ms), `.AutoSlot` (1), `.SlotLevels` ("10 40 70").
 - Major tiers: `Heartseed.Majors.TierLevels` ("10 25 40 55 70 85"). The number of tiers and slots is fixed;
   saved loadouts keep their tier index.
 - Granting quest: `Heartseed.Grant.QuestId` (90000), `.OfferOnLogin` (1), `.OfferDelay` (5000 ms).
-- Choices: `Heartseed.Choice.PromptOnLogin` (1), `.PromptDelay` (6000 ms), `.ChangeAtShrineOnly` (1).
+- Choices: `Heartseed.Choice.PromptOnLogin` (1), `.PromptDelay` (6000 ms), `.ChangeAtShrineOnly` (0).
 - Gift areas (T-083): `Heartseed.Gift.PlumeRadius` (30 yd), `.PlumeTargets` (3, caster not counted),
   `.RetortRadius` (8 yd). Meter numbers live in `heartseed_meter`.
 - Story beats: `Heartseed.Story.Hooks` (1), `.PandariaMaps` ("870"), `.WorldBosses` (MoP and old world boss
