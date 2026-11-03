@@ -17,7 +17,7 @@ python tools/clientpatch/build.py uninstall --client I:/UltimateMoP/mop-clean
   new value (`to`) and why. A `from` that no longer matches the source data fails the build.
 - Source tables come from the extracted server game data (`--dbc`, else `MOP_DBC_DIR`, else `<repo>/gamedata/dbc`),
   which is the client's own latest data, and field names from the shared DBC schemas (`tools/dbc/`).
-- `mpq.py` writes format version 1 archives with each file stored as one uncompressed unit. No third-party
+- `mpq.py` writes format version 1 archives with each file stored uncompressed in plain sectors, the layout Blizzard's update archives use (the client fails on uncompressed single-unit files). No third-party
   dependency.
 - The archive is `Data/wow-update-base-18414.MPQ`: the client loads `wow-update-base-<build>` archives in build
   order, so the one numbered after the newest Blizzard update (18273) loads last and wins.

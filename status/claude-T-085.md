@@ -16,7 +16,7 @@
 
 ## How it was tested
 - Unit tests 7/7: archive round trip, the format's reference hash, DBC cell edits and refusals.
-- The built archive read back with mpyq, an independent MPQ reader: one byte differs from the source table.
+- The built archive reads back with our reader: one byte differs from the source table. The first install crashed the client ("Reached the end of the file" in SpellLevels.dbc): it stored the file as an uncompressed single unit. Blizzard's own update archives store uncompressed files as plain sectors, so the archive now does the same.
 - Not yet confirmed in the real client.
 
 ## Decisions made

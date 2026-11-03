@@ -7,10 +7,10 @@ import struct
 from typing import Dict, List
 
 HEADER_SIZE = 32
-SECTOR_SHIFT = 3  # 512 << 3 = 4096-byte sectors
+SECTOR_SHIFT = 5  # 512 << 5 = 16 KB sectors, as in Blizzard's update archives
+# Uncompressed files are plain sectored entries with no sector offset table, the layout Blizzard's own update
+# archives use. The 5.4.8 client fails to read uncompressed single-unit files ("Reached the end of the file").
 FILE_EXISTS = 0x80000000
-# One raw unit with no sector offset table: every MPQ reader agrees on that layout for uncompressed data.
-FILE_SINGLE_UNIT = 0x01000000
 HASH_EMPTY = 0xFFFFFFFF
 
 
@@ -72,7 +72,7 @@ def build(files: Dict[str, bytes]) -> bytes:
     blocks = []
     for name in names:
         data = entries[name]
-        blocks.append((HEADER_SIZE + len(body), len(data), len(data), FILE_EXISTS | FILE_SINGLE_UNIT))
+        blocks.append((HEADER_SIZE + len(body), len(data), len(data), FILE_EXISTS))
         body += data
 
     size = _table_size(len(names))
