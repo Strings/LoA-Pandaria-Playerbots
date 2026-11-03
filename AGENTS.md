@@ -127,7 +127,9 @@ environment variables for the headless client (`contrib/headless-client/README.m
   (gitignored), shared and read-only. Point `DataDir` at it; never regenerate it unless your task
   says so.
 - The game client is `I:\UltimateMoP\mop-clean\` (5.4.8.18414 enUS, gitignored). Treat it as
-  read-only input: never commit it, never write into it (extract elsewhere, patch copies of the exe).
+  read-only input: never commit it, never write into it (extract elsewhere, patch copies of the exe). Two
+  exceptions, both installed by Claude Code on deploy: our addons in `Interface/AddOns/`, and the client patch
+  archive that `tools/clientpatch/` builds, in `Data/` (the human approved it on 2026-11-02).
   Launching it is computer use, so ask first.
 - Your `realmlist` row in your own auth database must point at your world port.
 

@@ -1,0 +1,13 @@
+{
+  "archive": "wow-update-base-18414.MPQ",
+  "edits": [
+    {
+      "file": "SpellLevels.dbc",
+      "id": 6758,
+      "field": "spell_level",
+      "from": 20,
+      "to": 1,
+      "why": "Apprentice Riding (33388). The server teaches riding at level 1 (T-011); at 20 the client treats it as not yet learned and greys out every ground mount in the journal."
+    }
+  ]
+}
