@@ -60,7 +60,10 @@ class DbcPatchTests(unittest.TestCase):
         manifest = build.load_manifest()
         self.assertTrue(manifest['archive'].endswith('.MPQ'))
         for edit in manifest['edits']:
-            self.assertTrue(get_schema(edit['file']), edit['file'])
+            if edit.get('type', 'dbc') == 'dbc':
+                self.assertTrue(get_schema(edit['file']), edit['file'])
+            else:
+                self.assertNotEqual(edit['from'], edit['to'])
             self.assertTrue(edit['why'])
 
 
