@@ -1,4 +1,5 @@
 import struct
+import zlib
 import sys
 import unittest
 from pathlib import Path
@@ -35,7 +36,15 @@ class MpqTests(unittest.TestCase):
     def test_header(self):
         archive = mpq.build({'a': b'1'})
         magic, size, total, version = struct.unpack_from('<4sIIH', archive)
-        self.assertEqual((magic, size, total, version), (b'MPQ\x1a', 32, len(archive), 0))
+        self.assertEqual((magic, size, total, version), (b'MPQ\x1a', 44, len(archive), 1))
+
+    def test_attributes_cover_every_block(self):
+        archive = mpq.build({'a': b'1', 'b': b'22'}, 'base')
+        raw = mpq.read(archive, '(attributes)')
+        version, flags = struct.unpack_from('<II', raw)
+        # a, b, (patch_metadata), (listfile), (attributes): CRC32, file time and MD5 for each.
+        self.assertEqual((version, flags, len(raw)), (100, 7, 8 + 5 * (4 + 8 + 16)))
+        self.assertEqual(struct.unpack_from('<I', raw, 8)[0], zlib.crc32(b'1'))
 
 
 class DbcPatchTests(unittest.TestCase):

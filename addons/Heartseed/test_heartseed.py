@@ -104,7 +104,7 @@ class HeartseedAddonTest(unittest.TestCase):
         for line in ["S	3	2	40	450	Sprout	Xuen	2	1	",
                      "M	10	Call of Xuen	Xuen	123904	A spectral white tiger fights at your side.",
                      "M	25			0	", "M	40			0	",
-                     "X	Essence of Storms	2	1", "G	1	Stamina	1	1", "G	3	Critical strike	0	1", "E"]:
+                     "X	Essence of Storms	2	1", "G	1	Stamina	1	1	2	30", "G	3	Critical strike	0	0	1	10", "E"]:
             self.g.addon(line)
         body = "\n".join(self.texts())
         self.assertIn("Growth level 3", body)
@@ -124,14 +124,14 @@ class HeartseedAddonTest(unittest.TestCase):
 
     def test_stat_button_spends_only_with_points(self):
         self.lua.execute("HeartseedPanel_Toggle()")
-        for line in ["S	2	1	0	400	Sprout	none	0	1	", "G	1	Stamina	1	1", "G	2	Main stat	0	1", "E"]:
+        for line in ["S	2	1	0	400	Sprout	none	0	1	", "G	1	Stamina	1	1	2	30", "G	2	Main stat	0	0	1	20", "E"]:
             self.g.addon(line)
         crit = [b for b in self.stat_buttons() if b.stat.id == 2][0]
         crit.scripts.OnClick(crit)
         self.assertIn(".seed spend 2", list(self.g.sent.values()))
         sent = len(self.g.sent)
         self.lua.execute("HeartseedPanel_Toggle(); HeartseedPanel_Toggle()")
-        for line in ["S	2	0	0	400	Sprout	none	0	1	", "G	1	Stamina	1	1", "G	2	Main stat	1	1", "E"]:
+        for line in ["S	2	0	0	400	Sprout	none	0	1	", "G	1	Stamina	1	1	2	30", "G	2	Main stat	1	1	1	20", "E"]:
             self.g.addon(line)
         crit = [b for b in self.stat_buttons() if b.stat.id == 2][0]
         before = len(self.g.sent)

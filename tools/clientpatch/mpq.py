@@ -1,22 +1,29 @@
-"""Minimal MPQ (format version 1) writer and reader for client patch archives.
+"""Minimal MPQ (format version 2) writer and reader for client patch archives.
 
-Files are stored the way Blizzard stores them in its own archives: split into 16 KB sectors behind a sector
-offset table, each sector zlib-compressed when that makes it smaller. Only the hash and block tables are
-encrypted, as the format requires.
+Archives match what StormLib writes with MPQ_CREATE_ARCHIVE_V2 | MPQ_CREATE_ATTRIBUTES, the layout a 5.4.8
+client is known to read large patched tables from: a 44-byte header, files split into 4 KB sectors behind a
+sector offset table (each sector zlib-compressed when that makes it smaller), then (listfile) and an
+(attributes) file holding every file's CRC32 and MD5. Only the hash and block tables are encrypted, as the
+format requires.
 """
+import hashlib
 import struct
 import zlib
 from typing import Dict, List
 
-HEADER_SIZE = 32
-SECTOR_SHIFT = 5  # 512 << 5 = 16 KB sectors, as in Blizzard's update archives
+HEADER_SIZE = 44
+FORMAT_VERSION = 1  # 0-based: format version 2
+SECTOR_SHIFT = 3  # 512 << 3 = 4 KB sectors, StormLib's default
 SECTOR_SIZE = 512 << SECTOR_SHIFT
-# The 5.4.8 client fails on uncompressed single-unit files ("Reached the end of the file") and on large
-# uncompressed sectored ones (SFileReadFile fails on a 16 MB table), so every file is compressed and sectored.
+# The 5.4.8 client fails on uncompressed single-unit files ("Reached the end of the file"), and its
+# repair-on-demand fails on large tables in version 1 archives without (attributes) (ERROR #134 on
+# SpellEffect.dbc, compressed or not), so archives follow StormLib's version 2 layout.
 FILE_EXISTS = 0x80000000
 FILE_COMPRESS = 0x00000200
 COMPRESSION_ZLIB = 0x02
 HASH_EMPTY = 0xFFFFFFFF
+ATTRIBUTES_VERSION = 100
+ATTRIBUTES_CRC32, ATTRIBUTES_FILETIME, ATTRIBUTES_MD5 = 0x1, 0x2, 0x4
 
 
 def _crypt_table():
@@ -75,10 +82,15 @@ def build(files: Dict[str, bytes], patch_prefix: str = '') -> bytes:
     archive to the wrong chain and its files never take effect.
     """
     entries = dict(files)
+    names = sorted(files)
     if patch_prefix:
         entries['(patch_metadata)'] = patch_prefix.encode('ascii')
+        names.append('(patch_metadata)')
     entries['(listfile)'] = ''.join(name + '\r\n' for name in sorted(files)).encode('ascii')
-    names = sorted(entries)
+    names.append('(listfile)')
+    # (attributes) covers every block, itself included with zeroes, in block order.
+    names.append('(attributes)')
+    entries['(attributes)'] = _attributes([entries[name] for name in names[:-1]])
 
     body = bytearray()
     blocks = []
@@ -102,11 +114,21 @@ def build(files: Dict[str, bytes], patch_prefix: str = '') -> bytes:
     hash_pos = HEADER_SIZE + len(body)
     block_pos = hash_pos + len(hash_raw)
     total = block_pos + len(block_raw)
-    header = struct.pack('<4sIIHHIIII', b'MPQ\x1a', HEADER_SIZE, total, 0, SECTOR_SHIFT,
-                         hash_pos, block_pos, size, len(blocks))
+    # Version 2 adds the hi-block table position and the high 16 bits of the table positions, all zero here.
+    header = struct.pack('<4sIIHHIIIIQHH', b'MPQ\x1a', HEADER_SIZE, total, FORMAT_VERSION, SECTOR_SHIFT,
+                         hash_pos, block_pos, size, len(blocks), 0, 0, 0)
     return (header + bytes(body)
             + _crypt(hash_raw, hash_string('(hash table)', HASH_KEY), False)
             + _crypt(block_raw, hash_string('(block table)', HASH_KEY), False))
+
+
+def _attributes(files: List[bytes]) -> bytes:
+    """CRC32, file time (left zero so builds are reproducible) and MD5 per block; the last block is (attributes)."""
+    crcs = [zlib.crc32(data) & 0xFFFFFFFF for data in files] + [0]
+    md5s = [hashlib.md5(data).digest() for data in files] + [bytes(16)]
+    count = len(crcs)
+    return (struct.pack('<II', ATTRIBUTES_VERSION, ATTRIBUTES_CRC32 | ATTRIBUTES_FILETIME | ATTRIBUTES_MD5)
+            + struct.pack('<%dI' % count, *crcs) + bytes(8 * count) + b''.join(md5s))
 
 
 def _pack_sectors(data: bytes) -> bytes:

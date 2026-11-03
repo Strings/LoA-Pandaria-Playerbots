@@ -5524,11 +5524,11 @@ Heartseed.Growth.TwinksEarn = 0
 
 #
 #    Heartseed.Growth.ResetAtShrineOnly
-#        Description: Taking stat points back (.seed reset, the addon) needs a Celestial shrine.
+#        Description: 1 = taking stat points back (.seed reset, the addon) needs a Celestial shrine.
 #                     0 = anywhere.
-#        Default:     1
+#        Default:     0
 
-Heartseed.Growth.ResetAtShrineOnly = 1
+Heartseed.Growth.ResetAtShrineOnly = 0
 
 #
 #    Heartseed.Feed.OnReplace
@@ -5653,9 +5653,9 @@ Heartseed.Choice.PromptDelay = 6000
 #    Heartseed.Choice.ChangeAtShrineOnly
 #        Description: A major that is already chosen can be changed only at a Celestial shrine
 #                     (heartseed_shrine). 0 lets players change it anywhere with .seed.
-#        Default:     1
+#        Default:     0
 
-Heartseed.Choice.ChangeAtShrineOnly = 1
+Heartseed.Choice.ChangeAtShrineOnly = 0
 
 #
 ###################################################################################################

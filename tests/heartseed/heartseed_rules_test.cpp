@@ -38,8 +38,12 @@ namespace
         UMP_CHECK(UnspentPoints(5, spent) == 2);
         UMP_CHECK(UnspentPoints(2, spent) == 0);                     // over-spent (GM) never wraps
         UMP_CHECK(UnspentPoints(4, {}) == 4);
-        UMP_CHECK(StatPointAmount(3, 1) == 3 && StatPointAmount(3, 0) == 0 && StatPointAmount(3, -2) == 0);
-        UMP_CHECK(StatPointAmount(UINT32_MAX, 2) == INT32_MAX);
+        UMP_CHECK(StatPointAmount(0, 10, 10) == 0 && StatPointAmount(3, 0, 10) == 0 && StatPointAmount(3, -2, 10) == 0);
+        UMP_CHECK(StatPointAmount(1, 10, 10) == 1);                    // the first point always shows
+        UMP_CHECK(StatPointAmount(10, 10, 10) == 5);                   // half the ceiling at halfPoints
+        UMP_CHECK(StatPointAmount(20, 30, 20) == 15 && StatPointAmount(2, 30, 20) == 3);
+        UMP_CHECK(StatPointAmount(1000, 10, 10) == 10 && StatPointAmount(UINT32_MAX, 10, 10) == 10);  // never past it
+        UMP_CHECK(StatPointAmount(5, 10, 0) == 10);
 
         UMP_CHECK(MainStatFor(10, 268) == MainStat::Agility && MainStatFor(10, 270) == MainStat::Intellect);
         UMP_CHECK(MainStatFor(2, 66) == MainStat::Strength && MainStatFor(2, 65) == MainStat::Intellect);

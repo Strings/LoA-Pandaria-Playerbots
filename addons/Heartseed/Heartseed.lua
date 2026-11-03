@@ -247,8 +247,8 @@ for i = 1, 4 do
     Tooltip(b, function(self)
         local st = self.stat
         if not st then return nil end
-        local lines = { st.name, "+" .. st.points * st.pct .. "% from " .. st.points .. " point" .. (st.points == 1 and "" or "s"),
-            "+" .. st.pct .. "% per point" }
+        local lines = { st.name, "+" .. st.pct .. "% from " .. st.points .. " point" .. (st.points == 1 and "" or "s"),
+            "Next point: +" .. st.next .. "%", "Approaches +" .. st.max .. "%: each point adds a little less." }
         if data and data.state and data.state.unspent > 0 then
             lines[#lines + 1] = "|cff00ff00Click to spend a point.|r"
         end
@@ -261,7 +261,7 @@ statReset:SetSize(56, 20)
 statReset:SetPoint("RIGHT", 0, 0)
 statReset:SetText("Reset")
 statReset:SetScript("OnClick", function() Sound("click"); Command(".seed reset"); SyncSoon() end)
-Tooltip(statReset, { "Take back every point", "Spend them again as you like. A Celestial shrine has to be near." })
+Tooltip(statReset, { "Take back every point", "Spend them again as you like." })
 
 -- The Celestial Gift: the level 10 major's active spell, castable from the panel ------------------------------
 
@@ -465,7 +465,7 @@ local function Layout()
             b:Show()
             b.icon:SetTexture(STAT_ICONS[st.id] or ICONS .. "INV_Misc_QuestionMark")
             b.icon:SetDesaturated(st.points == 0 and s.unspent == 0)
-            b.count:SetText(st.points > 0 and ("+" .. st.points * st.pct .. "%") or "")
+            b.count:SetText(st.points > 0 and ("+" .. st.pct .. "%") or "")
             spent = spent + st.points
         else
             b:Hide()
@@ -736,7 +736,7 @@ events:SetScript("OnEvent", function(_, event, ...)
         }
     elseif f[1] == "G" then
         incoming.stats[#incoming.stats + 1] = { id = tonumber(f[2]) or 0, name = f[3] or "?", points = tonumber(f[4]) or 0,
-            pct = tonumber(f[5]) or 0 }
+            pct = tonumber(f[5]) or 0, next = tonumber(f[6]) or 0, max = tonumber(f[7]) or 0 }
     elseif f[1] == "M" then
         incoming.majors[#incoming.majors + 1] = { level = tonumber(f[2]) or 0, name = f[3] or "", path = f[4] or "",
             gift = tonumber(f[5]) or 0, description = f[6] or "" }

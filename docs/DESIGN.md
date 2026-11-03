@@ -348,7 +348,8 @@ Later threads: Jaina's reconciliation when she sees the seed bloom in Pandaria; 
 
 - **Three tracks, no rank cap (decided 2026-11-02, replaces the level-capped rank):**
   - **Growth XP** (per character): battleground wins and dungeon and raid boss kills near your level fill a bar; each
-    level of it grants a small permanent percentage stat point (stamina, main stat or a secondary). No cap.
+    level of it grants a small permanent percentage stat point (stamina, main stat or a secondary). No cap on
+    points; each stat's bonus has diminishing returns toward its own ceiling (decided 2026-11-03).
   - **Feeding** (account-wide): replaced weapons are consumed for essences, appearances and the seed's identity.
   - **Character level** unlocks the stages and the major choices (10, 25, 40, 55, 70, 85).
   - Low-level balance comes from scaling every Heartseed effect with the character's own health, damage or healing,
@@ -409,7 +410,7 @@ Later threads: Jaina's reconciliation when she sees the seed bloom in Pandaria; 
 4. **Utility perks at awakenings**, e.g. Seedsense: nearby rares and treasures on the minimap.
 5. **Visuals:** glow and color by stage and dominant Celestial path.
 
-**Specs (decided, answers the open question):** one Heartseed with a saved path loadout per spec; swapping specs swaps choices. Loadouts change at any Celestial shrine. The morph at 90 follows the dominant path plus absorbed essences.
+**Specs (decided, answers the open question):** one Heartseed with a saved path loadout per spec; swapping specs swaps choices. Loadouts and majors change anywhere (decided 2026-11-03; the shrine-only rule is a config key, off). The morph at 90 follows the dominant path plus absorbed essences.
 
 **One seed per account (decided).** The seed chose a soul, not a body, and reincarnation already says the soul persists. Do this before Phase 0b hardens and real play builds up state: cheap now, painful later.
 

@@ -43,7 +43,7 @@ All Heartseed settings are reloaded on `.reload config` via `HeartseedMgr::LoadC
 | `Heartseed.Grant.OfferDelay` | `5000` | Delay in milliseconds after login before the quest prompt appears | Yes |
 | `Heartseed.Choice.PromptOnLogin` | `1` | Automatically displays the major trait choice window at login if a tier is unchosen | Yes |
 | `Heartseed.Choice.PromptDelay` | `6000` | Delay in milliseconds after login before the choice window displays | Yes |
-| `Heartseed.Choice.ChangeAtShrineOnly` | `1` | Restricts changing chosen major traits to Celestial shrines (0 allows anywhere) | Yes |
+| `Heartseed.Choice.ChangeAtShrineOnly` | `0` | 1 restricts changing chosen major traits to Celestial shrines (0 allows anywhere) | Yes |
 
 ---
 
