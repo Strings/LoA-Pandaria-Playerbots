@@ -8,6 +8,113 @@
       "from": "local PLAYER_MOUNT_LEVEL = 20;",
       "to": "local PLAYER_MOUNT_LEVEL = 1;",
       "why": "The mount journal greys out every mount and refuses drags below this level, whatever the character can ride. The server lets everyone ride from level 1 (T-011)."
+    },
+    {
+      "type": "spell",
+      "id": 310100,
+      "from": 123904,
+      "name": "Call of Xuen",
+      "rank": "Celestial Gift",
+      "icon": 6423,
+      "description": "Xuen's Gift. Call the spirit of Xuen, the White Tiger, to fight at your side, its claws crackling with lightning. Your critical strikes build Thunder, which keeps the tiger with you longer and brings the Gift back sooner.",
+      "why": "Heartseed Gift button (T-086): its own name, tooltip and icon instead of the borrowed spell's. Clone of Invoke Xuen, the White Tiger (monk talent)."
+    },
+    {
+      "type": "spell",
+      "id": 310101,
+      "from": 148009,
+      "name": "Crane's Plume",
+      "rank": "Celestial Gift",
+      "icon": 6359,
+      "attributes": {
+        "attributes_ex2": {
+          "set": 536870912
+        }
+      },
+      "description": "Chi-Ji's Gift. The Red Crane's hope heals you and the most wounded members of your group. Healing you do or receive builds Hope, which makes the next Plume stronger.",
+      "why": "Heartseed Gift button (T-086): its own name, tooltip and icon instead of the borrowed spell's. Clone of Spirit of Chi-Ji (legendary cloak proc); cannot crit, as the core makes the source."
+    },
+    {
+      "type": "spell",
+      "id": 310102,
+      "from": 116098,
+      "name": "Niuzao's Retort",
+      "rank": "Celestial Gift",
+      "icon": 6429,
+      "description": "Niuzao's Gift. After a heavy blow, answer with the Black Ox's charge, striking the enemies before you for a share of the damage you just took. Usable only for a few seconds after the blow.",
+      "why": "Heartseed Gift button (T-086): its own name, tooltip and icon instead of the borrowed spell's. Clone of Ox Charge (creature spell)."
+    },
+    {
+      "type": "spell",
+      "id": 310103,
+      "from": 117960,
+      "name": "Serpent's Breath",
+      "rank": "Celestial Gift",
+      "icon": 6335,
+      "attributes": {
+        "attributes_ex5": {
+          "clear": 512
+        }
+      },
+      "description": "Yu'lon's Gift. Breathe jade fire in a cone, burning every enemy before you. Your spell casts build Coil, which makes the next Breath stronger.",
+      "aura_description": "Breathing jade fire.",
+      "why": "Heartseed Gift button (T-086): its own name, tooltip and icon instead of the borrowed spell's. Clone of Celestial Breath (creature spell); ticks start after the first period, as the core makes the source."
+    },
+    {
+      "type": "spell",
+      "id": 310110,
+      "from": 26297,
+      "name": "Ferocity of Xuen",
+      "rank": "Celestial Gift",
+      "icon": 6182,
+      "description": "Haste while the White Tiger fights at your side.",
+      "aura_description": "Haste increased.",
+      "why": "Heartseed Gift rider aura (T-086): its own name and tooltip instead of the borrowed spell's. Clone of Berserking (troll racial)."
+    },
+    {
+      "type": "spell",
+      "id": 310111,
+      "from": 2983,
+      "name": "Crane's Swiftness",
+      "rank": "Celestial Gift",
+      "icon": 6236,
+      "description": "A burst of speed on the Red Crane's wings.",
+      "aura_description": "Movement speed increased.",
+      "why": "Heartseed Gift rider aura (T-086): its own name and tooltip instead of the borrowed spell's. Clone of Sprint (rogue)."
+    },
+    {
+      "type": "spell",
+      "id": 310112,
+      "from": 11426,
+      "name": "Niuzao's Shield",
+      "rank": "Celestial Gift",
+      "icon": 6349,
+      "description": "The Black Ox's strength shields you from harm.",
+      "aura_description": "Absorbs damage.",
+      "why": "Heartseed Gift rider aura (T-086): its own name and tooltip instead of the borrowed spell's. Clone of Ice Barrier (mage)."
+    },
+    {
+      "type": "spell",
+      "id": 310113,
+      "from": 51340,
+      "name": "Humbled by Niuzao",
+      "rank": "Celestial Gift",
+      "icon": 6183,
+      "description": "Struck by the Black Ox, the enemy deals less damage.",
+      "aura_description": "Damage dealt reduced.",
+      "why": "Heartseed Gift rider aura (T-086): its own name and tooltip instead of the borrowed spell's. Clone of a creature curse that lowers damage dealt."
+    },
+    {
+      "type": "spell",
+      "id": 310114,
+      "from": 118540,
+      "name": "Jade Fire",
+      "rank": "Celestial Gift",
+      "icon": 6277,
+      "description": "Yu'lon's jade fire burns the enemy over time.",
+      "aura_description": "Burning with jade fire.",
+      "why": "Heartseed Gift rider aura (T-086): its own name and tooltip instead of the borrowed spell's. Clone of Jade Serpent Wave."
     }
-  ]
+  ],
+  "server_sql": "sql/updates/world/2026_11_03_claude_00_heartseed_gift_spells.sql"
 }

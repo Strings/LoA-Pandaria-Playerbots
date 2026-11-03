@@ -34,6 +34,8 @@ namespace Heartseed
     constexpr uint32 SPELL_CORE_WEAPON_BONUS = 310008;
     // Server-side passive (spell_dbc) whose crit procs (spell_proc_event) feed the path meter.
     constexpr uint32 SPELL_METER_PASSIVE = 310009;
+    // Client spells the Gifts were before they got their own clones (T-086), removed from players on sync.
+    constexpr uint32 RETIRED_GIFT_SPELLS[] = { 123904, 148009, 116098, 117960, 115008, 119381 };
     // Server-side passives (spell_dbc) for "main stat" Growth points, picked by the character's main stat.
     constexpr uint32 SPELL_GROWTH_STRENGTH = 310011;
     constexpr uint32 SPELL_GROWTH_AGILITY = 310012;

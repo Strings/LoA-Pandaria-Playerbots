@@ -1398,7 +1398,7 @@ class spell_heartseed_meter : public AuraScript
     }
 };
 
-// 148009 - Spirit of Chi-Ji as Chi-Ji's Gift (Crane's Plume): heals the caster and the most wounded group members
+// 310101 - Crane's Plume, Chi-Ji's Gift (a clone of Spirit of Chi-Ji): heals the caster and the most wounded group members
 // nearby for a share of the caster's health, more for each Hope spent. The cloak's own proc is left alone.
 class spell_heartseed_crane_plume : public SpellScript
 {
@@ -1468,7 +1468,7 @@ class spell_heartseed_crane_plume : public SpellScript
     uint32 _extraTargets = 0;
 };
 
-// 116098 - Ox Charge as Niuzao's Gift (Niuzao's Retort), castable only for a short time after a big hit (the gift
+// 310102 - Niuzao's Retort, Niuzao's Gift (a clone of Ox Charge), castable only for a short time after a big hit (the gift
 // script gates it): a shockwave around the caster deals a share of the damage taken in the meter window to each
 // enemy. Riders weaken the enemies hit, widen the shockwave and cut the cooldown per enemy hit; the shield is the
 // gift script's.
@@ -1535,7 +1535,7 @@ class spell_heartseed_niuzao_retort : public SpellScript
 };
 
 // 124947 - Celestial Breath tick. The creature spell's damage is replaced by the Gift's power, a share of the caster's
-// attack or spell power raised by the Coil spent, when Yu'lon's Gift (117960) is the source.
+// attack or spell power raised by the Coil spent, when Yu'lon's Gift (310103) is the source.
 class spell_heartseed_celestial_breath : public SpellScript
 {
     PrepareSpellScript(spell_heartseed_celestial_breath);
@@ -1588,7 +1588,7 @@ class spell_heartseed_celestial_breath : public SpellScript
         OnEffectHitTarget += SpellEffectFn(spell_heartseed_celestial_breath::HandleDamage, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
     }
 
-    static constexpr uint32 GIFT_SPELL_CELESTIAL_BREATH = 117960;
+    static constexpr uint32 GIFT_SPELL_CELESTIAL_BREATH = 310103; // Serpent's Breath
 };
 
 // 123996 - Crackling Tiger Lightning. The creature spell has no visible bolt, so Xuen's strikes play a lightning
@@ -1610,8 +1610,8 @@ class spell_heartseed_xuen_lightning : public SpellScript
         Unit* xuen = GetCaster();
         Player* owner = xuen->GetOwner() ? xuen->GetOwner()->ToPlayer() : nullptr;
         Heartseed::GiftRider rider;
-        if (!owner || targets.empty() || owner->HasTalent(GIFT_SPELL_INVOKE_XUEN, owner->GetActiveSpec())
-            || !sHeartseedMgr->GetGiftRider(owner, GIFT_SPELL_INVOKE_XUEN, Heartseed::GiftRiderKind::ExtraTargets, rider))
+        if (!owner || targets.empty() || owner->HasTalent(MONK_TALENT_INVOKE_XUEN, owner->GetActiveSpec())
+            || !sHeartseedMgr->GetGiftRider(owner, GIFT_SPELL_CALL_OF_XUEN, Heartseed::GiftRiderKind::ExtraTargets, rider))
             return;
 
         std::list<Unit*> nearby;
@@ -1635,7 +1635,8 @@ class spell_heartseed_xuen_lightning : public SpellScript
         OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_heartseed_xuen_lightning::AddChainTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
     }
 
-    static constexpr uint32 GIFT_SPELL_INVOKE_XUEN = 123904;
+    static constexpr uint32 GIFT_SPELL_CALL_OF_XUEN = 310100;
+    static constexpr uint32 MONK_TALENT_INVOKE_XUEN = 123904;
     static constexpr float CHAIN_RANGE = 15.0f;
 };
 
