@@ -126,6 +126,7 @@ something worth knowing.
 | Path | What |
 |---|---|
 | `docs/DESIGN.md` | Complete design reference exported from the design document |
+| `docs/KNOWLEDGE.md` | Lessons that cost time to learn: debugging methods, 5.4.8 client internals, tool quirks |
 | `docs/ID_RANGES.md` | Range reservations for IDs, spells, items, gameobjects, quests, RBAC permissions |
 | `docs/MAP.md` | Repository map and path directory (this document) |
 | `docs/PLAYTEST.md` | Human playtest walkthrough, checklist, and verification guide |
