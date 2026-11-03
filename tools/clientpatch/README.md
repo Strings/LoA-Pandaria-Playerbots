@@ -1,8 +1,8 @@
 # Client patch (`tools/clientpatch/`)
 
-Builds the one MPQ archive that carries every change we make to the 5.4.8 client's data, and installs it into a
-client. DESIGN.md plans to ship all client changes as a patch MPQ through a launcher; this is that archive, and
-the launcher will install the same file.
+Builds the update archives that carry every change we make to the 5.4.8 client's data, and installs them into a
+client. DESIGN.md plans to ship all client changes as patch MPQs through a launcher; these are those archives, and
+the launcher will install the same files.
 
 ## Interface
 
@@ -13,7 +13,7 @@ python tools/clientpatch/build.py install --client I:/UltimateMoP/mop-clean
 python tools/clientpatch/build.py uninstall --client I:/UltimateMoP/mop-clean
 ```
 
-- `edits.json` names the archive and lists every edit with what it replaces (`from`), the new value (`to`) and why.
+- `edits.json` names the client build and locale and lists every edit with what it replaces (`from`), the new value (`to`) and why.
   A `from` that no longer matches the source fails the build.
   - `dbc` edits change one cell (`id`, `field`) of a table from the extracted server game data (`--dbc`, else
     `MOP_DBC_DIR`, else `<repo>/gamedata/dbc`); field names come from the shared DBC schemas (`tools/dbc/`).
@@ -23,8 +23,14 @@ python tools/clientpatch/build.py uninstall --client I:/UltimateMoP/mop-clean
     BSD0, MD5-checked) in load order. It never writes into the client.
 - `mpq.py` writes format version 1 archives with each file stored uncompressed in plain sectors, the layout Blizzard's update archives use (the client fails on uncompressed single-unit files). No third-party
   dependency.
-- The archive is `Data/wow-update-base-18414.MPQ`: the client loads `wow-update-base-<build>` archives in build
-  order, so the one numbered after the newest Blizzard update (18273) loads last and wins.
+- The client patches each file only from update archives of the chain that holds it: `base` (`Data/`) or the
+  locale (`Data/enUS/`). Each update archive names its chain in `(patch_metadata)`; without it the client
+  attaches the archive to the wrong chain and its files silently never apply. So the build writes
+  `Data/wow-update-base-18414.MPQ` and `Data/enUS/wow-update-enUS-18414.MPQ`, each tagged, and puts each file in
+  the chain `client.py` finds it in. Numbered after the newest Blizzard update (18273), they load last and win.
+- Editing a file of a `Blizzard_*` addon breaks its signed `.toc.sig` and the client refuses the addon as
+  CORRUPT. The build ships a placeholder `.toc.sig` of the wrong size for each edited Blizzard addon, which the
+  client treats as unsigned, so the addon loads (as tainted code, like any user addon).
 
 Only WDBC tables with 4-byte fields and text files are edited so far; DB2 tables and art come with their first use.
 

@@ -62,9 +62,16 @@ def _table_size(count: int) -> int:
     return size
 
 
-def build(files: Dict[str, bytes]) -> bytes:
-    """Builds an archive holding `files` (archive path -> bytes) plus a (listfile)."""
+def build(files: Dict[str, bytes], patch_prefix: str = '') -> bytes:
+    """Builds an archive holding `files` (archive path -> bytes) plus a (listfile).
+
+    An update archive also needs `patch_prefix`, the chain it patches ("base" or a locale such as "enUS"), stored
+    as (patch_metadata) the way Blizzard's own update archives carry it; without it the client attaches the
+    archive to the wrong chain and its files never take effect.
+    """
     entries = dict(files)
+    if patch_prefix:
+        entries['(patch_metadata)'] = patch_prefix.encode('ascii')
     entries['(listfile)'] = ''.join(name + '\r\n' for name in sorted(files)).encode('ascii')
     names = sorted(entries)
 

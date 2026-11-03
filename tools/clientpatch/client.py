@@ -175,6 +175,19 @@ def archive_chain(client_dir: str, locale: str = 'enUS') -> List[str]:
     return base + locale_base + updates
 
 
+def chain_of(client_dir: str, name: str, locale: str = 'enUS', skip: Tuple[str, ...] = ()) -> str:
+    """The chain ("base" or the locale) whose archives hold `name`; the client only patches a file from its own chain."""
+    chain = None
+    locale_dir = os.path.normcase(os.path.join(client_dir, 'Data', locale))
+    for path in archive_chain(client_dir, locale):
+        if os.path.basename(path) in skip or not Archive(path).find(name):
+            continue
+        chain = locale if os.path.normcase(os.path.dirname(path)) == locale_dir else 'base'
+    if chain is None:
+        raise KeyError(name)
+    return chain
+
+
 def read_current(client_dir: str, name: str, skip: Tuple[str, ...] = ()) -> bytes:
     """The file as the client sees it: the last full copy in load order with every later delta applied."""
     data = None

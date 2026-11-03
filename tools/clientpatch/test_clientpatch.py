@@ -41,6 +41,11 @@ class MpqTests(unittest.TestCase):
 class DbcPatchTests(unittest.TestCase):
     schema = get_schema('SpellLevels.dbc')
 
+
+    def test_update_archive_names_its_chain(self):
+        self.assertEqual(mpq.read(mpq.build({'a': b'1'}, 'enUS'), '(patch_metadata)'), b'enUS')
+        with self.assertRaises(KeyError):
+            mpq.read(mpq.build({'a': b'1'}), '(patch_metadata)')
     def test_edits_one_cell(self):
         raw = spell_levels([(6757, 1, 0, 0, 0, 5), (6758, 33388, 0, 0, 0, 20)])
         out = build.patch_dbc(raw, self.schema, [{'id': 6758, 'field': 'spell_level', 'from': 20, 'to': 1}])
@@ -58,7 +63,8 @@ class DbcPatchTests(unittest.TestCase):
 
     def test_manifest_edits_have_reasons(self):
         manifest = build.load_manifest()
-        self.assertTrue(manifest['archive'].endswith('.MPQ'))
+        self.assertEqual(sorted(build.archive_names(manifest).values()),
+                         ['enUS\\wow-update-enUS-18414.MPQ', 'wow-update-base-18414.MPQ'])
         for edit in manifest['edits']:
             if edit.get('type', 'dbc') == 'dbc':
                 self.assertTrue(get_schema(edit['file']), edit['file'])

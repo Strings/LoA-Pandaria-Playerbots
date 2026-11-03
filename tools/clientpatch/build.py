@@ -1,9 +1,12 @@
 """Builds the client patch archive from edits.json and installs it into a client.
 
-    python tools/clientpatch/build.py build [--dbc DIR] [--out DIR]
-    python tools/clientpatch/build.py install --client DIR [--out DIR]
-    python tools/clientpatch/build.py uninstall --client DIR
+    python tools/clientpatch/build.py build [--dbc DIR] [--client DIR] [--out DIR]
+    python tools/clientpatch/build.py install [--client DIR] [--out DIR]
+    python tools/clientpatch/build.py uninstall [--client DIR]
     python tools/clientpatch/build.py check [--out DIR]
+
+The client patches each file only from update archives of the chain that holds it: "base" (Data/) or the locale
+(Data/<locale>/). So the build writes one update archive per chain that has edits, each tagged with its chain.
 
 Two kinds of edit. A `dbc` edit changes one cell of a table from the extracted server game data (`--dbc`, else
 MOP_DBC_DIR, else <repo>/gamedata/dbc), which is the client's own latest data. A `text` edit replaces one exact
@@ -83,15 +86,29 @@ def unsigned_sig_path(path: str):
     return None
 
 
-def build_archive(manifest: dict, dbc_dir: Path, client_dir: Path) -> bytes:
+def archive_names(manifest: dict) -> dict:
+    """Chain -> archive path under Data/, for both chains, so install and uninstall can clear stale ones."""
+    build, locale = manifest['build'], manifest['locale']
+    return {'base': 'wow-update-base-%d.MPQ' % build, locale: '%s\\wow-update-%s-%d.MPQ' % (locale, locale, build)}
+
+
+def build_archives(manifest: dict, dbc_dir: Path, client_dir: Path) -> dict:
+    """Chain -> archive bytes, for each chain that has edits."""
+    names = archive_names(manifest)
+    # Read the client's own archives, never ours, so rebuilding is repeatable.
+    skip = tuple(Path(name.replace('\\', '/')).name for name in names.values())
+    locale = manifest['locale']
+
+    def chain(path):
+        return client.chain_of(str(client_dir), path, locale, skip)
+
     by_file = {}
     for edit in manifest['edits']:
         by_file.setdefault((edit.get('type', 'dbc'), edit['file']), []).append(edit)
     files = {}
     for (kind, filename), edits in sorted(by_file.items()):
         if kind == 'text':
-            # Read the client's current copy, never our own archive, so rebuilding is repeatable.
-            current = client.read_current(str(client_dir), filename, skip=(manifest['archive'],))
+            current = client.read_current(str(client_dir), filename, skip=skip)
             files[filename] = patch_text(current, filename, edits)
             sig = unsigned_sig_path(filename)
             if sig:
@@ -101,7 +118,11 @@ def build_archive(manifest: dict, dbc_dir: Path, client_dir: Path) -> bytes:
         if not schema:
             raise KeyError('no schema for ' + filename)
         files['DBFilesClient\\' + filename] = patch_dbc((dbc_dir / filename).read_bytes(), schema, edits)
-    return mpq.build(files)
+
+    by_chain = {}
+    for path, data in files.items():
+        by_chain.setdefault(chain(path), {})[path] = data
+    return {name: mpq.build(chain_files, name) for name, chain_files in by_chain.items()}
 
 
 def default_client() -> Path:
@@ -123,26 +144,37 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
 
     manifest = load_manifest()
-    archive_name = manifest['archive']
-    built = args.out / archive_name
+    names = archive_names(manifest)
+
+    def out_path(chain):
+        return args.out / Path(names[chain].replace('\\', '/')).name
 
     if args.command == 'build':
         args.out.mkdir(parents=True, exist_ok=True)
-        built.write_bytes(build_archive(manifest, args.dbc, args.client))
-        print('built %s (%d bytes, %d edits)' % (built, built.stat().st_size, len(manifest['edits'])))
+        archives = build_archives(manifest, args.dbc, args.client)
+        for chain in names:
+            path = out_path(chain)
+            if chain in archives:
+                path.write_bytes(archives[chain])
+                print('built %s (%s chain, %d bytes)' % (path, chain, path.stat().st_size))
+            elif path.exists():
+                path.unlink()
+        print('%d edits' % len(manifest['edits']))
     elif args.command == 'check':
-        archive = built.read_bytes()
-        print('%s: %s' % (built.name, ', '.join(mpq.listfile(archive))))
+        for chain in names:
+            if out_path(chain).exists():
+                print('%s: %s' % (out_path(chain).name, ', '.join(mpq.listfile(out_path(chain).read_bytes()))))
     elif args.command in ('install', 'uninstall'):
         if not args.client or not (args.client / 'Data').is_dir():
             parser.error('--client must be a WoW folder with a Data directory')
-        target = args.client / 'Data' / archive_name
-        if args.command == 'install':
-            shutil.copyfile(built, target)
-            print('installed ' + str(target))
-        elif target.exists():
-            target.unlink()
-            print('removed ' + str(target))
+        for chain in names:
+            target = args.client / 'Data' / names[chain].replace('\\', '/')
+            if args.command == 'install' and out_path(chain).exists():
+                shutil.copyfile(out_path(chain), target)
+                print('installed ' + str(target))
+            elif target.exists():
+                target.unlink()
+                print('removed ' + str(target))
     return 0
 
 
