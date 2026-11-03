@@ -230,7 +230,7 @@ local statButtons = {}
 for i = 1, 4 do
     local b = CreateFrame("Button", nil, statRow)
     b:SetSize(22, 22)
-    b:SetPoint("LEFT", (i - 1) * 62, 0)
+    b:SetPoint("LEFT", (i - 1) * 66, 0)
     b.icon = b:CreateTexture(nil, "ARTWORK")
     b.icon:SetAllPoints()
     b.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
@@ -309,6 +309,8 @@ local giftText = giftBox:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmal
 giftText:SetPoint("TOPLEFT", giftName, "BOTTOMLEFT", 0, -3)
 giftText:SetPoint("RIGHT", -8, 0)
 giftText:SetJustifyH("LEFT")
+giftText:SetJustifyV("TOP")
+giftText:SetWordWrap(true)
 
 local giftSpell, pendingGiftSpell, wantedGiftSpell
 local function SetGiftSpell(spellId)
@@ -465,7 +467,7 @@ local function Layout()
             b:Show()
             b.icon:SetTexture(STAT_ICONS[st.id] or ICONS .. "INV_Misc_QuestionMark")
             b.icon:SetDesaturated(st.points == 0 and s.unspent == 0)
-            b.count:SetText(st.points > 0 and ("+" .. st.pct .. "%") or "")
+            b.count:SetText((st.points > 0 and "" or "|cff808080") .. "+" .. st.pct .. "%")
             spent = spent + st.points
         else
             b:Hide()
@@ -486,6 +488,7 @@ local function Layout()
             or "Wakes at level " .. (gift and gift.level or 10) .. ".")
         SetGiftSpell(nil)
     end
+    giftBox:SetHeight(math.max(64, giftName:GetStringHeight() + giftText:GetStringHeight() + 20))
     UpdateGiftCooldown()
     if gift and gift.gift > 0 and lastGift ~= nil and lastGift ~= gift.gift then
         Sound("gift")
