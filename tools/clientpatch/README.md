@@ -30,8 +30,9 @@ python tools/clientpatch/build.py uninstall --client I:/UltimateMoP/mop-clean
     spell edit and commit the result. Not copied: power costs, effect scaling and server-side cooldowns (see
     `spells.py`). Port any `SpellMgr` corrections of the source into `attributes`.
 - `dbcfile.py` holds a table as raw cells plus its string block, for cloning and appending rows.
-- `mpq.py` writes format version 1 archives with each file stored uncompressed in plain sectors, the layout Blizzard's update archives use (the client fails on uncompressed single-unit files). No third-party
-  dependency.
+- `mpq.py` writes format version 1 archives the way Blizzard stores files: 16 KB sectors behind a sector offset
+  table, each zlib-compressed when that is smaller (flags `0x80000200`). The client fails on uncompressed
+  single-unit files and on large uncompressed ones. No third-party dependency.
 - The client patches each file only from update archives of the chain that holds it: `base` (`Data/`) or the
   locale (`Data/enUS/`). Each update archive names its chain in `(patch_metadata)`; without it the client
   attaches the archive to the wrong chain and its files silently never apply. So the build writes

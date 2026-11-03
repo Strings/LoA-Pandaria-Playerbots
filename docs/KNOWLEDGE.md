@@ -36,9 +36,12 @@ entry when something took more than one wrong turn to find, and say what would h
   crash. This is why our first patch "loaded" but changed nothing.
 - **Load order is by build number,** so an archive named `...-18414.MPQ` loads after Blizzard's last update (18273)
   and wins.
-- **MPQ layout matters.** Store uncompressed files the way Blizzard's update archives do (plain sectors, flags
-  `0x80000000`). An uncompressed single-unit file crashes the client with "Reached the end of the file". Third-party
-  readers (mpyq) misread this layout; trust `tools/clientpatch`'s own reader.
+- **MPQ layout matters: store files exactly as Blizzard does,** compressed in 16 KB sectors behind a sector offset
+  table (flags `0x80000200`). Uncompressed files fail in two different ways: a single-unit one crashes with "Reached
+  the end of the file", and a large sectored one (a 16 MB table) fails with "ERROR #134 ... SFileReadFile", while a
+  small one (67 KB) happened to work. When the client rejects our archive, compare our block flags with Blizzard's
+  for the same file before anything else. Third-party readers (mpyq) misread some layouts; trust
+  `tools/clientpatch`'s own reader.
 - **Blizzard ships most interface files as delta patches** (PTCH blocks with COPY or BSD0 bsdiff, MD5 checked) on
   top of an old full copy in `interface.MPQ`. Never edit the base copy; rebuild the current file through every delta
   first. Quirks: BSD0 bodies may be RLE-packed, and the bsdiff seek is 32-bit sign-magnitude.

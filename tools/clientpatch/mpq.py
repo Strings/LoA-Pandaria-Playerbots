@@ -1,16 +1,21 @@
 """Minimal MPQ (format version 1) writer and reader for client patch archives.
 
-Files are stored uncompressed and unencrypted, which every MPQ-reading WoW client accepts. Only the hash and
-block tables are encrypted, as the format requires.
+Files are stored the way Blizzard stores them in its own archives: split into 16 KB sectors behind a sector
+offset table, each sector zlib-compressed when that makes it smaller. Only the hash and block tables are
+encrypted, as the format requires.
 """
 import struct
+import zlib
 from typing import Dict, List
 
 HEADER_SIZE = 32
 SECTOR_SHIFT = 5  # 512 << 5 = 16 KB sectors, as in Blizzard's update archives
-# Uncompressed files are plain sectored entries with no sector offset table, the layout Blizzard's own update
-# archives use. The 5.4.8 client fails to read uncompressed single-unit files ("Reached the end of the file").
+SECTOR_SIZE = 512 << SECTOR_SHIFT
+# The 5.4.8 client fails on uncompressed single-unit files ("Reached the end of the file") and on large
+# uncompressed sectored ones (SFileReadFile fails on a 16 MB table), so every file is compressed and sectored.
 FILE_EXISTS = 0x80000000
+FILE_COMPRESS = 0x00000200
+COMPRESSION_ZLIB = 0x02
 HASH_EMPTY = 0xFFFFFFFF
 
 
@@ -79,8 +84,9 @@ def build(files: Dict[str, bytes], patch_prefix: str = '') -> bytes:
     blocks = []
     for name in names:
         data = entries[name]
-        blocks.append((HEADER_SIZE + len(body), len(data), len(data), FILE_EXISTS))
-        body += data
+        packed = _pack_sectors(data)
+        blocks.append((HEADER_SIZE + len(body), len(packed), len(data), FILE_EXISTS | FILE_COMPRESS))
+        body += packed
 
     size = _table_size(len(names))
     hashes = [(HASH_EMPTY, HASH_EMPTY, 0xFFFF, 0xFFFF, HASH_EMPTY)] * size
@@ -103,8 +109,32 @@ def build(files: Dict[str, bytes], patch_prefix: str = '') -> bytes:
             + _crypt(block_raw, hash_string('(block table)', HASH_KEY), False))
 
 
+def _pack_sectors(data: bytes) -> bytes:
+    """A sector offset table, then each sector compressed (type byte, zlib) or as is when that is no smaller."""
+    sectors = []
+    for start in range(0, len(data), SECTOR_SIZE):
+        chunk = data[start:start + SECTOR_SIZE]
+        compressed = bytes([COMPRESSION_ZLIB]) + zlib.compress(chunk, 9)
+        sectors.append(compressed if len(compressed) < len(chunk) else chunk)
+    offsets = [4 * (len(sectors) + 1)]
+    for sector in sectors:
+        offsets.append(offsets[-1] + len(sector))
+    return struct.pack('<%dI' % len(offsets), *offsets) + b''.join(sectors)
+
+
+def _unpack_sectors(packed: bytes, size: int) -> bytes:
+    count = (size + SECTOR_SIZE - 1) // SECTOR_SIZE
+    offsets = struct.unpack_from('<%dI' % (count + 1), packed)
+    out = bytearray()
+    for i in range(count):
+        chunk = packed[offsets[i]:offsets[i + 1]]
+        want = min(SECTOR_SIZE, size - i * SECTOR_SIZE)
+        out += zlib.decompress(chunk[1:]) if len(chunk) < want else chunk
+    return bytes(out)
+
+
 def read(archive: bytes, name: str) -> bytes:
-    """Reads one uncompressed file back; used by the tests and `build.py check`."""
+    """Reads one file back; used by the tests and `build.py check`."""
     magic, _, _, _, _, hash_pos, block_pos, hash_count, block_count = struct.unpack_from('<4sIIHHIIII', archive)
     if magic != b'MPQ\x1a':
         raise ValueError('not an MPQ archive')
@@ -118,9 +148,7 @@ def read(archive: bytes, name: str) -> bytes:
             break
         if (name1, name2) == (a, b):
             pos, packed, size, _ = struct.unpack_from('<IIII', block_raw, block_index * 16)
-            if packed != size:
-                raise ValueError('compressed files are not supported')
-            return archive[pos:pos + size]
+            return _unpack_sectors(archive[pos:pos + packed], size)
         slot = (slot + 1) % hash_count
     raise KeyError(name)
 
