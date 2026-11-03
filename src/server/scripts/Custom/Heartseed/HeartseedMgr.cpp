@@ -182,6 +182,7 @@ void HeartseedMgr::LoadConfig()
     _plumeRadius = std::max(0.0f, sConfigMgr->GetFloatDefault("Heartseed.Gift.PlumeRadius", 30.0f));
     _plumeTargets = uint32(std::max(1, sConfigMgr->GetIntDefault("Heartseed.Gift.PlumeTargets", 3)));
     _retortRadius = std::max(0.0f, sConfigMgr->GetFloatDefault("Heartseed.Gift.RetortRadius", 8.0f));
+    _breathRange = std::max(0.0f, sConfigMgr->GetFloatDefault("Heartseed.Gift.BreathRange", 12.0f));
     _procChance = sConfigMgr->GetFloatDefault("Heartseed.Proc.Chance", 10.0f);
     _procWeaponDamagePct = sConfigMgr->GetFloatDefault("Heartseed.Proc.WeaponDamagePct", 50.0f);
     _procCooldown = sConfigMgr->GetIntDefault("Heartseed.Proc.Cooldown", 3000);

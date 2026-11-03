@@ -1543,6 +1543,16 @@ class spell_heartseed_celestial_breath : public SpellScript
 {
     PrepareSpellScript(spell_heartseed_celestial_breath);
 
+    // The creature spell reaches 100 yards, Yu'lon's size; a player's breath reaches Heartseed.Gift.BreathRange.
+    void FilterTargets(std::list<WorldObject*>& targets)
+    {
+        Unit* caster = GetCaster();
+        if (!caster || caster->GetTypeId() != TYPEID_PLAYER)
+            return;
+        float range = sHeartseedMgr->GetBreathRange();
+        targets.remove_if([caster, range](WorldObject* target) { return !caster->IsWithinDist(target, range); });
+    }
+
     void HandleDamage(SpellEffIndex /*effIndex*/)
     {
         Player* player = GetCaster() ? GetCaster()->ToPlayer() : nullptr;
@@ -1588,6 +1598,8 @@ class spell_heartseed_celestial_breath : public SpellScript
 
     void Register() override
     {
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_heartseed_celestial_breath::FilterTargets, EFFECT_0,
+            TARGET_UNIT_CONE_ENEMY_104);
         OnEffectHitTarget += SpellEffectFn(spell_heartseed_celestial_breath::HandleDamage, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
     }
 

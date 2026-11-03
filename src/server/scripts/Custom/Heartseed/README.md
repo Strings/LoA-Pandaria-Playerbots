@@ -268,7 +268,8 @@ worldserver.conf:
 - Granting quest: `Heartseed.Grant.QuestId` (90000), `.OfferOnLogin` (1), `.OfferDelay` (5000 ms).
 - Choices: `Heartseed.Choice.PromptOnLogin` (1), `.PromptDelay` (6000 ms), `.ChangeAtShrineOnly` (0).
 - Gift areas (T-083): `Heartseed.Gift.PlumeRadius` (30 yd), `.PlumeTargets` (3, caster not counted),
-  `.RetortRadius` (8 yd). Meter numbers live in `heartseed_meter`.
+  `.RetortRadius` (8 yd), `.BreathRange` (12 yd; Serpent's Breath borrows a 100-yard creature cone). Meter numbers
+  live in `heartseed_meter`.
 - Story beats: `Heartseed.Story.Hooks` (1), `.PandariaMaps` ("870"), `.WorldBosses` (MoP and old world boss
   entries), `.AwakeningSound` (0 = none).
 - All pacing numbers are placeholders until v0.5.

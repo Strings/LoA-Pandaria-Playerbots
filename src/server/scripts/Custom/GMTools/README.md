@@ -10,6 +10,7 @@ its own force and inspect commands; these are the shared ones. Permissions come 
 | `Clock/` | T-039 | `.clock info`, `.clock speed <x>`, `.clock jump <duration>`, `.clock reset` |
 | `Scenarios/` | T-039 | `.scenario list`, `.scenario explain <name>`, `.scenario load <name> [args]` |
 | `Spectate/` | T-039 | `.spectate <name>` (or selected), `.spectate stop` |
+| `AreaProbe/` | T-086 | `.areaprobe place\|report\|reset\|clear`: measures spell areas with probe dummies (see its README) |
 
 Bot inspection (`.bot why`, `.bot state`, `.bot traits|memory|skill`) lives in the playerbots module, in
 `modules/mod_playerbots/src/Inspect/`, because it reads the bot engine.
