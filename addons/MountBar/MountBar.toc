@@ -1,0 +1,6 @@
+## Interface: 50400
+## Title: MountBar
+## Notes: Lets mounts the journal greys out below their level be dragged to the action bar as a summon macro.
+## Version: 0.1
+Model.lua
+MountBar.lua

@@ -15,7 +15,7 @@ something worth knowing.
 | `src/tools/` | Map, vmap and mmap extractors |
 | `modules/mod_playerbots/` | The playerbots port |
 | `sql/` | `base/` (full schemas), `updates/{world,characters,master}/`, `old/`, `archive/` |
-| `addons/` | Client addons we ship (`GMSuite/`, `Capture/`, `Loadouts/` (`/lo`), `ReagentBank/` (`/rb`), `ProfessionBar/` (`/pb`)) |
+| `addons/` | Client addons we ship (`GMSuite/`, `Capture/`, `Loadouts/` (`/lo`), `ReagentBank/` (`/rb`), `ProfessionBar/` (`/pb`), `MountBar/` (drag greyed-out mounts to the bar)) |
 | `tickets/` | Captured in-game `/idea` and `/bug` feedback tickets |
 | `tools/` | Developer tooling (build, benchmarks, live MCP, DBC reader, content search, SQL validator, twink tuning, stack sizes, crash triage) |
 | `tests/` | Pure logic unit test suites and regression scenarios |
