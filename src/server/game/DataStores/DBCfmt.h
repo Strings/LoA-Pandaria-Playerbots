@@ -154,7 +154,9 @@ const std::string CustomSpellDifficultyfmt = "ppppp";
 const std::string CustomSpellDifficultyIndex = "id";
 char const SpellDurationfmt[] = "niii";
 char const SpellEffectEntryfmt[] =            "niifiiiffiiiiiifiifiiiiixiiiix";
-const std::string CustomSpellEffectEntryfmt = "pappppppppapppapppppppppappppp";
+// `spelleffect_dbc` columns fill the positions marked p, in order. Position 14 (MiscValueB) used to be skipped and 15
+// (PointsPerComboPoint) filled instead, so summons from SQL lost their summon properties (UltimateMoP T-086).
+const std::string CustomSpellEffectEntryfmt = "pappppppppappppappppppppappppp";
 const std::string CustomSpellEffectEntryIndex = "Id";
 char const SpellEntryfmt[] =            "nssxxixxiiiiiiiiiiiiiiiii";
 const std::string CustomSpellEntryfmt = "paaaaaaaaapapppapppaapaapa";

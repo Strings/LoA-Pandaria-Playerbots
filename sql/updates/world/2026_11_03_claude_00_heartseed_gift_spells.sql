@@ -4,13 +4,13 @@ DELETE FROM `spell_dbc` WHERE `Id` IN (310100, 310101, 310102, 310103, 310110, 3
 DELETE FROM `spellmisc_dbc` WHERE `Id` IN (310100, 310101, 310102, 310103, 310110, 310111, 310112, 310113, 310114);
 DELETE FROM `spelleffect_dbc` WHERE `EffectSpellId` IN (310100, 310101, 310102, 310103, 310110, 310111, 310112, 310113, 310114);
 INSERT INTO `spell_dbc` (`Id`, `SpellAuraOptionsId`, `SpellCastingRequirementsId`, `SpellCategoriesId`, `SpellClassOptionsId`, `SpellEquippedItemsId`, `SpellLevelsId`, `SpellTargetRestrictionsId`, `SpellInterruptsId`, `SpellMiscId`, `Comment`) VALUES
-(310100, 0, 0, 30988, 16580, 0, 24517, 0, 30697, 310100, 'Call of Xuen (clone of 123904)'),
+(310100, 0, 0, 30988, 16580, 0, 30697, 24517, 0, 310100, 'Call of Xuen (clone of 123904)'),
 (310101, 0, 0, 38365, 0, 0, 0, 0, 0, 310101, 'Crane''s Plume (clone of 148009)'),
 (310102, 0, 0, 0, 0, 0, 0, 0, 0, 310102, 'Niuzao''s Retort (clone of 116098)'),
-(310103, 0, 0, 32601, 0, 0, 0, 0, 27126, 310103, 'Serpent''s Breath (clone of 117960)'),
+(310103, 0, 0, 32601, 0, 0, 27126, 0, 0, 310103, 'Serpent''s Breath (clone of 117960)'),
 (310110, 0, 0, 4576, 0, 0, 0, 0, 0, 310110, 'Ferocity of Xuen (clone of 26297)'),
-(310111, 0, 0, 386, 205, 0, 374, 0, 0, 310111, 'Crane''s Swiftness (clone of 2983)'),
-(310112, 0, 0, 1645, 507, 0, 1801, 0, 1527, 310112, 'Niuzao''s Shield (clone of 11426)'),
+(310111, 0, 0, 386, 205, 0, 0, 374, 0, 310111, 'Crane''s Swiftness (clone of 2983)'),
+(310112, 0, 0, 1645, 507, 0, 1527, 1801, 0, 310112, 'Niuzao''s Shield (clone of 11426)'),
 (310113, 0, 0, 11362, 0, 0, 0, 0, 0, 310113, 'Humbled by Niuzao (clone of 51340)'),
 (310114, 0, 0, 27576, 0, 0, 0, 0, 0, 310114, 'Jade Fire (clone of 118540)');
 INSERT INTO `spellmisc_dbc` (`Id`, `Attributes`, `AttributesEx`, `AttributesEx2`, `AttributesEx3`, `AttributesEx4`, `AttributesEx5`, `AttributesEx6`, `AttributesEx7`, `AttributesEx8`, `AttributesEx9`, `AttributesEx10`, `AttributesEx11`, `AttributesEx12`, `AttributesEx13`, `CastingTimeIndex`, `DurationIndex`, `RangeIndex`, `SchoolMask`, `Comment`) VALUES
@@ -26,7 +26,7 @@ INSERT INTO `spellmisc_dbc` (`Id`, `Attributes`, `AttributesEx`, `AttributesEx2`
 INSERT INTO `spelleffect_dbc` (`Id`, `Effect`, `EffectValueMultiplier`, `EffectApplyAuraName`, `EffectAplitude`, `EffectBasePoints`, `EffectBonusMultiplier`, `EffectDamageMultiplier`, `EffectChainTarget`, `EffectDieSides`, `EffectMechanic`, `EffectMiscValue`, `EffectMiscValueB`, `EffectRadiusIndex`, `EffectRadiusIndexMax`, `EffectRealPointsPerLevel`, `EffectSpellClassMaskA`, `EffectSpellClassMaskB`, `EffectSpellClassMaskC`, `EffectSpellClassMaskD`, `EffectTriggerSpell`, `EffectImplicitTargetA`, `EffectImplicitTargetB`, `EffectSpellId`, `EffectIndex`, `EffectAttributes`) VALUES
 (3101000, 28, 0.0, 0, 0, 0, 0.0, 1.0, 0, 0, 0, 63508, 3262, 0, 0, 0.0, 0, 0, 0, 0, 0, 53, 0, 310100, 0, 0),
 (3101010, 10, 0.0, 0, 0, 1, 0.0, 1.0, 0, 0, 0, 0, 0, 0, 23, 0.0, 0, 0, 0, 0, 0, 18, 31, 310101, 0, 0),
-(3101020, 2, 0.0, 0, 0, 18499, 0.0, 1.0, 0, 3001, 0, 0, 0, 0, 14, 0.0, 0, 0, 0, 0, 0, 18, 16, 310102, 0, 0),
+(3101020, 2, 0.0, 0, 0, 18499, 0.0, 1.0, 0, 0, 0, 0, 0, 0, 14, 0.0, 0, 0, 0, 0, 0, 18, 16, 310102, 0, 0),
 (3101030, 6, 0.0, 23, 500, 0, 0.0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 124947, 1, 0, 310103, 0, 0),
 (3101100, 6, 0.0, 193, 0, 20, 0.0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 1, 0, 310110, 0, 0),
 (3101110, 6, 0.0, 31, 0, 70, 0.0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 1, 0, 310111, 0, 0),

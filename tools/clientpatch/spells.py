@@ -19,10 +19,13 @@ E_ID, E_DIFFICULTY, E_SPELL = 0, 1, 27
 
 MISC_ATTRIBUTES = ['attributes'] + ['attributes_ex%s' % s for s in [''] + [str(n) for n in range(2, 14)]]
 
-# The core's custom tables and the client columns they come from.
+# The core's custom tables and the client columns they come from. The core reads these tables by column order into
+# the positions its Custom*fmt strings (DBCfmt.h) mark, whatever the columns are called: in `spell_dbc` the columns
+# named Levels, TargetRestrictions and Interrupts fill Interrupts (17), Levels (18) and TargetRestrictions (21); in
+# `spelleffect_dbc` the column named EffectDieSides fills ItemType (11), which no clone needs.
 SERVER_SPELL = [('Id', 0), ('SpellAuraOptionsId', 10), ('SpellCastingRequirementsId', 12),
                 ('SpellCategoriesId', 13), ('SpellClassOptionsId', 14), ('SpellEquippedItemsId', 16),
-                ('SpellLevelsId', 18), ('SpellTargetRestrictionsId', 21), ('SpellInterruptsId', 17),
+                ('SpellLevelsId', 17), ('SpellTargetRestrictionsId', 18), ('SpellInterruptsId', 21),
                 ('SpellMiscId', 24)]
 SERVER_MISC = ([('Id', 0)] + [('Attributes' if i == 0 else 'AttributesEx' + ('' if i == 1 else str(i)), 3 + i)
                                for i in range(14)]
@@ -30,7 +33,7 @@ SERVER_MISC = ([('Id', 0)] + [('Attributes' if i == 0 else 'AttributesEx' + ('' 
 FLOAT, INT = 'f', 'i'
 SERVER_EFFECT = [('Id', 0), ('Effect', 2), ('EffectValueMultiplier', 3, FLOAT), ('EffectApplyAuraName', 4),
                  ('EffectAplitude', 5), ('EffectBasePoints', 6, INT), ('EffectBonusMultiplier', 7, FLOAT),
-                 ('EffectDamageMultiplier', 8, FLOAT), ('EffectChainTarget', 9), ('EffectDieSides', 10, INT),
+                 ('EffectDamageMultiplier', 8, FLOAT), ('EffectChainTarget', 9), ('EffectDieSides', 11),
                  ('EffectMechanic', 12), ('EffectMiscValue', 13, INT), ('EffectMiscValueB', 14, INT),
                  ('EffectRadiusIndex', 16), ('EffectRadiusIndexMax', 17), ('EffectRealPointsPerLevel', 18, FLOAT),
                  ('EffectSpellClassMaskA', 19), ('EffectSpellClassMaskB', 20), ('EffectSpellClassMaskC', 21),
