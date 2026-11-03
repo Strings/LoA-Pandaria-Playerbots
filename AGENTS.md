@@ -12,9 +12,11 @@ each other's way.
 1. Read `STATUS.md` (where the project is), `TASKS.md` (your task) and `docs/MAP.md` (where
    things live). Do not read the git log unless your task needs history. If a `HANDOFF.md` is
    addressed to you and not yet done, start there.
-2. Read only the sections of `docs/DESIGN.md` your task touches. It is long; it is the design
+2. When stuck, or before client, MPQ or interface work, read `docs/KNOWLEDGE.md`; add to it when
+   something took more than one wrong turn to find.
+3. Read only the sections of `docs/DESIGN.md` your task touches. It is long; it is the design
    reference, not a checklist.
-3. Work in your own worktree on your own branch (see Worktrees). Pull the latest
+4. Work in your own worktree on your own branch (see Worktrees). Pull the latest
    `playerbot` branch into it before starting a new task.
 
 ## Autonomy
@@ -127,7 +129,9 @@ environment variables for the headless client (`contrib/headless-client/README.m
   (gitignored), shared and read-only. Point `DataDir` at it; never regenerate it unless your task
   says so.
 - The game client is `I:\UltimateMoP\mop-clean\` (5.4.8.18414 enUS, gitignored). Treat it as
-  read-only input: never commit it, never write into it (extract elsewhere, patch copies of the exe).
+  read-only input: never commit it, never write into it (extract elsewhere, patch copies of the exe). Two
+  exceptions, both installed by Claude Code on deploy: our addons in `Interface/AddOns/`, and the client patch
+  archive that `tools/clientpatch/` builds, in `Data/` (the human approved it on 2026-11-02).
   Launching it is computer use, so ask first.
 - Your `realmlist` row in your own auth database must point at your world port.
 

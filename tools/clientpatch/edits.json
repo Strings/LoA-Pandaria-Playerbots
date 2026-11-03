@@ -1,0 +1,13 @@
+{
+  "build": 18414,
+  "locale": "enUS",
+  "edits": [
+    {
+      "type": "text",
+      "file": "Interface\\AddOns\\Blizzard_PetJournal\\Blizzard_PetJournal.lua",
+      "from": "local PLAYER_MOUNT_LEVEL = 20;",
+      "to": "local PLAYER_MOUNT_LEVEL = 1;",
+      "why": "The mount journal greys out every mount and refuses drags below this level, whatever the character can ride. The server lets everyone ride from level 1 (T-011)."
+    }
+  ]
+}

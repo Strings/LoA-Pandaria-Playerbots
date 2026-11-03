@@ -15,7 +15,7 @@ something worth knowing.
 | `src/tools/` | Map, vmap and mmap extractors |
 | `modules/mod_playerbots/` | The playerbots port |
 | `sql/` | `base/` (full schemas), `updates/{world,characters,master}/`, `old/`, `archive/` |
-| `addons/` | Client addons we ship (`GMSuite/`, `Capture/`, `Loadouts/` (`/lo`), `ReagentBank/` (`/rb`), `ProfessionBar/` (`/pb`), `MountBar/` (drag greyed-out mounts to the bar)) |
+| `addons/` | Client addons we ship (`GMSuite/`, `Capture/`, `Loadouts/` (`/lo`), `ReagentBank/` (`/rb`), `ProfessionBar/` (`/pb`)) |
 | `tickets/` | Captured in-game `/idea` and `/bug` feedback tickets |
 | `tools/` | Developer tooling (build, benchmarks, live MCP, DBC reader, content search, SQL validator, twink tuning, stack sizes, crash triage) |
 | `tests/` | Pure logic unit test suites and regression scenarios |
@@ -94,6 +94,7 @@ something worth knowing.
 |---|---|
 | `tools/build/` | Shared build script (`tools/build/build.ps1`), machine lock, and compiler cache notes |
 | `tools/bench/` | Startup profiling and benchmarking tools (`tools/bench/startup_profile.py`) |
+| `tools/clientpatch/` | Client patch archive: DBC edits as data (`edits.json`), a small MPQ writer, build and install into the client's `Data/` |
 | `tools/live-server-mcp/` | MCP server adapter for live worldserver inspection |
 | `tools/backup/` | Save safety and database snapshot tooling (`tools/backup/save_safety.py`) |
 | `tools/art-slicer/` | Slices generated art into power-of-two TGA textures for addons (crop, circle mask, colour key) |
@@ -125,6 +126,7 @@ something worth knowing.
 | Path | What |
 |---|---|
 | `docs/DESIGN.md` | Complete design reference exported from the design document |
+| `docs/KNOWLEDGE.md` | Lessons that cost time to learn: debugging methods, 5.4.8 client internals, tool quirks |
 | `docs/ID_RANGES.md` | Range reservations for IDs, spells, items, gameobjects, quests, RBAC permissions |
 | `docs/MAP.md` | Repository map and path directory (this document) |
 | `docs/PLAYTEST.md` | Human playtest walkthrough, checklist, and verification guide |
