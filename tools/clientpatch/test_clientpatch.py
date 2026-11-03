@@ -68,6 +68,9 @@ class DbcPatchTests(unittest.TestCase):
         for edit in manifest['edits']:
             if edit.get('type', 'dbc') == 'dbc':
                 self.assertTrue(get_schema(edit['file']), edit['file'])
+            elif edit['type'] == 'spell':
+                # Spell clones live in the reserved custom block (docs/ID_RANGES.md).
+                self.assertTrue(310000 <= edit['id'] <= 310999 and edit['name'], edit['id'])
             else:
                 self.assertNotEqual(edit['from'], edit['to'])
             self.assertTrue(edit['why'])

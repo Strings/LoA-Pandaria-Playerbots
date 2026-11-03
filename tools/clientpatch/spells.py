@@ -1,0 +1,131 @@
+"""Spell clones: a client spell copied to a new id with its own name, tooltip, icon and attributes.
+
+A clone keeps the source's behaviour (effects, visuals, cast time, range, targeting) but shows as its own spell,
+so a borrowed spell can be renamed without renaming the real ability it came from. The client gets the rows in
+its Spell, SpellMisc and SpellEffect tables; the server gets the same spell as `spell_dbc`, `spellmisc_dbc` and
+`spelleffect_dbc` rows (`server_sql`), which the core loads over its own tables.
+
+Not copied: SpellPower (clones cost nothing), SpellEffectScaling (amounts come from base points; the server
+script sets real amounts) and server-side cooldowns (the core's `spell_dbc` has no cooldown column).
+"""
+from typing import Dict, List
+
+from dbcfile import Dbc, as_float, as_int
+
+# Column indexes, from tools/dbc/schemas.py.
+S_ID, S_NAME, S_RANK, S_DESC, S_AURA_DESC, S_MISC = 0, 1, 2, 3, 4, 24
+M_ID, M_SPELL, M_DIFFICULTY, M_ICON, M_ACTIVE_ICON = 0, 1, 2, 23, 24
+E_ID, E_DIFFICULTY, E_SPELL = 0, 1, 27
+
+MISC_ATTRIBUTES = ['attributes'] + ['attributes_ex%s' % s for s in [''] + [str(n) for n in range(2, 14)]]
+
+# The core's custom tables and the client columns they come from. The core reads these tables by column order into
+# the positions its Custom*fmt strings (DBCfmt.h) mark, whatever the columns are called: in `spell_dbc` the columns
+# named Levels, TargetRestrictions and Interrupts fill Interrupts (17), Levels (18) and TargetRestrictions (21); in
+# `spelleffect_dbc` the column named EffectDieSides fills ItemType (11), which no clone needs.
+SERVER_SPELL = [('Id', 0), ('SpellAuraOptionsId', 10), ('SpellCastingRequirementsId', 12),
+                ('SpellCategoriesId', 13), ('SpellClassOptionsId', 14), ('SpellEquippedItemsId', 16),
+                ('SpellLevelsId', 17), ('SpellTargetRestrictionsId', 18), ('SpellInterruptsId', 21),
+                ('SpellMiscId', 24)]
+SERVER_MISC = ([('Id', 0)] + [('Attributes' if i == 0 else 'AttributesEx' + ('' if i == 1 else str(i)), 3 + i)
+                               for i in range(14)]
+               + [('CastingTimeIndex', 17), ('DurationIndex', 18), ('RangeIndex', 19), ('SchoolMask', 25)])
+FLOAT, INT = 'f', 'i'
+SERVER_EFFECT = [('Id', 0), ('Effect', 2), ('EffectValueMultiplier', 3, FLOAT), ('EffectApplyAuraName', 4),
+                 ('EffectAplitude', 5), ('EffectBasePoints', 6, INT), ('EffectBonusMultiplier', 7, FLOAT),
+                 ('EffectDamageMultiplier', 8, FLOAT), ('EffectChainTarget', 9), ('EffectDieSides', 11),
+                 ('EffectMechanic', 12), ('EffectMiscValue', 13, INT), ('EffectMiscValueB', 14, INT),
+                 ('EffectRadiusIndex', 16), ('EffectRadiusIndexMax', 17), ('EffectRealPointsPerLevel', 18, FLOAT),
+                 ('EffectSpellClassMaskA', 19), ('EffectSpellClassMaskB', 20), ('EffectSpellClassMaskC', 21),
+                 ('EffectSpellClassMaskD', 22), ('EffectTriggerSpell', 23), ('EffectImplicitTargetA', 25),
+                 ('EffectImplicitTargetB', 26), ('EffectSpellId', 27), ('EffectIndex', 28), ('EffectAttributes', 29)]
+
+
+def effect_id(spell_id: int, index: int) -> int:
+    """Clone effect rows get ids far above the client's own (about 230000)."""
+    return spell_id * 10 + index
+
+
+def clone(edit: dict, tables: Dict[str, Dbc]) -> Dict[str, List[List[int]]]:
+    """Appends the clone's rows to `tables` (Spell, SpellMisc, SpellEffect) and returns them by table."""
+    spell_dbc, misc_dbc, effect_dbc = tables['Spell'], tables['SpellMisc'], tables['SpellEffect']
+    new_id, source_id = edit['id'], edit['from']
+    sources = spell_dbc.find(S_ID, source_id)
+    if not sources:
+        raise KeyError('spell %d: no client spell to clone' % source_id)
+    spell = list(sources[0])
+    miscs = misc_dbc.find(M_ID, spell[S_MISC])
+    if not miscs:
+        raise KeyError('spell %d: no SpellMisc row %d' % (source_id, spell[S_MISC]))
+    misc = list(miscs[0])
+
+    spell[S_ID] = new_id
+    spell[S_NAME] = spell_dbc.add_string(edit['name'])
+    spell[S_RANK] = spell_dbc.add_string(edit.get('rank', ''))
+    spell[S_DESC] = spell_dbc.add_string(edit.get('description', ''))
+    spell[S_AURA_DESC] = spell_dbc.add_string(edit.get('aura_description', ''))
+    spell[S_MISC] = new_id
+
+    misc[M_ID], misc[M_SPELL] = new_id, new_id
+    if 'icon' in edit:
+        misc[M_ICON] = edit['icon']
+        misc[M_ACTIVE_ICON] = 0
+    for name, change in edit.get('attributes', {}).items():
+        column = 3 + MISC_ATTRIBUTES.index(name)
+        misc[column] = (misc[column] | change.get('set', 0)) & ~change.get('clear', 0)
+
+    effects = []
+    for row in sorted(effect_dbc.find(E_SPELL, source_id), key=lambda r: r[28]):
+        if row[E_DIFFICULTY]:
+            continue
+        row = list(row)
+        row[E_ID] = effect_id(new_id, row[28])
+        row[E_SPELL] = new_id
+        effects.append(row)
+    if not effects:
+        raise KeyError('spell %d: no effects to clone' % source_id)
+
+    spell_dbc.append(spell)
+    misc_dbc.append(misc)
+    for row in effects:
+        effect_dbc.append(row)
+    return {'Spell': [spell], 'SpellMisc': [misc], 'SpellEffect': effects}
+
+
+def _value(row, column, kind=None):
+    if kind == FLOAT:
+        return repr(round(as_float(row[column]), 6))
+    if kind == INT:
+        return str(as_int(row[column]))
+    return str(row[column])
+
+
+def _insert(table, columns, rows, comments):
+    names = ', '.join('`%s`' % c[0] for c in columns)
+    comment = ', `Comment`' if comments else ''
+    values = []
+    for row, note in zip(rows, comments or [None] * len(rows)):
+        cells = [_value(row, *c[1:]) for c in columns]
+        if comments:
+            cells.append("'%s'" % note.replace("'", "''"))
+        values.append('(%s)' % ', '.join(cells))
+    return 'INSERT INTO `%s` (%s%s) VALUES\n%s;\n' % (table, names, comment, ',\n'.join(values))
+
+
+def server_sql(clones: List[dict], rows: List[Dict[str, List[List[int]]]]) -> str:
+    """Idempotent SQL giving the server the same clones."""
+    ids = ', '.join(str(c['id']) for c in clones)
+    spells = [r['Spell'][0] for r in rows]
+    miscs = [r['SpellMisc'][0] for r in rows]
+    effects = [e for r in rows for e in r['SpellEffect']]
+    names = ['%s (clone of %d)' % (c['name'], c['from']) for c in clones]
+    return ''.join([
+        '-- Generated by tools/clientpatch/build.py sql from edits.json; do not edit by hand.\n',
+        '-- Spell clones: the same spells the client patch adds, so server and client agree.\n',
+        'DELETE FROM `spell_dbc` WHERE `Id` IN (%s);\n' % ids,
+        'DELETE FROM `spellmisc_dbc` WHERE `Id` IN (%s);\n' % ids,
+        'DELETE FROM `spelleffect_dbc` WHERE `EffectSpellId` IN (%s);\n' % ids,
+        _insert('spell_dbc', SERVER_SPELL, spells, names),
+        _insert('spellmisc_dbc', SERVER_MISC, miscs, names),
+        _insert('spelleffect_dbc', SERVER_EFFECT, effects, None),
+    ])

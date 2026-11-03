@@ -55,6 +55,20 @@ entry when something took more than one wrong turn to find, and say what would h
 - **Prefer client patches over addon shims** (the human's call): a small edit in `tools/clientpatch/edits.json`
   beats an addon that hooks around Blizzard code.
 
+## Server core
+
+- **Custom spell tables are read by position, not by column name.** `spell_dbc`, `spellmisc_dbc` and
+  `spelleffect_dbc` fill the positions marked `p` in the `Custom*fmt` strings in `DBCfmt.h`, in column order. Some
+  column names lie: in `spell_dbc` the columns named Levels, TargetRestrictions and Interrupts fill Interrupts,
+  Levels and TargetRestrictions; in `spelleffect_dbc` the column named EffectDieSides fills ItemType.
+  `spelleffect_dbc` couldn't set MiscValueB at all until T-086, so summons defined in SQL lost their summon
+  properties: the spell cast fine and nothing appeared. Map by the fmt string (as `tools/clientpatch/spells.py` does)
+  and test a new SQL spell in game, not just its cast.
+- **Clone a client spell instead of renaming it.** Renaming a borrowed spell in the client renames the real ability
+  for everyone (Berserking is the troll racial). A clone in the custom block keeps the effects and visuals under its
+  own name, tooltip and icon; bind the source's class scripts to the clone and port its `SpellMgr` corrections into
+  the clone's attributes.
+
 ## Tools and environment
 
 - **Gemini CLI can't use a subscription.** Google sign-in succeeds, then the CLI is refused: "no longer supported

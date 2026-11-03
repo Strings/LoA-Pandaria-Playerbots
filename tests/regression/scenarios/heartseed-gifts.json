@@ -16,17 +16,17 @@
     "say .npc add temp 6",
     "npcguid 6",
     "say .heartseed major 10 2",
-    "cast 123904 npc",
+    "cast 310100 npc",
     "say .seed sync",
     "say .heartseed major 10 8",
-    "cast 117960",
+    "cast 310103",
     "say .heartseed info",
     "say .heartseed info",
     "say .heartseed major 10 6",
     "say .heartseed meter lit",
-    "cast 116098",
+    "cast 310102",
     "say .heartseed major 10 4",
-    "cast 148009",
+    "cast 310101",
     "say .heartseed revoke"
   ],
   "assertions": [
@@ -36,7 +36,7 @@
     },
     {
       "type": "contains",
-      "text": "A Celestial Gift wakes: Invoke Xuen, the White Tiger"
+      "text": "A Celestial Gift wakes: Call of Xuen"
     },
     {
       "type": "contains",
@@ -48,43 +48,43 @@
     },
     {
       "type": "contains",
-      "text": "spell_candidates=484|123904"
+      "text": "|310100 "
     },
     {
       "type": "contains",
-      "text": "|117960"
+      "text": "|310103"
     },
     {
       "type": "contains",
-      "text": "|116098"
+      "text": "|310102"
     },
     {
       "type": "contains",
-      "text": "A Celestial Gift wakes: Celestial Breath"
+      "text": "A Celestial Gift wakes: Serpent's Breath"
     },
     {
       "type": "contains",
-      "text": "A Celestial Gift wakes: Ox Charge"
+      "text": "A Celestial Gift wakes: Niuzao's Retort"
     },
     {
       "type": "contains",
-      "text": "A Celestial Gift wakes: Spirit of Chi-Ji"
+      "text": "A Celestial Gift wakes: Crane's Plume"
     },
     {
       "type": "not_contains",
-      "text": "SMSG_CAST_FAILED spell=123904"
+      "text": "SMSG_CAST_FAILED spell=310100"
     },
     {
       "type": "not_contains",
-      "text": "SMSG_CAST_FAILED spell=117960"
+      "text": "SMSG_CAST_FAILED spell=310103"
     },
     {
       "type": "not_contains",
-      "text": "SMSG_CAST_FAILED spell=116098"
+      "text": "SMSG_CAST_FAILED spell=310102"
     },
     {
       "type": "not_contains",
-      "text": "SMSG_CAST_FAILED spell=148009"
+      "text": "SMSG_CAST_FAILED spell=310101"
     },
     {
       "type": "not_contains",

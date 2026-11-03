@@ -16,16 +16,16 @@
     "say .npc add temp 6",
     "npcguid 6",
     "say .heartseed major 10 2",
-    "cast 123904 npc",
+    "cast 310100 npc",
     "wait-for evt=never timeout=3",
     "npcguid 63508",
-    "cast 123904 npc",
+    "cast 310100 npc",
     "wait-for evt=never timeout=4",
     "npcguid 63508",
     "wait-for evt=never timeout=8",
     "say .npc add temp 6",
     "npcguid 6",
-    "cast 123904 npc",
+    "cast 310100 npc",
     "say .heartseed revoke"
   ],
   "assertions": [
@@ -35,7 +35,7 @@
     },
     {
       "type": "regex",
-      "pattern": "(?s)spell_candidates=\\d+\\|123904 .*SMSG_CAST_FAILED spell=123904 result=70.*spell_candidates=\\d+\\|123904 "
+      "pattern": "(?s)spell_candidates=\\d+\\|310100 .*SMSG_CAST_FAILED spell=310100 result=70.*spell_candidates=\\d+\\|310100 "
     },
     {
       "type": "regex",
@@ -43,7 +43,7 @@
     },
     {
       "type": "not_contains",
-      "text": "SMSG_CAST_FAILED spell=123904 result=13"
+      "text": "SMSG_CAST_FAILED spell=310100 result=13"
     },
     {
       "type": "not_contains",

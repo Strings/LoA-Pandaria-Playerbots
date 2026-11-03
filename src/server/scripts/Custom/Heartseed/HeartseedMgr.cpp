@@ -1929,17 +1929,26 @@ void HeartseedMgr::RefreshTraits(Player* player)
 void HeartseedMgr::SyncGifts(Player* player, std::set<uint32> const& wanted, bool announce)
 {
     std::set<uint32> all;
+    std::map<uint32, std::string> names;
     {
         std::lock_guard<std::mutex> guard(_lock);
         for (auto const& [traitId, trait] : _traits)
             if (trait.GiftSpellId)
+            {
                 all.insert(trait.GiftSpellId);
+                names[trait.GiftSpellId] = trait.Name;
+            }
         auto itr = _states.find(player->GetGUID().GetCounter());
         if (itr != _states.end())
             itr->second.TaughtGifts = wanted;
     }
 
-    // Gifts reuse client spells, some of them monk talents: a monk who took the talent keeps it.
+    // Gifts are clones of client spells (T-086); before that they were the client spells themselves, some of them
+    // monk talents, so the old ones are taken back too unless a monk took the talent.
+    for (uint32 spellId : Heartseed::RETIRED_GIFT_SPELLS)
+        if (player->HasSpell(spellId) && !player->HasTalent(spellId, player->GetActiveSpec()))
+            player->RemoveSpell(spellId);
+
     for (uint32 spellId : all)
     {
         bool has = player->HasSpell(spellId);
@@ -1948,10 +1957,10 @@ void HeartseedMgr::SyncGifts(Player* player, std::set<uint32> const& wanted, boo
             if (has)
                 continue;
             player->LearnSpell(spellId, false);
+            // The trait's name: Gift clones have no name on the server, only in the client patch.
             if (announce)
-                if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId))
-                    ChatHandler(player->GetSession()).PSendSysMessage("|cff40ff40Your Heartseed stirs. A Celestial Gift wakes: %s. Find it in your spellbook.|r",
-                        spellInfo->SpellName);
+                ChatHandler(player->GetSession()).PSendSysMessage("|cff40ff40Your Heartseed stirs. A Celestial Gift wakes: %s. Find it in your spellbook.|r",
+                    names[spellId].c_str());
         }
         else if (has && !player->HasTalent(spellId, player->GetActiveSpec()))
             player->RemoveSpell(spellId);

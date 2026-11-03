@@ -1,0 +1,81 @@
+import struct
+import sys
+import unittest
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+
+import spells  # noqa: E402
+from dbcfile import Dbc  # noqa: E402
+
+
+def table(fields, rows, strings=b'\0'):
+    raw = struct.pack('<4sIIII', b'WDBC', len(rows), fields, fields * 4, len(strings))
+    for row in rows:
+        raw += struct.pack('<%dI' % fields, *row)
+    return raw + strings
+
+
+def source_tables():
+    spell = [0] * 25
+    spell[0], spell[1], spell[13], spell[24] = 500, 1, 77, 900  # name "Old", categories 77, misc row 900
+    misc = [0] * 26
+    misc[0], misc[1], misc[5], misc[8], misc[23] = 900, 500, 0x20, 0x200, 42  # attributes_ex2, ex5, icon
+    effects = []
+    for index in range(2):
+        effect = [0] * 30
+        effect[0], effect[2], effect[6], effect[27], effect[28] = 7000 + index, 6, (-5 + index) & 0xFFFFFFFF, 500, index
+        effects.append(effect)
+    other = [0] * 30
+    other[0], other[1], other[27] = 7100, 1, 500  # a heroic-difficulty row, not cloned
+    return {'Spell': Dbc(table(25, [spell], b'\0Old\0'), 'Spell.dbc'),
+            'SpellMisc': Dbc(table(26, [misc]), 'SpellMisc.dbc'),
+            'SpellEffect': Dbc(table(30, effects + [other]), 'SpellEffect.dbc')}
+
+
+EDIT = {'type': 'spell', 'id': 310100, 'from': 500, 'name': "Crane's Plume", 'rank': 'Celestial Gift',
+        'description': 'Heals.', 'icon': 6359, 'attributes': {'attributes_ex2': {'set': 0x4}, 'attributes_ex5': {'clear': 0x200}}}
+
+
+class CloneTests(unittest.TestCase):
+    def test_clone_rows(self):
+        tables = source_tables()
+        rows = spells.clone(EDIT, tables)
+        spell, misc = rows['Spell'][0], rows['SpellMisc'][0]
+        self.assertEqual((spell[0], spell[13], spell[24]), (310100, 77, 310100))
+        self.assertEqual(tables['Spell'].string(spell[1]), "Crane's Plume")
+        self.assertEqual(tables['Spell'].string(spell[3]), 'Heals.')
+        self.assertEqual(spell[4], 0)
+        self.assertEqual((misc[0], misc[1], misc[23], misc[5], misc[8]), (310100, 310100, 6359, 0x24, 0))
+        self.assertEqual([(e[0], e[27], e[28]) for e in rows['SpellEffect']], [(3101000, 310100, 0), (3101001, 310100, 1)])
+        # The source stays as it was.
+        self.assertEqual(tables['Spell'].string(tables['Spell'].find(0, 500)[0][1]), 'Old')
+
+    def test_round_trip(self):
+        tables = source_tables()
+        spells.clone(EDIT, tables)
+        again = Dbc(tables['Spell'].to_bytes(), 'Spell.dbc')
+        self.assertEqual(again.string(again.find(0, 310100)[0][2]), 'Celestial Gift')
+        self.assertEqual(len(Dbc(tables['SpellEffect'].to_bytes()).rows), 5)
+
+    def test_refusals(self):
+        tables = source_tables()
+        with self.assertRaises(KeyError):
+            spells.clone(dict(EDIT, **{'from': 501}), tables)
+        spells.clone(EDIT, tables)
+        with self.assertRaises(ValueError):
+            spells.clone(EDIT, tables)
+
+    def test_server_sql(self):
+        tables = source_tables()
+        rows = [spells.clone(EDIT, tables)]
+        sql = spells.server_sql([EDIT], rows)
+        self.assertIn("(310100, 0, 0, 77, 0, 0, 0, 0, 0, 310100, 'Crane''s Plume (clone of 500)')", sql)
+        self.assertIn('DELETE FROM `spelleffect_dbc` WHERE `EffectSpellId` IN (310100);', sql)
+        # Signed base points survive as signed values.
+        self.assertIn('(3101000, 6, 0.0, 0, 0, -5,', sql)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -87,6 +87,7 @@ The first playtest starts when the quick wins are merged. T-003, T-004 and T-031
 | T-083 | Heartseed active play (DESIGN.md "Active play, not big cooldowns"): path meters (Thunder, Hope, lit Retort, Coil), Gift cooldowns 20–60 s shortened by play, Crane's Plume and Niuzao's Retort replace Crane Rush and Ox Stomp, proc-gated casts plus addon button glow, Growth XP track with percentage stat points, rank cap removed, effects scale with the character's own stats | `src/server/scripts/Custom/Heartseed/`, `addons/Heartseed/`, `sql/updates/world/`, `sql/updates/characters/`, `tests/heartseed/` | claude | done (part A: meters, Gifts, glow; part B: Growth XP, stat points, rank cap removed) |
 | T-084 | Heartseed Growth from quests and rares near the character's level (repeatable non-daily quests excluded), config keys `Heartseed.Growth.Quest` and `.Rare` | `src/server/scripts/Custom/Heartseed/` | claude | done |
 | T-085 | Client patch archives: DBC and interface edits as data, MPQ writer, install into the client's `Data/`. First edit: the mount journal's level check drops to 1 so mounts drag to the bar (replaces the MountBar addon) | `tools/clientpatch/` | claude | done |
+| T-086 | Gift identity: the Celestial Gifts and their rider auras become their own spells (clones in the 310100 block, client patch plus generated server SQL) with their own names, tooltips and placeholder icons; custom icon art when the panel art lands | `tools/clientpatch/`, `src/server/scripts/Custom/Heartseed/` | claude | review |
 
 ### Tooling (v0.1, cheap first)
 
