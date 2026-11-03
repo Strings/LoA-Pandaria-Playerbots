@@ -54,10 +54,18 @@ class CloneTests(unittest.TestCase):
 
     def test_skill_line_puts_clone_in_spellbook(self):
         tables = source_tables()
-        tables['SkillLineAbility'] = Dbc(table(13, [[27083, 183, 125439, 0, 0, 1] + [0] * 7]), 'SkillLineAbility.dbc')
+        abilities = [[27083, 183, 125439, 0, 0, 1] + [0] * 7, [27090, 183, 125440] + [0] * 10,
+                     [30000, 200, 999999] + [0] * 10]
+        tables['SkillLineAbility'] = Dbc(table(13, abilities), 'SkillLineAbility.dbc')
+        tables['SkillLineAbilitySortedSpell'] = Dbc(
+            table(2, [[27083, 125439], [27090, 125440], [30000, 999999]]), 'SkillLineAbilitySortedSpell.dbc')
         rows = spells.clone(dict(EDIT, skill_line=183), tables)
-        self.assertEqual(rows['SkillLineAbility'], [[310100, 183, 310100, 0, 0, 1] + [0] * 7])
-        self.assertEqual(len(tables['SkillLineAbility'].rows), 2)
+        # Copies the line's last row, takes the next free id and stays inside the line's block.
+        self.assertEqual(rows['SkillLineAbility'], [[30001, 183, 310100] + [0] * 10])
+        self.assertEqual([r[0] for r in tables['SkillLineAbility'].rows], [27083, 27090, 30001, 30000])
+        # The sorted table grows with it, still sorted by spell.
+        self.assertEqual(tables['SkillLineAbilitySortedSpell'].rows,
+                         [[27083, 125439], [27090, 125440], [30001, 310100], [30000, 999999]])
         with self.assertRaises(KeyError):
             spells.clone(dict(EDIT, id=310101, skill_line=999), tables)
 
