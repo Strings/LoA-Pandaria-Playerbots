@@ -5496,8 +5496,20 @@ Heartseed.Growth.DungeonBoss = 50
 Heartseed.Growth.RaidBoss = 100
 
 #
+#    Heartseed.Growth.Quest
+#    Heartseed.Growth.Rare
+#        Description: Growth XP for each quest turned in and each rare killed near the character's level
+#                     (every credited group member earns for a rare). Repeatable quests other than dailies
+#                     and weeklies give none.
+#        Default:     15, 40
+
+Heartseed.Growth.Quest = 15
+Heartseed.Growth.Rare = 40
+
+#
 #    Heartseed.Growth.LevelRange
-#        Description: How many levels below the character a boss may be and still give Growth XP.
+#        Description: How many levels below the character a boss, rare or quest may be and still give
+#                     Growth XP.
 #        Default:     5
 
 Heartseed.Growth.LevelRange = 5

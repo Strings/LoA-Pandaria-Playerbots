@@ -466,6 +466,8 @@ private:
     uint32 _growthBattlegroundWin = 0;
     uint32 _growthDungeonBoss = 0;
     uint32 _growthRaidBoss = 0;
+    uint32 _growthQuest = 0;
+    uint32 _growthRare = 0;
     uint8 _growthLevelRange = 0;
     bool _growthTwinksEarn = false;
     bool _growthResetAtShrineOnly = true;

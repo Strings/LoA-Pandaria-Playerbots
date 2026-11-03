@@ -134,10 +134,12 @@ DESIGN.md Progression, "Three tracks, no rank cap". There is no rank and no cap 
 stages, majors and minors (`min_rank` is a level), feeding gives appearances and essences, and Growth XP gives
 power, each the character's own.
 
-- **Growth XP** comes from battleground wins (`Heartseed.Growth.BattlegroundWin`, arenas excluded) and dungeon
-  and raid boss kills (`.DungeonBoss`, `.RaidBoss`) at most `.LevelRange` levels below the character, for every
-  credited group member. Growth level L to L + 1 costs `.XpBase + .XpPerLevel * L`; no cap.
-  `HeartseedMgr::AddGrowthXp` is the one entry point for later sources (quests, rares, events).
+- **Growth XP** comes from battleground wins (`Heartseed.Growth.BattlegroundWin`, arenas excluded), quest
+  turn-ins (`.Quest`; repeatable quests other than dailies and weeklies give none), rare kills (`.Rare`, creature
+  rank rare or rare elite) and dungeon and raid boss kills (`.DungeonBoss`, `.RaidBoss`). Quests, rares and
+  bosses count at most `.LevelRange` levels below the character; kills pay every credited group member. Growth
+  level L to L + 1 costs `.XpBase + .XpPerLevel * L`; no cap. `HeartseedMgr::AddGrowthXp` is the one entry
+  point for later sources (custom rares, events, Sha hunters).
 - The battleground result reaches the script through `BattlegroundHooks` (`src/server/game/Scripting/`), a
   small dispatch the core calls from `Battleground::EndBattleground`, so `ScriptMgr.h` stays untouched.
 - **Only the character being played earns.** The player's alts logged in as playerbots keep their points but
@@ -253,7 +255,7 @@ worldserver.conf:
 - `Heartseed.Core.WeaponDamagePct` (5), `Heartseed.Proc.SpellId` (16614, placeholder look),
   `Heartseed.Proc.Chance` (10), `Heartseed.Proc.WeaponDamagePct` (50), `Heartseed.Proc.Cooldown` (3000 ms).
 - Growth XP (T-083): `Heartseed.Growth.XpBase` (300), `.XpPerLevel` (50), `.BattlegroundWin` (100),
-  `.DungeonBoss` (50), `.RaidBoss` (100), `.LevelRange` (5), `.TwinksEarn` (0), `.ResetAtShrineOnly` (1).
+  `.DungeonBoss` (50), `.RaidBoss` (100), `.Quest` (15, T-084), `.Rare` (40, T-084), `.LevelRange` (5), `.TwinksEarn` (0), `.ResetAtShrineOnly` (1).
 - Feeding: `Heartseed.Feed.OnReplace` (1), `.Qualities` ("0 1 2 3 4", poor to epic).
 - Essences: `Heartseed.Essence.ProcCooldown` (3000 ms), `.AutoSlot` (1), `.SlotLevels` ("10 40 70").
 - Major tiers: `Heartseed.Majors.TierLevels` ("10 25 40 55 70 85"). The number of tiers and slots is fixed;

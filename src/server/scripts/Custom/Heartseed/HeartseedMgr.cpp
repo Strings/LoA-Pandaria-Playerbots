@@ -192,6 +192,8 @@ void HeartseedMgr::LoadConfig()
     _growthBattlegroundWin = sConfigMgr->GetIntDefault("Heartseed.Growth.BattlegroundWin", 100);
     _growthDungeonBoss = sConfigMgr->GetIntDefault("Heartseed.Growth.DungeonBoss", 50);
     _growthRaidBoss = sConfigMgr->GetIntDefault("Heartseed.Growth.RaidBoss", 100);
+    _growthQuest = sConfigMgr->GetIntDefault("Heartseed.Growth.Quest", 15);
+    _growthRare = sConfigMgr->GetIntDefault("Heartseed.Growth.Rare", 40);
     _growthLevelRange = uint8(std::clamp(sConfigMgr->GetIntDefault("Heartseed.Growth.LevelRange", 5), 0, 255));
     _growthTwinksEarn = sConfigMgr->GetBoolDefault("Heartseed.Growth.TwinksEarn", false);
     _growthResetAtShrineOnly = sConfigMgr->GetBoolDefault("Heartseed.Growth.ResetAtShrineOnly", true);
@@ -1121,6 +1123,13 @@ void HeartseedMgr::OnQuestRewarded(Player* player, Quest const* quest)
     // Any way of completing the quest grants it: this one, and later the Theramore intro scenario.
     if (quest->GetQuestId() == _grantQuestId && Grant(player))
         ChatHandler(player->GetSession()).SendSysMessage("A Heartseed has taken root in your weapon.");
+
+    // Questing is how a fresh character levels, so it feeds Growth too. Repeatable turn-ins other than dailies and
+    // weeklies could be farmed, and quests far below the character are skipped like gray bosses.
+    if (quest->IsRepeatable() && !quest->IsDailyOrWeekly())
+        return;
+    if (Heartseed::GrowthSourceNearLevel(player->GetLevel(), uint8(std::clamp(player->GetQuestLevel(quest), 0, 255)), _growthLevelRange))
+        AddGrowthXp(player, _growthQuest);
 }
 
 bool HeartseedMgr::ReachStoryBeat(Player* player, uint16 flag)
@@ -1155,11 +1164,18 @@ void HeartseedMgr::OnKillCredit(Player* player, Creature* killed)
     if (_storyHooks && _worldBossEntries.count(killed->GetEntry()))
         ReachStoryBeat(player, Heartseed::STORY_FLAG_FIRST_WORLD_BOSS);
 
-    // Every credited group member earns for a dungeon or raid boss near its own level.
+    // Every credited group member earns for a rare out in the world, or a dungeon or raid boss, near its own level.
+    if (!Heartseed::GrowthSourceNearLevel(player->GetLevel(), killed->GetLevel(), _growthLevelRange))
+        return;
+    uint32 rank = killed->GetCreatureTemplate()->rank;
+    if (rank == CREATURE_ELITE_RARE || rank == CREATURE_ELITE_RAREELITE)
+    {
+        AddGrowthXp(player, _growthRare);
+        return;
+    }
+
     Map const* map = killed->GetMap();
     if (!map || !map->IsDungeon() || !(killed->IsDungeonBoss() || killed->isWorldBoss()))
-        return;
-    if (!Heartseed::GrowthSourceNearLevel(player->GetLevel(), killed->GetLevel(), _growthLevelRange))
         return;
     AddGrowthXp(player, map->IsRaid() ? _growthRaidBoss : _growthDungeonBoss);
 }
@@ -1234,7 +1250,7 @@ uint32 HeartseedMgr::AddGrowthXp(Player* player, uint32 amount)
     {
         // The system's introduction: the first point is when it means something to the player.
         player->GetSession()->SendNotification("Your Heartseed has grown. Spend its stat point in the Heartseed panel (/hs).");
-        handler.SendSysMessage("Battleground wins and dungeon and raid bosses near your level feed your Heartseed's Growth. Each Growth "
+        handler.SendSysMessage("Quests, rares, battleground wins and dungeon and raid bosses near your level feed your Heartseed's Growth. Each Growth "
             "level is a stat point for stamina, your main stat or a secondary: spend it in the Heartseed panel (/hs) or with .seed spend. "
             "A Celestial shrine takes them back so you can spend them again.");
     }

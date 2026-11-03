@@ -20,6 +20,18 @@
     "say .seed reset",
     "say .heartseed points reset",
     "say .heartseed growth 0",
+    "say .quest remove 9029",
+    "say .quest remove 7889",
+    "say .quest add 9029",
+    "say .quest complete 9029",
+    "say .quest reward 9029",
+    "say .heartseed growth",
+    "say .quest add 7889",
+    "say .quest complete 7889",
+    "say .quest reward 7889",
+    "say .heartseed growth",
+    "say .quest remove 9029",
+    "say .quest remove 7889",
     "say .heartseed flag set first_dungeon",
     "say .heartseed flag clear first_dungeon",
     "say .heartseed essence add 1",
@@ -28,6 +40,10 @@
     "say .heartseed info"
   ],
   "assertions": [
+    {
+      "type": "regex",
+      "pattern": "(?s)step: say .quest reward 9029.*?step: say .heartseed growth.*?Growth of Seedtest: level 0, 15 of 300 XP.*?step: say .quest reward 7889.*?step: say .heartseed growth.*?Growth of Seedtest: level 0, 15 of 300 XP"
+    },
     {
       "type": "contains",
       "text": "LOGIN-OK map="
