@@ -69,6 +69,20 @@ def patch_text(raw: bytes, path: str, edits) -> bytes:
     return text.encode('utf-8')
 
 
+# A Blizzard addon's .toc.sig is a 276-byte signed hash of the addon's files; an edited file makes it fail and
+# the client refuses the addon as CORRUPT. A signature of any other size counts as absent, so the addon loads
+# unsigned instead.
+UNSIGNED_SIG = b'unsigned by tools/clientpatch\n'
+
+
+def unsigned_sig_path(path: str):
+    parts = path.split('\\')
+    if len(parts) > 3 and parts[0].lower() == 'interface' and parts[1].lower() == 'addons' \
+            and parts[2].lower().startswith('blizzard_'):
+        return '\\'.join(parts[:3] + [parts[2] + '.toc.sig'])
+    return None
+
+
 def build_archive(manifest: dict, dbc_dir: Path, client_dir: Path) -> bytes:
     by_file = {}
     for edit in manifest['edits']:
@@ -79,6 +93,9 @@ def build_archive(manifest: dict, dbc_dir: Path, client_dir: Path) -> bytes:
             # Read the client's current copy, never our own archive, so rebuilding is repeatable.
             current = client.read_current(str(client_dir), filename, skip=(manifest['archive'],))
             files[filename] = patch_text(current, filename, edits)
+            sig = unsigned_sig_path(filename)
+            if sig:
+                files[sig] = UNSIGNED_SIG
             continue
         schema = get_schema(filename)
         if not schema:

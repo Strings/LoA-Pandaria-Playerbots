@@ -72,6 +72,13 @@ class TextEditTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 build.patch_text(source, 'f.lua', [{'from': 'local X = 20;', 'to': 'local X = 1;'}])
 
+    def test_blizzard_addon_edits_ship_an_unsigned_sig(self):
+        self.assertEqual(build.unsigned_sig_path('Interface\\AddOns\\Blizzard_PetJournal\\Blizzard_PetJournal.lua'),
+                         'Interface\\AddOns\\Blizzard_PetJournal\\Blizzard_PetJournal.toc.sig')
+        self.assertNotEqual(len(build.UNSIGNED_SIG), 276)
+        self.assertIsNone(build.unsigned_sig_path('Interface\\AddOns\\MyAddon\\MyAddon.lua'))
+        self.assertIsNone(build.unsigned_sig_path('Interface\\FrameXML\\UIParent.lua'))
+
 
 if __name__ == '__main__':
     unittest.main()
