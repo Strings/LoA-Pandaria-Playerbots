@@ -62,11 +62,22 @@
     },
     {
       "type": "row",
+      "file": "SpellVisualEffectName.db2",
+      "id": 310103,
+      "from": 13139,
+      "set": {
+        "scale": 0.5
+      },
+      "why": "Serpent's Breath visual (T-086): its own copy of the jade dragon breath model so it can be sized apart from Cleansing Breath. Its flame travels about 30 model units; 0.5 carries it about 15 yards, past the breath's measured reach (.areaprobe: hits to 12.5-14.5 yards from a target's edge). Tune here."
+    },
+    {
+      "type": "row",
       "file": "SpellVisualKitModelAttach.db2",
       "id": 310103,
       "from": 18040,
       "set": {
-        "parent_spell_visual_kit_id": 310103
+        "parent_spell_visual_kit_id": 310103,
+        "spell_visual_effect_name_id": 310103
       },
       "why": "Serpent's Breath visual (T-086): the jade dragon breath model on the caster's breath point, so it comes from the mouth and scales with the caster's model."
     },

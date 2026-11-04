@@ -10,7 +10,7 @@ namespace MountedSpeed
 
     inline float ValidMultiplier(float value)
     {
-        return std::isfinite(value) && value > 0.0f ? value : 2.0f;
+        return std::isfinite(value) && value > 0.0f ? value : 2.4f;
     }
 
     constexpr float AdjustRate(float rate, float multiplier)

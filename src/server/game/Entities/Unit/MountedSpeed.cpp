@@ -5,15 +5,15 @@
 
 namespace
 {
-    std::atomic<float> multiplier{ 2.0f };
+    std::atomic<float> multiplier{ 2.4f };
 }
 
 void MountedSpeed::Load()
 {
-    float configured = sConfigMgr->GetFloatDefault("Rate.MountedSpeed", 2.0f);
+    float configured = sConfigMgr->GetFloatDefault("Rate.MountedSpeed", 2.4f);
     float value = ValidMultiplier(configured);
     if (value != configured)
-        TC_LOG_ERROR("server.loading", "Rate.MountedSpeed must be finite and positive; using 2.0.");
+        TC_LOG_ERROR("server.loading", "Rate.MountedSpeed must be finite and positive; using 2.4.");
     multiplier.store(value, std::memory_order_relaxed);
 }
 
