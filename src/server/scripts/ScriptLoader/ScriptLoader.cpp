@@ -2171,8 +2171,11 @@ void AddSC_starting_kit();
 void AddSC_telemetry();
 void AddSC_gmtools_areaprobe();
 
+void AddSC_twink_xp();
+
 void AddCustomScripts()
 {
+    AddSC_twink_xp();
 #ifdef SCRIPTS
     /* This is where custom scripts should be added. */
 //AddSC_npc_teleport();
