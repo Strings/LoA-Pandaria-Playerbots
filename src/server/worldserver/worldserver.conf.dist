@@ -5980,3 +5980,37 @@ SoloQoL.NativeTransmogRules = 1
 # Disabling preserves the chosen flag and restores native paid NPC behavior.
 Twinks.FreeXPToggle = 1
 Twinks.IntroOnLogin = 1
+
+###################################################################################################
+# AFFIXED RARES (T-089)
+#
+#    Rares.Affixes.Enable
+#        Description: Open-world rares and rare elites roll affixes from affix_template when they spawn or
+#                     respawn. Each affix shows as a buff on the rare and adds XP and loot.
+#        Default:     1
+#
+#    Rares.Affixes.CountWeights
+#        Description: Weights for 0, 1, 2 and 3 affixes, comma separated.
+#        Default:     "30,40,22,8"
+#
+#    Rares.BotsWaitForPlayer
+#        Description: An affixed rare carries "Unclaimed" until a human player damages it: bots don't target it
+#                     and it doesn't attack bots. A rare that evades is unclaimed again.
+#        Default:     1
+#
+#    Rares.Xp.BaseLevelFraction
+#    Rares.Xp.MaxLevelFraction
+#        Description: Extra kill XP as a share of the killer's current level: the base plus each affix's
+#                     xp_bonus_pct, capped at the max. Paid to the killer and group members in reward range.
+#        Default:     0.25, 1.0
+#
+#    Rares.IntroOnFirstClaim
+#        Description: The first claim per character this server run shows a short popup.
+#        Default:     1
+
+Rares.Affixes.Enable = 1
+Rares.Affixes.CountWeights = "30,40,22,8"
+Rares.BotsWaitForPlayer = 1
+Rares.Xp.BaseLevelFraction = 0.25
+Rares.Xp.MaxLevelFraction = 1.0
+Rares.IntroOnFirstClaim = 1

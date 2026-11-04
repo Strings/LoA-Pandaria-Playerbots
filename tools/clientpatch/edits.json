@@ -102,7 +102,10 @@
       "icon": 6335,
       "cooldown": 30000,
       "cast_time_index": 1,
-      "interrupts": {"clear_aura": 24, "clear_channel": 24},
+      "interrupts": {
+        "clear_aura": 24,
+        "clear_channel": 24
+      },
       "visual": 310103,
       "attributes": {
         "attributes_ex5": {
@@ -167,6 +170,105 @@
       "description": "Yu'lon's jade fire burns the enemy over time.",
       "aura_description": "Burning with jade fire.",
       "why": "Heartseed Gift rider aura (T-086): its own name and tooltip instead of the borrowed spell's. Clone of Jade Serpent Wave."
+    },
+    {
+      "type": "spell",
+      "id": 318000,
+      "from": 33208,
+      "name": "Unclaimed",
+      "rank": "Affix",
+      "icon": 3390,
+      "description": "Bots leave this rare alone until a player strikes it.",
+      "aura_description": "Unclaimed: bots leave it to you until you strike first.",
+      "why": "Affixed rares (T-089): the bot hold on an unclaimed rare."
+    },
+    {
+      "type": "spell",
+      "id": 318001,
+      "from": 33208,
+      "name": "Molten",
+      "rank": "Affix",
+      "icon": 33,
+      "description": "Pulses fire at nearby enemies and explodes when it dies.",
+      "aura_description": "Molten: pulses fire around it and explodes on death.",
+      "why": "Affixed rares (T-089): a visible marker aura on the rare, clone of a periodic dummy aura; the server's spell_affix_marker script runs the affix."
+    },
+    {
+      "type": "spell",
+      "id": 318002,
+      "from": 33208,
+      "name": "Frozen",
+      "rank": "Affix",
+      "icon": 193,
+      "description": "Bursts into frost novas that freeze nearby enemies in place.",
+      "aura_description": "Frozen: frost novas root nearby enemies.",
+      "why": "Affixed rares (T-089): a visible marker aura on the rare, clone of a periodic dummy aura; the server's spell_affix_marker script runs the affix."
+    },
+    {
+      "type": "spell",
+      "id": 318003,
+      "from": 33208,
+      "name": "Vampiric",
+      "rank": "Affix",
+      "icon": 150,
+      "description": "Heals itself for part of the damage it deals.",
+      "aura_description": "Vampiric: heals from the damage it deals.",
+      "why": "Affixed rares (T-089): a visible marker aura on the rare, clone of a periodic dummy aura; the server's spell_affix_marker script runs the affix."
+    },
+    {
+      "type": "spell",
+      "id": 318004,
+      "from": 33208,
+      "name": "Shielded",
+      "rank": "Affix",
+      "icon": 566,
+      "description": "Wraps itself in an absorb shield again and again.",
+      "aura_description": "Shielded: shields itself periodically.",
+      "why": "Affixed rares (T-089): a visible marker aura on the rare, clone of a periodic dummy aura; the server's spell_affix_marker script runs the affix."
+    },
+    {
+      "type": "spell",
+      "id": 318005,
+      "from": 33208,
+      "name": "Teleporting",
+      "rank": "Affix",
+      "icon": 1499,
+      "description": "Blinks behind its target.",
+      "aura_description": "Teleporting: blinks behind you.",
+      "why": "Affixed rares (T-089): a visible marker aura on the rare, clone of a periodic dummy aura; the server's spell_affix_marker script runs the affix."
+    },
+    {
+      "type": "spell",
+      "id": 318006,
+      "from": 33208,
+      "name": "Juggernaut",
+      "rank": "Affix",
+      "icon": 2005,
+      "description": "Huge, slow and unstoppable: more health, immune to roots, snares and stuns.",
+      "aura_description": "Juggernaut: more health, can't be rooted, snared or stunned.",
+      "why": "Affixed rares (T-089): a visible marker aura on the rare, clone of a periodic dummy aura; the server's spell_affix_marker script runs the affix."
+    },
+    {
+      "type": "spell",
+      "id": 318007,
+      "from": 33208,
+      "name": "Summoner",
+      "rank": "Affix",
+      "icon": 217,
+      "description": "Calls Sha minions to its side.",
+      "aura_description": "Summoner: calls minions.",
+      "why": "Affixed rares (T-089): a visible marker aura on the rare, clone of a periodic dummy aura; the server's spell_affix_marker script runs the affix."
+    },
+    {
+      "type": "spell",
+      "id": 318008,
+      "from": 33208,
+      "name": "Sha-touched",
+      "rank": "Affix",
+      "icon": 6580,
+      "description": "The Sha's despair sends nearby enemies fleeing in fear.",
+      "aura_description": "Sha-touched: fears those who stand close.",
+      "why": "Affixed rares (T-089): a visible marker aura on the rare, clone of a periodic dummy aura; the server's spell_affix_marker script runs the affix."
     }
   ],
   "server_sql": "sql/updates/world/2026_11_03_claude_00_heartseed_gift_spells.sql"
