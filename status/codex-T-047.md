@@ -1,4 +1,4 @@
-BLOCKED: On the Codex test realm, does the real client show simultaneous creature/resource markers and multiple tracking checkmarks after `trackingprobe all`?
+BLOCKED: The human reports the client is crashing. Claude owns crash fixes; the human explicitly asked Codex not to fix it. Resume the client tracking observation once the client is usable.
 
 # T-047: Native multiple-tracking probe
 
@@ -33,3 +33,5 @@ AGENTS.md requires asking before computer use. The handoff explicitly asks for h
 ## Map additions
 - lua_scripts/Custom/Tracking/: opt-in native tracking diagnostic and instructions.
 - tools/tracking/: Lua VM/API compatibility tests.
+
+Human update (2026-11-04): client currently crashes; crash investigation may be read-only, fixes belong to Claude. No GUI or crash fix attempted. Continuing T-007.
