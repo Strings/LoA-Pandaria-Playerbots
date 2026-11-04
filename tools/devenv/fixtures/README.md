@@ -15,7 +15,13 @@ The non-secret fixture-manifest.json maps stable IDs (warrior-001/030/060/085/09
 
 ## Pre-generated bots and cold-file reset
 
-Create a small bot pool once with an existing generated test/local runtime: AiPlayerbot.Enabled=1, RandomBotAccountCount=3, RandomBotAutologin=0, RandomBotLoginAtStartup=0, MinRandomBots=0. Keep MaxRandomBots at the local profile's limit. Start it on your own ports; the native factory creates the accounts/characters. Use .botscenario <name> login, then .botscenario <name> randomize <level> to initialize a local roster once. Use tools/devenv/stage_local.py to anchor a roster in one zone when needed. Shut that world down cleanly, then use test/none for fixture tests. Both runtimes must point at the same per-agent databases and bot-account prefix. No scale load or shared server is needed.
+Create the small offline bot pool once using the bootstrap profile (no existing roster is needed):
+
+```
+python tools/devenv/setup.py --agent codex --gamedata I:/UltimateMoP/gamedata --binaries build/bin --output build/bot-bootstrap --profile test --load bootstrap
+```
+
+Stop any world using your ports, then start the bootstrap world. It enables the native factory with three accounts and disables automatic bot login (both population limits are zero). This profile is distinct from none/local and cannot run the regression suite or fixture provisioning. Account count and login switches live in tools/devenv/profiles.json. After it creates the characters, collect a 20..50-name roster from your own databases and stop the bootstrap world. Generate a test/local runtime with --roster to explicitly initialize/anchor that roster using tools/devenv/stage_local.py, then .botscenario <name> randomize <level> once. Stop cleanly after initialization; use test/none for ordinary fixture tests. All runtimes must use the same private databases and bot-account prefix. A repeated bootstrap reuses existing accounts; normal test runs restore the saved baseline instead of re-randomizing it.
 
 Copy tools/backup/config.example.json into build/fixture-backup.json. Keep all four databases paired, including auth (bot accounts/credentials), characters (gear/characters), world (checkpoint version) and playerbots (AI state). Use an unused capture port and worktree-local snapshot/check roots. Stop your private world before capture; fixture/bot rows must be offline. Select 20..50 existing bot characters. The tool verifies the five fixtures, records the bot roster, and delegates capture to T-037:
 
@@ -24,7 +30,7 @@ python tools/devenv/fixtures/fixtures.py --runtime build/devenv --mysql-bin "C:/
 python tools/devenv/fixtures/fixtures.py --runtime build/devenv --mysql-bin "C:/Program Files/MySQL/MySQL Server 8.0/bin" restore build/fixture-snapshots/SNAPSHOT build/fixture-restored/data
 ```
 
-Snapshots stay gitignored. fixture-baseline.json records their stable fixture map and pre-generated bot roster. T-037 imports a consistent capture into a new isolated MySQL instance, stops it, hashes the cold files and restores by verified file copy. The restore destination must be new and below this worktree's build directory; existing databases/services are never replaced. Use the matching MySQL version on a separate unused local port. See tools/backup/README.md for launching restored data. Restoring into the shared service is outside this tool.
+Snapshots stay gitignored. Keep the runtime's private checkpoint-fixture-account.json and connection configuration alongside your private backup; the non-secret baseline manifest deliberately contains no login password. fixture-baseline.json records their stable fixture map and pre-generated bot roster. T-037 imports a consistent capture into a new isolated MySQL instance, stops it, hashes the cold files and restores by verified file copy. The restore destination must be new and below this worktree's build directory; existing databases/services are never replaced. Use the matching MySQL version on a separate unused local port. See tools/backup/README.md for launching restored data. Restoring into the shared service is outside this tool.
 
 The test-only idempotent SQL is sql/fixtures/2026_11_04_codex_00_checkpoint_fixtures.sql. provision applies only its fixture-* template rows to the private world database and reloads checkpoints through the first fixture. No new schema, core hooks, config timers or production update are introduced. Limits live in sql/fixtures/characters.json.
 

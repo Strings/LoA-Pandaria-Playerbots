@@ -66,3 +66,7 @@ The generator does not select LLM providers: none exist yet. New provider keys
 must explicitly choose scripted in test policy when introduced.
 
 Tests: `python -m unittest discover -s tools/devenv -v`.
+
+## One-time offline bot bootstrap (T-007)
+
+Use --profile test --load bootstrap to create three native random-bot accounts before a local roster exists. It sets both population limits and auto-login switches to zero; only the native character factory runs. This is a preparation profile, not a regression load. Stop it before starting the regular test/none or test/local runtime on the same agent ports. tools/devenv/fixtures/README.md covers the full initialized-roster and cold-file snapshot workflow.

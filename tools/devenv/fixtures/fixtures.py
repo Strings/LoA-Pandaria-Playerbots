@@ -67,9 +67,6 @@ class Environment:
         if self.host not in ('127.0.0.1', 'localhost') or database != self.databases[2]:
             raise ValueError('world config does not match private local metadata')
         for kind, expected in zip(('Login', 'Character', 'World', 'Playerbots'), self.databases):
-            # Playerbots connection is configured in its own file on this fork.
-            if kind == 'Playerbots':
-                continue
             values = re.findall(r'^' + kind + r'DatabaseInfo\s*=\s*"([^"]+)"', config, re.M)
             if len(values) != 1 or values[0].split(';') != [self.host, self.port, self.user, self.password, expected]:
                 raise ValueError('database connections disagree with private metadata')
@@ -269,7 +266,7 @@ def snapshot(env, config_path, bot_count):
     if len(matches) != 1:
         raise ValueError('expected one explicit bot account prefix')
     prefix = matches[0]
-    bots = env.query('SELECT c.guid,c.name,c.account,c.race,c.class,c.level,c.online FROM characters c JOIN `' + env.databases[0] + "`.account a ON a.id=c.account WHERE LEFT(a.username," + str(len(prefix)) + ")='" + prefix + "' ORDER BY c.guid LIMIT " + str(bot_count) + ';')
+    bots = env.query('SELECT c.guid,c.name,c.account,c.race,c.class,c.level,c.online FROM characters c JOIN `' + env.databases[0] + "`.account a ON a.id=c.account WHERE UPPER(LEFT(a.username," + str(len(prefix)) + "))='" + prefix.upper() + "' ORDER BY c.guid LIMIT " + str(bot_count) + ';')
     if len(bots) != bot_count or any(row[6] != '0' for row in bots):
         raise ValueError('generate the local bot pool once and log it out before snapshot')
     # Reuse T-037 capture/restore and its hash/version safeguards, without duplicating InnoDB logic.

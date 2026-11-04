@@ -2,7 +2,7 @@
   "version": 1,
   "limits": {
     "query_seconds": 30,
-    "probe_seconds": 2,
+    "probe_seconds": 5,
     "client_seconds": 180,
     "logout_seconds": 60,
     "poll_seconds": 1

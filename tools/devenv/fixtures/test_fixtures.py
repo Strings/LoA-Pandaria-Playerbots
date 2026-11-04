@@ -50,6 +50,22 @@ class Tests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     f.Environment(runtime, root=root)
 
+    def test_world_config_cannot_hide_a_foreign_bot_database(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = (Path(directory) / 'codex').resolve()
+            runtime = root / 'build/test'
+            runtime.mkdir(parents=True)
+            metadata = {'agent': 'codex', 'profile': 'test', 'load': 'none',
+                        'databases': ['auth_codex', 'characters_codex', 'world_codex', 'playerbots_codex'],
+                        'auth_port': 3744, 'world_port': 8105, 'soap_port': 7898}
+            (runtime / 'environment.json').write_text(json.dumps(metadata))
+            config = '\n'.join(kind + 'DatabaseInfo = "127.0.0.1;3306;test;secret;' + database + '"'
+                               for kind, database in [('Login', 'auth_codex'), ('Character', 'characters_codex'),
+                               ('World', 'world_codex'), ('Playerbots', 'playerbots_claude')])
+            (runtime / 'worldserver.conf').write_text(config)
+            with self.assertRaises(ValueError):
+                f.Environment(runtime, root=root)
+
     def test_character_identity_or_online_state_must_match(self):
         fixture = f.load_catalog()['fixtures'][0]
         env = SimpleNamespace(query=Mock())
@@ -99,6 +115,14 @@ class Tests(unittest.TestCase):
             with patch.object(f, 'character', return_value=9), patch.object(f, 'state', return_value={'equipment': [[15, 12282, 100, 0]]}):
                 with self.assertRaises(ValueError):
                     f.verify(env, {'id': 7})
+
+    def test_closed_world_and_uncertain_timeout_are_distinct(self):
+        env = SimpleNamespace(meta={'world_port': 8105}, limits={'probe_seconds': 5})
+        with patch.object(f.socket, 'create_connection', side_effect=ConnectionRefusedError):
+            self.assertFalse(f.Environment.running(env))
+        with patch.object(f.socket, 'create_connection', side_effect=f.socket.timeout):
+            with self.assertRaises(RuntimeError):
+                f.Environment.running(env)
 
     def test_live_snapshot_is_rejected_before_capture(self):
         env = SimpleNamespace(running=Mock(return_value=True))

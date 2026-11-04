@@ -108,6 +108,8 @@ def generate(args):
     world.update(profiles[args.profile]['world'])
     world = {key: str(value).replace('{repo}', ROOT.as_posix()) for key, value in world.items()}
     bots = dict(profiles[args.profile]['bots'], **profiles['loads'][args.load])
+    if args.load == 'bootstrap' and args.profile != 'test':
+        raise ValueError('bot bootstrap requires the test profile')
     if args.load == 'scale' and not args.performance:
         raise ValueError('scale profile requires --performance')
     if args.load == 'local':
@@ -150,7 +152,7 @@ def main():
     parser.add_argument('--db-user', default='ultimatemop')
     parser.add_argument('--db-password-env', default='MOP_DB_PASSWORD')
     parser.add_argument('--profile', choices=('dev', 'test'), default='test')
-    parser.add_argument('--load', choices=('none', 'local', 'scale'), default='none')
+    parser.add_argument('--load', choices=('none', 'bootstrap', 'local', 'scale'), default='none')
     parser.add_argument('--profiles', default=str(Path(__file__).with_name('profiles.json')))
     parser.add_argument('--roster')
     parser.add_argument('--performance', action='store_true')
