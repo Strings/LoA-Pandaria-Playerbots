@@ -16,6 +16,7 @@
 */
 
 #include "CreatureAI.h"
+#include "CreatureHooks.h"
 #include "AreaBoundary.h"
 #include "CreatureAIImpl.h"
 #include "Creature.h"
@@ -559,6 +560,8 @@ bool CreatureAI::_EnterEvadeMode(EvadeReason why)
     me->GetThreatManager().ClearAllThreat();
     me->CombatStop(true);
     me->LoadCreaturesAddon();
+    // Custom systems put back what the aura sweep above took (affixed rares re-apply their affixes).
+    CreatureHooks::Dispatch(me, CreatureHooks::Event::Evaded);
     me->ApplyInstanceAuraIfNeeded();
     me->SetLootRecipient(NULL);
     me->ResetPlayerDamageReq();
