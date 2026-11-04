@@ -1,0 +1,24 @@
+{
+  "name": "ghost-speed",
+  "timeout_seconds": 90,
+  "args": ["--cmd", "play", "--hold", "2"],
+  "steps": [
+    "say .revive",
+    "say .go -9339.7 170.2 61.6 0",
+    "target Seedtest",
+    "say .die",
+    "wait-for evt=ghost_settle timeout=4",
+    "release",
+    "wait-for evt=ghost_settle timeout=4",
+    "say .mountspeed",
+    "say .revive",
+    "wait-for evt=ghost_settle timeout=2",
+    "say .mountspeed"
+  ],
+  "assertions": [
+    {"type": "contains", "text": "LOGIN-OK map="},
+    {"type": "contains", "text": "mounted=0; taxi=0; run=2.000;"},
+    {"type": "not_contains", "text": "SESSION-TIMEOUT"},
+    {"type": "not_contains", "text": "Traceback"}
+  ]
+}
