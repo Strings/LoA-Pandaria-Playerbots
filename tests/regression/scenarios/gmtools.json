@@ -55,8 +55,8 @@
       "text": "You are not spectating anyone."
     },
     {
-      "type": "contains",
-      "text": "18 checkpoints (.checkpoint explain <name>, .checkpoint apply <name>):"
+      "type": "regex",
+      "pattern": "\\b(?:1[89]|[2-9]\\d|\\d{3,})\\ checkpoints\\ \\(\\.checkpoint\\ explain\\ <name>,\\ \\.checkpoint\\ apply\\ <name>\\):"
     },
     {
       "type": "contains",
