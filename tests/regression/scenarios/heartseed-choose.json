@@ -1,0 +1,26 @@
+{
+  "name": "heartseed-choose",
+  "timeout_seconds": 90,
+  "args": ["--cmd", "play", "--hold", "2"],
+  "steps": [
+    "say .revive",
+    "say .heartseed revoke",
+    "say .heartseed grant",
+    "say .heartseed major 10 8",
+    "say .seed choose Yu'lon",
+    "say .seed choose chiji",
+    "say .seed choose Xuen",
+    "say .seed choose nobody",
+    "say .heartseed info"
+  ],
+  "assertions": [
+    {"type": "contains", "text": "LOGIN-OK map="},
+    {"type": "contains", "text": "already walks with Yu'lon"},
+    {"type": "contains", "text": "Your Heartseed turns toward Chi-Ji"},
+    {"type": "contains", "text": "Your Heartseed turns toward Xuen"},
+    {"type": "contains", "text": "Usage: .seed choose"},
+    {"type": "contains", "text": "Gift spell 310100"},
+    {"type": "not_contains", "text": "SESSION-TIMEOUT"},
+    {"type": "not_contains", "text": "Traceback"}
+  ]
+}

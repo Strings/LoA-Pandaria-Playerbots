@@ -1,5 +1,6 @@
 -- Heartseed: a panel for UltimateMoP's Heartseed. The server holds every value; .seed sync answers with addon
--- messages, and "Choose paths" opens the server's own choice window (.seed). Open with /hs or the key binding.
+-- messages, and "Choose paths" opens the server's own choice window (.seed); clicking a Celestial takes its Gift
+-- (.seed choose). Open with /hs or the key binding.
 
 local PREFIX = "Heartseed"
 local DEFAULT_KEY = "SHIFT-H"
@@ -197,7 +198,23 @@ for _, path in ipairs(PATHS) do
         if data and data.state and data.state.path == path.key then
             lines[#lines + 1] = Hex(path.color) .. "Your seed leans toward " .. path.key .. ".|r"
         end
+        local gift = data and data.majors and data.majors[1]
+        if gift and gift.path == path.key then
+            lines[#lines + 1] = "|cff00ff00Your Gift: " .. gift.name .. ".|r"
+        elseif gift and UnitLevel("player") >= gift.level then
+            lines[#lines + 1] = "|cff00ff00Click to take " .. path.key .. "'s Gift.|r"
+        end
         return lines
+    end)
+    -- Takes this Celestial's Gift (the first major); the server checks combat, level and shrine rules.
+    b:SetScript("OnClick", function(self)
+        local gift = data and data.majors and data.majors[1]
+        if not gift or UnitLevel("player") < gift.level or gift.path == path.key then
+            return
+        end
+        Sound("click")
+        Command(".seed choose " .. path.key)
+        SyncSoon()
     end)
     celestials[path.key] = b
 end

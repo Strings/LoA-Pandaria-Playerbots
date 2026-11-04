@@ -286,6 +286,8 @@ Permission 90000 (`Command: heartseed`, Gamemaster role). Target is the selected
 - `.heartseed shrines`: list the Celestial shrines and say whether the target is at one.
 - `.seed` (player command, permission 90001): open your own choice window. `.seed spend <stat> [count]` spends
   stat points (stat id or name prefix), `.seed reset` takes them all back at a shrine; the addon uses both.
+- `.seed choose <Celestial> [level]`: take that Celestial's major at the tier opening at `level` (default the Gift's),
+  under the choice window's rules (combat, level, `ChangeAtShrineOnly`). The addon's Celestial icons send it.
 - `.heartseed growth [+<xp> | <level> [xp]]`: show Growth; `+<xp>` earns XP as in play (the bot and twink rules
   apply); `<level> [xp]` sets it, refunding points past the new level.
 - `.heartseed points [spend <stat> [count] | reset]`: list the stats with points, percentages and the aura each

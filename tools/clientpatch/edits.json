@@ -101,6 +101,7 @@
       "rank": "Celestial Gift",
       "icon": 6335,
       "cooldown": 30000,
+      "cast_time_index": 1,
       "visual": 310103,
       "attributes": {
         "attributes_ex5": {

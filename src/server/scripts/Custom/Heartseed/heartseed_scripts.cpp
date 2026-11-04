@@ -24,6 +24,7 @@
 #include "WorldSession.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
@@ -382,6 +383,7 @@ public:
             { "sync", &HandleSeedSyncCommand, RBAC_PERM_COMMAND_SEED, Trinity::ChatCommands::Console::No },
             { "spend", &HandleSeedSpendCommand, RBAC_PERM_COMMAND_SEED, Trinity::ChatCommands::Console::No },
             { "reset", &HandleSeedResetCommand, RBAC_PERM_COMMAND_SEED, Trinity::ChatCommands::Console::No },
+            { "choose", &HandleSeedChooseCommand, RBAC_PERM_COMMAND_SEED, Trinity::ChatCommands::Console::No },
             { "",     &HandleSeedCommand,     RBAC_PERM_COMMAND_SEED, Trinity::ChatCommands::Console::No },
         };
         static std::vector<ChatCommand> commandTable =
@@ -808,6 +810,92 @@ public:
             handler->PSendSysMessage("Your Heartseed strengthens your %s.", stat.Name.c_str());
         else
             handler->PSendSysMessage("Your Heartseed has %s.", result == Heartseed::GrowthResult::NoPoints ? "no stat points to spend" : DescribeGrowthResult(result));
+        return true;
+    }
+
+    // Player: .seed choose <Celestial> [level], the Heartseed addon's Celestial buttons: takes that Celestial's major
+    // at the tier opening at <level> (default the first, the Gift). Same rules as the choice window (.seed).
+    static bool HandleSeedChooseCommand(ChatHandler* handler, char const* args)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+        std::istringstream in(args ? args : "");
+        std::string pathText;
+        uint32 level = Heartseed::MajorTierLevel(0);
+        in >> pathText >> level;
+
+        // Letters only, any case: "Yu'lon", "yulon" and "Chi-Ji", "chiji" all match.
+        auto letters = [](std::string const& text)
+        {
+            std::string out;
+            for (char c : text)
+                if (std::isalpha(static_cast<unsigned char>(c)))
+                    out += char(std::tolower(static_cast<unsigned char>(c)));
+            return out;
+        };
+        Heartseed::Path path = Heartseed::Path::None;
+        for (Heartseed::Path candidate : { Heartseed::Path::Xuen, Heartseed::Path::ChiJi, Heartseed::Path::Niuzao, Heartseed::Path::Yulon })
+            if (!pathText.empty() && letters(pathText) == letters(GetPathName(candidate)))
+                path = candidate;
+        uint8 tier = Heartseed::MaxMajorTiers;
+        for (uint8 t = 0; t < Heartseed::MaxMajorTiers; ++t)
+            if (Heartseed::MajorTierLevel(t) == level)
+                tier = t;
+        if (path == Heartseed::Path::None || tier >= Heartseed::MaxMajorTiers)
+        {
+            handler->SendSysMessage("Usage: .seed choose <Xuen|Niuzao|Yu'lon|Chi-Ji> [level of the major, default the Gift's].");
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+
+        Heartseed::State state;
+        if (!sHeartseedMgr->GetState(player, state))
+        {
+            handler->SendSysMessage("You do not carry a Heartseed.");
+            return true;
+        }
+        if (player->IsInCombat())
+        {
+            handler->SendSysMessage("Your Heartseed will not listen while you fight.");
+            return true;
+        }
+        if (!Heartseed::MajorTierOpen(tier, player->GetLevel()))
+        {
+            handler->PSendSysMessage("Your Heartseed's level %u path opens at level %u.", level, level);
+            return true;
+        }
+
+        Heartseed::TraitInfo pick;
+        bool found = false;
+        for (Heartseed::TraitInfo const& trait : sHeartseedMgr->GetTraits())
+        {
+            if (trait.Kind == Heartseed::TraitKind::Major && trait.Tier == tier && trait.TraitPath == path)
+            {
+                pick = trait;
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+        {
+            handler->PSendSysMessage("%s is silent at level %u for now.", GetPathName(path), level);
+            return true;
+        }
+
+        auto loadout = state.Loadouts.find(uint16(player->GetTalentSpecialization()));
+        uint32 chosen = loadout != state.Loadouts.end() ? loadout->second[tier] : 0;
+        if (chosen == pick.Id)
+        {
+            handler->PSendSysMessage("Your Heartseed already walks with %s: %s.", GetPathName(path), pick.Name.c_str());
+            return true;
+        }
+        Heartseed::ShrineInfo shrine;
+        if (chosen && sHeartseedMgr->IsChangeAtShrineOnly() && !sHeartseedMgr->GetShrineAt(player, shrine))
+        {
+            handler->SendSysMessage("Your Heartseed holds to the path it took. Visit a Celestial shrine to change it.");
+            return true;
+        }
+        if (sHeartseedMgr->ChooseMajor(player, tier, pick.Id, false) == Heartseed::ChoiceResult::Ok)
+            handler->PSendSysMessage("Your Heartseed turns toward %s: %s.", GetPathName(path), pick.Name.c_str());
         return true;
     }
 

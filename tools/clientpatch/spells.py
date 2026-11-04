@@ -19,6 +19,7 @@ M_ID, M_SPELL, M_DIFFICULTY, M_ICON, M_ACTIVE_ICON = 0, 1, 2, 23, 24
 S_COOLDOWNS = 15
 E_ID, E_DIFFICULTY, E_SPELL = 0, 1, 27
 M_VISUAL = 21
+M_CAST_TIME = 17
 CD_ID, CD_SPELL, CD_RECOVERY = 0, 1, 4
 
 MISC_ATTRIBUTES = ['attributes'] + ['attributes_ex%s' % s for s in [''] + [str(n) for n in range(2, 14)]]
@@ -81,6 +82,9 @@ def clone(edit: dict, tables: Dict[str, Dbc]) -> Dict[str, List[List[int]]]:
     if 'icon' in edit:
         misc[M_ICON] = edit['icon']
         misc[M_ACTIVE_ICON] = 0
+    # SpellCastTimes row; 1 is instant (a channel then starts at once).
+    if 'cast_time_index' in edit:
+        misc[M_CAST_TIME] = edit['cast_time_index']
     for name, change in edit.get('attributes', {}).items():
         column = 3 + MISC_ATTRIBUTES.index(name)
         misc[column] = (misc[column] | change.get('set', 0)) & ~change.get('clear', 0)
