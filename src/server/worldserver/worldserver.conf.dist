@@ -5691,8 +5691,10 @@ Death.GhostSpeed = 2.0
 #
 #    Taxi.SpeedOfTopFlight
 #        Description: Flight paths fly this many times as fast as the fastest player flying (Master Riding
-#                     through Rate.MountedSpeed: about 59 yd/s at 2.4). Never slower than the stock 32 yd/s;
-#                     0 keeps stock. Reloadable; takes effect at the next flight.
+#                     through Rate.MountedSpeed: about 59 yd/s at 2.4). Never slower than the stock 32 yd/s
+#                     and never faster than 50 yd/s, the 5.4.8 client's flying spline cap: past it the
+#                     server lands the player while the client is still flying (T-087). 0 keeps stock.
+#                     Reloadable; takes effect at the next flight.
 #        Default:     2.0
 
 Taxi.SpeedOfTopFlight = 2.0

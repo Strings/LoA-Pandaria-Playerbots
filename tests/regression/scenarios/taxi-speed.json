@@ -7,7 +7,7 @@
   ],
   "assertions": [
     {"type": "contains", "text": "LOGIN-OK map="},
-    {"type": "contains", "text": "Flight paths: 118.2 yd/s (Taxi.SpeedOfTopFlight=2.00; top player flying 59.1 yd/s; stock 32)"},
+    {"type": "contains", "text": "Flight paths: 50.0 yd/s (Taxi.SpeedOfTopFlight=2.00; top player flying 59.1 yd/s; stock 32; client cap 50)"},
     {"type": "not_contains", "text": "SESSION-TIMEOUT"}
   ]
 }

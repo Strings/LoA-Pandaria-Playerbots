@@ -27,6 +27,11 @@ entry when something took more than one wrong turn to find, and say what would h
 
 ## The 5.4.8 client
 
+- **Flying splines top out at 50 yd/s in the client.** It flies a flying, Catmullrom, falling or parabolic spline no
+  faster than 50 yd/s, whatever duration the packet gives (upstream `MoveSplineInit` caps the server the same way,
+  and 5.4.8 has no unlimited-speed spline flag). Lifting the server cap for flight paths (T-086j, 118 yd/s) made the
+  server finish first: it ran `FlightPathMovementGenerator::DoFinalize` and dismounted the player while the client
+  still flew the route, so the taxi mount vanished mid-air (T-087). Faster flights need a client exe patch.
 - **Two archive chains.** Files live in the `base` chain (`Data/*.MPQ`, `Data/wow-update-base-<build>.MPQ`) or the
   locale chain (`Data/enUS/locale-enUS.MPQ`, `Data/enUS/wow-update-enUS-<build>.MPQ`). The client patches a file only
   from update archives of the chain that holds it. A Blizzard addon spans both: `Blizzard_PetJournal.lua` is in
