@@ -268,12 +268,21 @@ struct npc_hallowend : public ScriptedAI
         me->SetVisible(false);
         me->SetReactState(REACT_PASSIVE);
         me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+        FiresSummoned = false;
+    }
+
+    // Not in the constructor: it runs during grid load, where SummonCreature can return null (a crash on the
+    // dereference, seen in the T-075 smoke run). Only while the holiday is on, so the fires don't sit there all year.
+    void SummonFires()
+    {
+        FiresSummoned = true;
         for (uint8 j = 0; j < PostionEventoHallowends[AreaFire].Area_Count; j++)
         {
-            if (Creature* summon = me->SummonCreature(NPC_HEADLESS_HORSEMAN_FIRE_DND, PostionEventoHallowends[AreaFire + j].SpawnPosition)->ToCreature())
+            if (TempSummon* summon = me->SummonCreature(NPC_HEADLESS_HORSEMAN_FIRE_DND, PostionEventoHallowends[AreaFire + j].SpawnPosition))
             {
                 Fires.Summon(summon);
-                summon->AI()->SetData(0, AreaFire + j);
+                if (summon->AI())
+                    summon->AI()->SetData(0, AreaFire + j);
             }
         }
     }
@@ -284,6 +293,7 @@ struct npc_hallowend : public ScriptedAI
     uint32 CountPlayersEvent;
     uint8 AreaFire;
     SummonList Fires;
+    bool FiresSummoned;
     bool EventProgress;
     bool SaidPhrase[2];
 
@@ -364,6 +374,9 @@ struct npc_hallowend : public ScriptedAI
     {
         if (!IsHolidayActive(HOLIDAY_HALLOWS_END))
             return;
+
+        if (!FiresSummoned)
+            SummonFires();
 
         // The event begins each 1 / 4 of an hour. if during this process no one is around (10 seconds), the event began
         // Time Data works.
