@@ -69,6 +69,18 @@ class CloneTests(unittest.TestCase):
         with self.assertRaises(KeyError):
             spells.clone(dict(EDIT, id=310101, skill_line=999), tables)
 
+    def test_cooldown_and_visual(self):
+        tables = source_tables()
+        tables['Spell'].rows[0][spells.S_COOLDOWNS] = 14174
+        tables['SpellCooldowns'] = Dbc(table(6, [[14174, 500, 0, 5000, 2000, 1500], [14200, 1, 0, 0, 0, 0]]),
+                                       'SpellCooldowns.dbc')
+        rows = spells.clone(dict(EDIT, cooldown=30000, visual=310103), tables)
+        # Own row with the next id: the given cooldown, no category cooldown, the source's global cooldown.
+        self.assertEqual(rows['SpellCooldowns'], [[14201, 310100, 0, 0, 30000, 1500]])
+        self.assertEqual(rows['Spell'][0][spells.S_COOLDOWNS], 14201)
+        self.assertEqual(rows['SpellMisc'][0][spells.M_VISUAL], 310103)
+        self.assertEqual(len(tables['SpellCooldowns'].rows), 3)
+
     def test_round_trip(self):
         tables = source_tables()
         spells.clone(EDIT, tables)

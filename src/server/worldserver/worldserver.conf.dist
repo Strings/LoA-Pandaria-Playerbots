@@ -5453,6 +5453,14 @@ Heartseed.Gift.PlumeTargets = 3
 Heartseed.Gift.RetortRadius = 8
 
 #
+#    Heartseed.Gift.BreathRange
+#        Description: Serpent's Breath reaches enemies within this many yards in its cone. The creature spell it
+#                     borrows reaches 100 yards; the client visual is sized for the default.
+#        Default:     12
+
+Heartseed.Gift.BreathRange = 12
+
+#
 #    Heartseed.Proc.Chance
 #        Description: Chance in percent for damage the character deals to roll the core proc.
 #        Default:     10
@@ -5696,6 +5704,20 @@ GMTools.Clock.MaxJumpSeconds = 2592000
 #        Default:     10000
 
 GMTools.Spectate.AttachTimeoutMs = 10000
+
+#
+#    GMTools.AreaProbe.Lifetime
+#        Description: Seconds before .areaprobe probes despawn on their own.
+#        Default:     600
+
+GMTools.AreaProbe.Lifetime = 600
+
+#
+#    GMTools.AreaProbe.MaxProbes
+#        Description: The most probes one .areaprobe place stands.
+#        Default:     400
+
+GMTools.AreaProbe.MaxProbes = 400
 
 #
 ###################################################################################################

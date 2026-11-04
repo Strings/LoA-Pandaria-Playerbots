@@ -2169,6 +2169,7 @@ void AddSC_spawn_thinning();
 void AddSC_raid_retention();
 void AddSC_starting_kit();
 void AddSC_telemetry();
+void AddSC_gmtools_areaprobe();
 
 void AddCustomScripts()
 {
@@ -2200,6 +2201,7 @@ void AddCustomScripts()
     AddSC_raid_retention();
     AddSC_starting_kit();
     AddSC_telemetry();
+    AddSC_gmtools_areaprobe();
 
 #endif
     AddSC_Anticheat();

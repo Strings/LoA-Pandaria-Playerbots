@@ -80,9 +80,41 @@ class DbcPatchTests(unittest.TestCase):
             elif edit['type'] == 'spell':
                 # Spell clones live in the reserved custom block (docs/ID_RANGES.md).
                 self.assertTrue(310000 <= edit['id'] <= 310999 and edit['name'], edit['id'])
+            elif edit['type'] == 'row':
+                self.assertTrue(get_schema(edit['file']), edit['file'])
+                self.assertTrue(310000 <= edit['id'] <= 310999, edit['id'])
             else:
                 self.assertNotEqual(edit['from'], edit['to'])
             self.assertTrue(edit['why'])
+
+
+def wdb2(rows, fields):
+    body = b''.join(struct.pack('<%dI' % fields, *row) for row in rows)
+    header = struct.pack('<4sIIII', b'WDB2', len(rows), fields, fields * 4, 1)
+    return header + struct.pack('<IIIiiiI', 0xABCD, 18273, 0, 0, 0, -1, 0) + body + b'\0'
+
+
+class RowEditTests(unittest.TestCase):
+    schema = get_schema('SpellVisualKitModelAttach.db2')
+
+    def test_copies_row_to_new_id_in_wdb2(self):
+        source = [18040, 30429, 7, 17, 0, 0, 0, 0, 0, 0, 0, -1 & 0xFFFFFFFF, -1 & 0xFFFFFFFF, 0, 0]
+        raw = wdb2([source], 15)
+        out = build.add_rows(raw, self.schema, [{'id': 310103, 'from': 18040,
+                                                 'set': {'parent_spell_visual_kit_id': 310103, 'scale': 1.5}}])
+        # Header extras (hash, build, locale) survive; the copy changes only what was set.
+        self.assertEqual(out[20:48], raw[20:48])
+        copy = list(struct.unpack_from('<15I', out, 48 + 60))
+        self.assertEqual(copy[:3], [310103, 310103, 7])
+        self.assertEqual(struct.unpack('<f', struct.pack('<I', copy[10]))[0], 1.5)
+        self.assertEqual(out[48:108], raw[48:108])
+
+    def test_refuses_missing_source_and_unknown_column(self):
+        raw = wdb2([[1] + [0] * 14], 15)
+        with self.assertRaises(KeyError):
+            build.add_rows(raw, self.schema, [{'id': 310103, 'from': 2}])
+        with self.assertRaises(KeyError):
+            build.add_rows(raw, self.schema, [{'id': 310103, 'from': 1, 'set': {'nope': 1}}])
 
 
 if __name__ == '__main__':

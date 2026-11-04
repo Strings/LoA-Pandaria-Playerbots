@@ -407,6 +407,7 @@ public:
     float GetPlumeRadius() const { return _plumeRadius; }
     uint32 GetPlumeTargets() const { return _plumeTargets; }
     float GetRetortRadius() const { return _retortRadius; }
+    float GetBreathRange() const { return _breathRange; }
     // Traits plus glow; called after any state change.
     void Refresh(Player* player);
 
@@ -447,6 +448,7 @@ private:
     float _plumeRadius = 30.0f;
     uint32 _plumeTargets = 3;
     float _retortRadius = 8.0f;
+    float _breathRange = 12.0f;
     std::map<uint8, Heartseed::MeterRule> _meters;      // path -> meter (heartseed_meter)
     float _coreWeaponDamagePct = 0.0f;
     uint32 _procSpellId = 0;
