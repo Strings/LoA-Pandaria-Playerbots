@@ -1,26 +1,35 @@
-# T-047: Multiple tracking types
+BLOCKED: On the Codex test realm, does the real client show simultaneous creature/resource markers and multiple tracking checkmarks after `trackingprobe all`?
+
+# T-047: Native multiple-tracking probe
 
 **Agent:** codex
 **Branch:** codex/T-047-multi-tracking
-**Task status:** in progress
+**Task status:** blocked pending the client observation required by handoff step 2
 
 ## What changed
-- Started on latest playerbot, after T-044's completed verification and T-046's full 11-scenario pass (final latest-base build follows).
-- Read the provisional multi-tracking design. This fork already ORs/removes creature/resource bits in SpellAuraEffects.cpp; no tracker-specific exclusion appears in SpellInfo/SpellAuras, and the four probe spells have no explicit spell-group exclusion in world_codex.
-- Test actual native aura combinations before adding any core change. Keep the client-test requirement: several minimap types and dropdown checkmarks. GUI permission is not granted yet.
+- Rebased PR 99 on current playerbot 9a656fb4. This is the provisional multi-tracking experiment from DESIGN.md; no core stacking rule is changed.
+- Finished the opt-in GM Lua probe, disabled by default. Whitelisted triggered self-casts use the native tracker auras; inspection reads the actual private tracking fields. Cleanup remains usable when disabled. No spells are learned, IDs allocated or durations added.
+- Corrected unsupported Lua API assumptions: this fork disables AddAura and HasAura bindings. Use registered CastSpell(target, id, true) and mask inspection. A new compatibility test checks every player method used against the actual enabled LuaFunctions.cpp registry.
 
-## Next
-- Lua prototype/VM checks, bounded GM force/inspect probe behind a config key, native mask/add/remove controls. Add core behavior only if the baseline proves necessary.
-- Build and relevant units/live/regressions. Visual client check needs explicit permission under AGENTS.md; never launch or write into mop-clean.
-- Record that the design is provisional. Status/task review and one PR; Claude reviews before routine merge, human reviews any core touch. No duration planned.
+## Verification
+- Eight Lua VM tests PASS, including config/missing config, GM guard, native event 18 registration, registry compatibility, isolated resource profile, invalid/status input, passthrough and disabled cleanup.
+- Live Codex headless checks PASS against the current playerbot binary with PR 91's additional travel adapter. Lua scripts under test are this branch's exact scripts; no C++ is changed by PR 99.
+- Native all: creatures=65, resources=6. Removing Track Beasts: 64/6. Removing Find Herbs: 64/4. Resources profile: 0/6; creatures profile: 65/0; clear: 0/0. Assertions verify the complete sequence in build/T047-native.log.
+- Forcing while disabled is rejected; inspection and cleanup remain available. Ordinary-player forcing is rejected. Logs: build/T047-disabled.log and build/T047-non-gm.log.
+- GUI/client rendering and dropdown checkmarks have NOT been observed. Server masks are not proof of those behaviors.
+
+## Exact human client test
+1. Use a disposable GM hunter on the Codex test realm (auth 3744, world 8105). The probe is installed in build/T046-current-runtime and its private forcing key is enabled. Do not test on a character whose current tracking selections matter.
+2. If needed on that fixture only, learn the four abilities: `.learn 1494`, `.learn 19883`, `.learn 2383`, `.learn 2580`. Their names are Track Beasts, Track Humanoids, Find Herbs and Find Minerals.
+3. In ordinary Say chat, without a leading dot or slash, send `trackingprobe clear`, then `trackingprobe all`. The status must read creatures=65 resources=6.
+4. Open the minimap tracking dropdown. Record which of the four abilities have checkmarks. Near known beasts, humanoids and herb/ore nodes, record which marker categories appear together. Visit suitable nearby spots if one location lacks all categories; confirm each category exists there before judging missing markers.
+5. Click one tracking option off in the dropdown and run `trackingprobe status`. Record the checkmarks, markers and both masks; this tests whether the client UI clears other selections.
+6. Send `trackingprobe clear` afterward. Remove only spells learned solely for this disposable test if desired.
+
+Question: do all four checkmarks coexist, do both categories of creature markers and both resource markers render, and does changing one option preserve the others? Report actual observations, including any category the location could not test.
+
+AGENTS.md requires asking before computer use. The handoff explicitly asks for human steps and a blocked task when this observation is needed, so no GUI was launched. PR 99 remains a draft. Continue T-007 while waiting.
 
 ## Map additions
-- Planned Custom/Tracking/ and tools/tracking/ diagnostic/prototype.
-
-## Lua probe checkpoint
-- Added an optional Eluna GM probe in lua_scripts/Custom/Tracking, with Tracking.Probe.Enable=0 documented in conf.dist. It reads the active config (MOP_WORLD_CONFIG override), forces only four whitelisted self auras, inspects both native masks, and allows cleanup while disabled. No core behavior, database IDs or duration added.
-- Six Lua VM tests pass: disabled/missing config, GM guard, resource-only profile, no-mutation status/invalid input, unrelated-command passthrough, cleanup after disable. Production probe remains Lua because native aura APIs suffice.
-- This is still provisional. Next: deploy to Codex-only Eluna runtime, prove actual combined bits/add/remove/key controls, then request permission for the required client visual test. Server masks alone cannot prove client rendering/checkmarks.
-- Map additions: lua_scripts/Custom/Tracking/ and tools/tracking/.
-
-- Native wiring correction: this fork has chat event 18, not modern Eluna command event 42. Probe now uses plain GM chat like the existing gm_probe example and reload config; API/registration VM assertion added. Initial native attempt made no aura changes.
+- lua_scripts/Custom/Tracking/: opt-in native tracking diagnostic and instructions.
+- tools/tracking/: Lua VM/API compatibility tests.

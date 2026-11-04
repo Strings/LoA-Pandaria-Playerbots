@@ -9,3 +9,5 @@ GM rank 2+ can use the plain GM chat command `trackingprobe status|resources|cre
 Expected native masks: creatures 65 (beasts plus humanoids), resources 6 (herbs plus minerals). Confirm removal leaves the other category intact through ordinary aura changes, and disabling the probe rejects forcing. Visual test: a hunter who knows these tracking abilities near both creature types and herb/ore nodes; check simultaneous markers and multiple dropdown checkmarks. Do not claim that test from server masks alone. GUI permission is required; never launch or write into `mop-clean`.
 
 VM guard/config/dispatch tests: `python -m unittest discover -s tools/tracking -v` (uses the existing development-only `lupa` package). Native/client results belong in `status/codex-T-047.md`.
+
+Verified on the Codex server: 65/6 combined masks, individual removals 64/6 then 64/4, and category isolation/cleanup. This fork disables Lua AddAura/HasAura, so the probe uses registered triggered CastSpell and reports masks. Eight VM/API compatibility tests pass. The required human client steps and pending question are in status/codex-T-047.md; client rendering remains unverified.

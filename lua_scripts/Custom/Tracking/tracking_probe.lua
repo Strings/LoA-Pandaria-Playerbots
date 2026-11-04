@@ -21,13 +21,9 @@ function Probe.Enabled()
 end
 
 local function status(player)
-    local active = {}
-    for _, id in ipairs(spells) do
-        if player:HasAura(id) then active[#active + 1] = tostring(id) end
-    end
-    player:SendBroadcastMessage(string.format("TrackingProbe enabled=%d creatures=%d resources=%d active=%s",
+    player:SendBroadcastMessage(string.format("TrackingProbe enabled=%d creatures=%d resources=%d",
         Probe.Enabled() and 1 or 0, player:GetUInt32Value(creatureField),
-        player:GetUInt32Value(resourceField), table.concat(active, ",")))
+        player:GetUInt32Value(resourceField)))
 end
 
 function Probe.Chat(_, player, command)
@@ -50,9 +46,8 @@ function Probe.Chat(_, player, command)
     if action ~= "status" then
         for _, id in ipairs(spells) do player:RemoveAura(id) end
         for _, id in ipairs(profiles[action] or {}) do
-            if not player:AddAura(id, player) then
-                player:SendBroadcastMessage("Tracking probe could not apply spell " .. id)
-            end
+            -- This fork exposes triggered casts, while AddAura/HasAura bindings are disabled.
+            player:CastSpell(player, id, true)
         end
     end
     status(player)

@@ -1,5 +1,6 @@
 from pathlib import Path
 import unittest
+import re
 from lupa import LuaRuntime
 
 SCRIPT = Path(__file__).resolve().parents[2] / 'lua_scripts/Custom/Tracking/tracking_probe.lua'
@@ -22,7 +23,7 @@ class ProbeTests(unittest.TestCase):
             player = {rank=2, auras={}, changed=0, messages={}}
             function player:GetGMRank() return self.rank end
             function player:HasAura(id) return self.auras[id] == true end
-            function player:AddAura(id) self.auras[id]=true; self.changed=self.changed+1; return true end
+            function player:CastSpell(target,id,triggered) self.auras[id]=true; self.changed=self.changed+1 end
             function player:RemoveAura(id) self.auras[id]=nil; self.changed=self.changed+1 end
             function player:GetUInt32Value() return 0 end
             function player:SendBroadcastMessage(text) table.insert(self.messages,text) end
@@ -32,6 +33,12 @@ class ProbeTests(unittest.TestCase):
 
     def command(self, text):
         return self.probe.Chat(18, self.player, text)
+
+    def test_player_methods_are_enabled_in_this_fork(self):
+        registry = (SCRIPT.parents[3] / 'src/server/game/LuaEngine/LuaFunctions.cpp').read_text(encoding='utf-8')
+        enabled = set(re.findall(r'^\s*\{"(\w+)"', registry, re.M))
+        used = set(re.findall(r'player:(\w+)\(', SCRIPT.read_text(encoding='utf-8')))
+        self.assertEqual(used - enabled, set())
 
     def test_registered_native_chat_event(self):
         self.assertEqual(self.lua.globals().registered, 18)
