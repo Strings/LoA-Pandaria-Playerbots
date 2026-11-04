@@ -19,6 +19,10 @@ namespace
         handler->PSendSysMessage("Mount speed: multiplier=%.2f; mounted=%u; taxi=%u; run=%.3f; flight=%.3f",
             MountedSpeed::Multiplier(), uint32(player->IsMounted()), uint32(player->IsInFlight()),
             player->GetSpeedRate(MOVE_RUN), player->GetSpeedRate(MOVE_FLIGHT));
+        float topFlight = baseMoveSpeed[MOVE_FLIGHT] * MountedSpeed::AdjustRate(MountedSpeed::TopFlightRate, MountedSpeed::Multiplier());
+        handler->PSendSysMessage("Flight paths: %.1f yd/s (Taxi.SpeedOfTopFlight=%.2f; top player flying %.1f yd/s; stock %.0f)",
+            MountedSpeed::TaxiSpeed(MountedSpeed::StockTaxiSpeed, baseMoveSpeed[MOVE_FLIGHT], MountedSpeed::Multiplier(),
+                MountedSpeed::TaxiFactor()), MountedSpeed::TaxiFactor(), topFlight, MountedSpeed::StockTaxiSpeed);
         return true;
     }
 

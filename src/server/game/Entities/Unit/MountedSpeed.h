@@ -29,6 +29,8 @@ namespace MountedSpeed
 
     // Master Riding's 310% bonus: the fastest flying a player learns.
     constexpr float TopFlightRate = 4.1f;
+    // The core's stock flight-path speed, yards per second.
+    constexpr float StockTaxiSpeed = 32.0f;
 
     // Flight-path speed in yards per second: `factor` times the fastest player flying (Master Riding through the
     // riding multiplier), never slower than the stock taxi speed; a factor of 0 keeps stock.
