@@ -38,3 +38,11 @@
 - `src/server/game/DungeonFinding/SoloDungeonHooks.h`, `.cpp`: optional adapter facade.
 - `tests/legacy_dungeons/`: pure policy tests.
 - `tests/regression/scenarios/legacy-dungeons.json`: native solo Dungeon Finder round trip.
+
+## Requested collision correction (2026-11-04)
+- Rebased PR 91 on current playerbot 9a656fb4 (including PR 138). Preserved Twinks' complete 96000 block, moved every Legacy permission/reference to 97000/97001 and its entire allocation row to 97000-97999, and advanced Next system to 98000. No SQL in this PR writes 95000/95001 or 96000/96001. Upstream tests/regression/run.py retained unchanged; one timeout implementation remains.
+- Production rebuild PASS, no warnings; all 24 unit suites and 3 runner tests PASS. SQL validator: 2 files, 0 issues. Logs: build/T046-renumber-build.log and build/T046-renumber-units.log.
+- Corrected Legacy auth SQL applied twice to auth_codex; XP and telemetry permission rows remained byte-identical. Restored Codex's merged Twinks permissions first; no main database changes.
+- Requested native legacy, xp-toggle and telemetry scenarios PASS: build/regression-T046-renumber/20261104T230635Z-fcec28c2/results.json. Only telemetry's initial position/bookkeeping is normalized in temporary input; assertions unchanged.
+- Ordinary-player native travel PASS again. Exact threshold, force, margin reload and return after disabling entries PASS again from a known starting map; logs build/T046-renumber-*.log. Entry/margin defaults restored to 1/20.
+- Ready for Claude review; native client list visibility still awaits a client playtest.
