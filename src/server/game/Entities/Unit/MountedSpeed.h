@@ -31,13 +31,19 @@ namespace MountedSpeed
     constexpr float TopFlightRate = 4.1f;
     // The core's stock flight-path speed, yards per second.
     constexpr float StockTaxiSpeed = 32.0f;
+    // The 5.4.8 client flies a flying spline no faster than this, whatever the packet's duration says (the same
+    // limit MoveSplineInit applies). A faster flight path ends on the server first: it dismounts the player while
+    // the client is still flying (T-087).
+    constexpr float ClientFlyingSplineCap = 50.0f;
 
     // Flight-path speed in yards per second: `factor` times the fastest player flying (Master Riding through the
-    // riding multiplier), never slower than the stock taxi speed; a factor of 0 keeps stock.
+    // riding multiplier), never slower than the stock taxi speed nor faster than the client's spline cap; a factor
+    // of 0 keeps stock.
     constexpr float TaxiSpeed(float stock, float baseFlight, float multiplier, float factor)
     {
-        return factor * baseFlight * AdjustRate(TopFlightRate, multiplier) > stock
-            ? factor * baseFlight * AdjustRate(TopFlightRate, multiplier) : stock;
+        return factor * baseFlight * AdjustRate(TopFlightRate, multiplier) <= stock ? stock
+            : factor * baseFlight * AdjustRate(TopFlightRate, multiplier) >= ClientFlyingSplineCap ? ClientFlyingSplineCap
+            : factor * baseFlight * AdjustRate(TopFlightRate, multiplier);
     }
 }
 
