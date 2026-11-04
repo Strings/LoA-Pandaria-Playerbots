@@ -12447,6 +12447,10 @@ void Unit::UpdateSpeed(UnitMoveType mtype, bool forced)
         (mtype == MOVE_RUN || mtype == MOVE_FLIGHT))
         speed = MountedSpeed::AdjustRate(speed, MountedSpeed::Multiplier());
 
+    // The walk back to the corpse: the Ghost aura alone gives 150%.
+    if (GetTypeId() == TYPEID_PLAYER && HasAuraType(SPELL_AURA_GHOST) && (mtype == MOVE_RUN || mtype == MOVE_SWIM))
+        speed = MountedSpeed::GhostRate(speed, MountedSpeed::GhostSpeed());
+
     switch (mtype)
     {
         case MOVE_RUN:

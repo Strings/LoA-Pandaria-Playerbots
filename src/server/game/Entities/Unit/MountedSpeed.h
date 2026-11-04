@@ -7,10 +7,17 @@ namespace MountedSpeed
 {
     void Load();
     float Multiplier();
+    float GhostSpeed();
 
     inline float ValidMultiplier(float value)
     {
         return std::isfinite(value) && value > 0.0f ? value : 2.4f;
+    }
+
+    // A ghost runs and swims at least this fast (Death.GhostSpeed); faster effects keep their speed.
+    constexpr float GhostRate(float rate, float ghostSpeed)
+    {
+        return rate < ghostSpeed ? ghostSpeed : rate;
     }
 
     constexpr float AdjustRate(float rate, float multiplier)
