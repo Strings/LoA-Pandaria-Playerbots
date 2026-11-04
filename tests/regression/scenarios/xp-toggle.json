@@ -1,0 +1,44 @@
+{
+  "name": "xp-toggle",
+  "timeout_seconds": 120,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "1"
+  ],
+  "steps": [
+    "say .xp off",
+    "say .xp status",
+    "say .xp on",
+    "say .xp sideways"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "event",
+      "kind": "login",
+      "minimum": 1,
+      "maximum": 1
+    },
+    {
+      "type": "contains",
+      "text": "XP gain: off"
+    },
+    {
+      "type": "contains",
+      "text": "XP gain: on"
+    },
+    {
+      "type": "contains",
+      "text": "battleground queue: shared"
+    },
+    {
+      "type": "contains",
+      "text": "Use .xp on, .xp off or .xp status"
+    }
+  ]
+}

@@ -87,9 +87,9 @@ def execute(case, runtime, destination, environment):
         if process.returncode:
             failures.append({'exit_code': process.returncode})
     except subprocess.TimeoutExpired as exc:
-        output = (exc.stdout or b'') + b'\n' + (exc.stderr or b'')
-        if isinstance(output, bytes):
-            output = output.decode('utf-8', errors='replace')
+        # TimeoutExpired carries bytes even when run() was asked for text.
+        parts = [exc.stdout or '', exc.stderr or '']
+        output = '\n'.join(p.decode('utf-8', errors='replace') if isinstance(p, bytes) else p for p in parts)
         failures = [{'timeout_seconds': case['timeout_seconds']}]
     output = redact(output, environment)
     (destination / (case['name'] + '.log')).write_text(output, encoding='utf-8')

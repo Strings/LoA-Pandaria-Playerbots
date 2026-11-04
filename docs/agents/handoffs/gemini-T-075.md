@@ -13,9 +13,9 @@ never pushed, so step 8 is the one that matters most.
    `git switch -c gemini/T-075-smoke-run origin/playerbot`. Write down the commit: `git rev-parse --short HEAD`.
 2. Don't build: GEMINI.md says no full server builds. Use Claude Code's binaries, built from the same
    `playerbot` commit:
-   `I:\UltimateMoP\.worktrees\claude\build\bin\RelWithDebInfo`. Only read from that folder, never write to it.
+   `I:\UltimateMoP\.worktrees\claude\build\bin`. Only read from that folder, never write to it.
 3. Regenerate your runtime (set `MOP_DB_PASSWORD` first, from your existing `build/devenv` confs):
-   `python tools/devenv/setup.py --agent gemini --gamedata I:/UltimateMoP/gamedata --binaries I:/UltimateMoP/.worktrees/claude/build/bin/RelWithDebInfo --output build/devenv --profile test --load none --db-user ultimatemop`
+   `python tools/devenv/setup.py --agent gemini --gamedata I:/UltimateMoP/gamedata --binaries I:/UltimateMoP/.worktrees/claude/build/bin --output build/devenv --profile test --load none --db-user ultimatemop`
 4. Start `build/devenv/authserver.exe` and `build/devenv/worldserver.exe -c <absolute path to build/devenv/worldserver.conf>`.
    Wait for the world server's "ready" line. Ports must be 3754 / 8115 / 7908. If any other port shows, stop and
    report it.

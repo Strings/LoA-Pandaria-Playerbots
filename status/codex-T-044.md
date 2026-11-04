@@ -35,3 +35,10 @@
 - All 11 current headless regressions pass, including newly merged mountspeed/solo scenarios. Report in primary checkout: build/regression-T044/20261101T201936Z-0b9448e3/results.json.
 - PlayerSaveInterval restored to original 60000, missing current default keys appended without replacing private overrides. No new duration, no main DB changes. Claude approval before routine merge; after merge apply only world 04/auth 05 SQL to main.
 - Build and 16-unit-suite pass precede only documentation commits. Native GUI unused. T-046 compilation/live verification follows in primary; this branch is in the secondary Codex checkout for review updates.
+
+## Carried over by Claude Code (2026-11-04)
+- Codex was out of usage; Claude Code squashed the branch onto playerbot (PR 86 closed in favor of this one).
+- IDs moved to the 96000 block: telemetry (T-004) already owns rbac 95000/95001, which the original auth update
+  would have overwritten. npc_text 96000, rbac 96000/96001, ID_RANGES updated, next system 97000.
+- New scenario `xp-toggle`. Unit tests 23/23; xp-toggle and telemetry scenarios pass on the Claude runtime.
+- Follow-up: the login notice shows on every login; limit it to new characters once a first-login hook exists.
