@@ -244,7 +244,9 @@ namespace Movement
             args.velocity = unit->GetSpeed(SelectSpeedType(moveFlagsForSpeed));
         }
 
-        args.velocity = std::min(args.velocity, args.flags.catmullrom || args.flags.flying || args.flags.falling || args.flags.parabolic ? 50.0f : std::max(28.0f, unit->GetSpeed(MOVE_RUN) * 4.0f));
+        // A flight path sets its own speed (Taxi.SpeedOfTopFlight), above the 50 yd/s cap.
+        if (!unit->HasUnitState(UNIT_STATE_IN_FLIGHT))
+            args.velocity = std::min(args.velocity, args.flags.catmullrom || args.flags.flying || args.flags.falling || args.flags.parabolic ? 50.0f : std::max(28.0f, unit->GetSpeed(MOVE_RUN) * 4.0f));
 
         if (!args.Validate(unit))
             return 0;

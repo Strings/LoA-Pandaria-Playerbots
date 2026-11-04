@@ -102,6 +102,7 @@
       "icon": 6335,
       "cooldown": 30000,
       "cast_time_index": 1,
+      "interrupts": {"clear_aura": 24, "clear_channel": 24},
       "visual": 310103,
       "attributes": {
         "attributes_ex5": {

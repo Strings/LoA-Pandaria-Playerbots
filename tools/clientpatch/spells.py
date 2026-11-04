@@ -21,6 +21,8 @@ E_ID, E_DIFFICULTY, E_SPELL = 0, 1, 27
 M_VISUAL = 21
 M_CAST_TIME = 17
 CD_ID, CD_SPELL, CD_RECOVERY = 0, 1, 4
+S_INTERRUPTS = 17
+I_ID, I_SPELL, I_AURA, I_CHANNEL = 0, 1, 3, 5
 
 MISC_ATTRIBUTES = ['attributes'] + ['attributes_ex%s' % s for s in [''] + [str(n) for n in range(2, 14)]]
 
@@ -129,13 +131,35 @@ def clone(edit: dict, tables: Dict[str, Dbc]) -> Dict[str, List[List[int]]]:
         spell[S_COOLDOWNS] = row[CD_ID]
         cooldown_rows.append(row)
 
+    # `interrupts` clears AuraInterruptFlags and ChannelInterruptFlags bits on the clone's own copy of the source's
+    # SpellInterrupts row (8 = moving, 16 = turning). The server keeps the source row (its data files are stock), so
+    # the core's spell corrections must clear the same bits; `server_spell` is the row the server SQL gets.
+    interrupt_rows = []
+    server_spell = list(spell)
+    if 'interrupts' in edit:
+        interrupt_dbc = tables['SpellInterrupts']
+        source = interrupt_dbc.find(I_ID, spell[S_INTERRUPTS]) if spell[S_INTERRUPTS] else []
+        if not source:
+            raise KeyError('spell %d: no SpellInterrupts row to copy' % source_id)
+        row = list(source[0])
+        row[I_ID] = max(r[I_ID] for r in interrupt_dbc.rows) + 1
+        row[I_SPELL] = new_id
+        row[I_AURA] &= ~edit['interrupts'].get('clear_aura', 0)
+        row[I_CHANNEL] &= ~edit['interrupts'].get('clear_channel', 0)
+        spell[S_INTERRUPTS] = row[I_ID]
+        interrupt_rows.append(row)
+
     spell_dbc.append(spell)
     misc_dbc.append(misc)
+    for row in interrupt_rows:
+        tables['SpellInterrupts'].append(row)
     for row in cooldown_rows:
         tables['SpellCooldowns'].append(row)
     for row in effects:
         effect_dbc.append(row)
-    rows = {'Spell': [spell], 'SpellMisc': [misc], 'SpellEffect': effects}
+    rows = {'Spell': [spell], 'SpellMisc': [misc], 'SpellEffect': effects, 'ServerSpell': [server_spell]}
+    if interrupt_rows:
+        rows['SpellInterrupts'] = interrupt_rows
     if cooldown_rows:
         rows['SpellCooldowns'] = cooldown_rows
     if skill_rows:
@@ -171,7 +195,7 @@ def _insert(table, columns, rows, comments):
 def server_sql(clones: List[dict], rows: List[Dict[str, List[List[int]]]]) -> str:
     """Idempotent SQL giving the server the same clones."""
     ids = ', '.join(str(c['id']) for c in clones)
-    spells = [r['Spell'][0] for r in rows]
+    spells = [r.get('ServerSpell', r['Spell'])[0] for r in rows]
     miscs = [r['SpellMisc'][0] for r in rows]
     effects = [e for r in rows for e in r['SpellEffect']]
     names = ['%s (clone of %d)' % (c['name'], c['from']) for c in clones]

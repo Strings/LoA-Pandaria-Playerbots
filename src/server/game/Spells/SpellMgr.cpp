@@ -6554,6 +6554,11 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 117960: // Celestial Breathe
                     spellInfo->AttributesEx5 &= ~SPELL_ATTR5_START_PERIODIC_AT_APPLY;
                     break;
+                case 310103: // Serpent's Breath (Heartseed Gift): channels while moving and turning, as its client
+                             // row does (tools/clientpatch/edits.json `interrupts`); it borrows Celestial Breathe's.
+                    spellInfo->AuraInterruptFlags[0] &= ~(AURA_INTERRUPT_FLAG_MOVE | AURA_INTERRUPT_FLAG_TURNING);
+                    spellInfo->ChannelInterruptFlags[0] &= ~(AURA_INTERRUPT_FLAG_MOVE | AURA_INTERRUPT_FLAG_TURNING);
+                    break;
                 case 118018: // Draw Power (Summons)
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_CASTER;
                     spellInfo->Effects[1].TargetA = TARGET_UNIT_CASTER;

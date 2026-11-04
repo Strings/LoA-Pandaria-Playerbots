@@ -8,6 +8,7 @@ namespace MountedSpeed
     void Load();
     float Multiplier();
     float GhostSpeed();
+    float TaxiFactor();
 
     inline float ValidMultiplier(float value)
     {
@@ -24,6 +25,17 @@ namespace MountedSpeed
     {
         // Riding percentages describe the bonus above ordinary movement.
         return rate > 1.0f ? 1.0f + (rate - 1.0f) * multiplier : rate;
+    }
+
+    // Master Riding's 310% bonus: the fastest flying a player learns.
+    constexpr float TopFlightRate = 4.1f;
+
+    // Flight-path speed in yards per second: `factor` times the fastest player flying (Master Riding through the
+    // riding multiplier), never slower than the stock taxi speed; a factor of 0 keeps stock.
+    constexpr float TaxiSpeed(float stock, float baseFlight, float multiplier, float factor)
+    {
+        return factor * baseFlight * AdjustRate(TopFlightRate, multiplier) > stock
+            ? factor * baseFlight * AdjustRate(TopFlightRate, multiplier) : stock;
     }
 }
 

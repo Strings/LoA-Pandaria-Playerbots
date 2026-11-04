@@ -13,6 +13,9 @@ non-player units keep their existing paths.
 `Death.GhostSpeed` (default 2.0) is the least a ghost runs and swims at, against
 the Ghost aura's stock 150%; faster effects keep their speed and 0 turns it off.
 
+`Taxi.SpeedOfTopFlight` (default 2.0) makes flight paths that many times as fast as Master Riding flying
+(about 118 yd/s at the shipped settings, against the stock 32); the spline speed cap skips flight paths.
+
 GM `.mountspeed` recalculates and reports the selected player's run/flight rates,
 mount/taxi state and effective multiplier (defaults to self; reload permission).
 Unit tests cover riding tiers, stock/custom multipliers and invalid input.
