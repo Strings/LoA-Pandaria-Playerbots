@@ -10,6 +10,9 @@ The core applies the bonus before normalization and slows. Unmounted characters,
 ghost wolf, druid travel/flight forms, taxi flights, swimming/backward movement,
 non-player units keep their existing paths.
 
+`Death.GhostSpeed` (default 2.0) is the least a ghost runs and swims at, against
+the Ghost aura's stock 150%; faster effects keep their speed and 0 turns it off.
+
 GM `.mountspeed` recalculates and reports the selected player's run/flight rates,
 mount/taxi state and effective multiplier (defaults to self; reload permission).
 Unit tests cover riding tiers, stock/custom multipliers and invalid input.

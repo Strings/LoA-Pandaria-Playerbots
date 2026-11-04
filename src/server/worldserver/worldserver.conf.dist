@@ -5679,6 +5679,15 @@ Heartseed.Choice.ChangeAtShrineOnly = 0
 
 Rate.MountedSpeed = 2.4
 
+#
+#    Death.GhostSpeed
+#        Description: A ghost runs and swims at least this fast (1.0 is ordinary speed; the Ghost
+#                     aura alone gives 1.5). Faster effects keep their speed; 0 leaves stock ghost speed.
+#                     Reloadable; takes effect at the next speed change (or the next death).
+#        Default:     2.0
+
+Death.GhostSpeed = 2.0
+
 
 ###################################################################################################
 # GM TOOLS (T-039)
