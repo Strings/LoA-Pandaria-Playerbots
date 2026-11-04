@@ -2,53 +2,39 @@
 
 **Agent:** codex
 **Branch:** codex/T-046-legacy-dungeons
-**Task status:** in progress (independent preparation)
+**Task status:** review (PR 91; core review and real-client list playtest pending)
 
 ## What changed
-- Started on latest playerbot aa0af9db after T-044 implementation/test preparation. Primary worktree remains frozen on T-041's queued build.
-- Read decided dungeon-finder design and accepted interim state: solo only, original dungeon level until scaling table, instance-pool bot groups deferred.
+- Specific normal/heroic five-player Dungeon Finder joins become solo round-trip travel at the configured margin (default 20 levels over the dungeon cap), without matchmaking groups or completion rewards. Below-margin bot parties await the instance pool.
+- Public `.legacy list/status/enter/out`; GM selected-player inspection and `force`, which bypasses only the level margin. Native entry restrictions and group/queue/combat/travel safety checks remain.
+- A custom character table saves the return point and original difficulty before transfer. Logout/restart preserves the trip; returning, leaving by portal/hearth or deleting the character clears it. Existing trips can return after disabling new entries.
+- Narrow core hooks cover native upper-level locks, joins and teleport-out. AutoBalance leaves active legacy visits at original difficulty and refreshes when visits change.
+- Added configuration, player introduction, permissions, pure policy tests, documentation and a repeatable native entry/return regression scenario.
+- Integrated playerbot 9a656fb4 on 2026-11-04, preserving published branch history. Telemetry keeps its 95000 block; legacy travel uses 96000. Both sides' configuration additions are retained.
 
 ## How it was tested
-- All 15 standalone unit suites pass, including eligibility/cap fallback/boundary/force and strict decimal-ID parsing. Production C++ has not been built or live-tested.
+- Current production worldserver build PASS (RelWithDebInfo, normal shared build queue, 7.7 minutes). No warnings in touched files; existing PathGenerator and playerbots transport warnings remain outside this change. Log: `build/T046-current-build.log`.
+- All 23 current standalone unit suites PASS, without warnings. Log: `build/T046-current-units.log`.
+- Both new SQL files: validator 0 issues. Original strict migration check on a real characters_codex save copy preserved all 147 pre-existing tables, retained a representative trip and produced identical results across two applications. Report: `build/pr-validation/build/T046-migration-checks/characters_codex_check_83fe78972e4b/report.json`.
+- Original implementation checks PASS: exact margin, GM force, live margin reload, return after disabling entry, battleground queue guard, unscaled visits with AutoBalance enabled, and saved anchor/difficulty across a worldserver restart. Earlier full suite: 11/11 PASS.
+- Current native Dungeon Finder entry/return regression PASS: no group, map 389 entered, original location and heroic difficulty restored. Report: `build/regression-T046-current-native/20261104T224029Z-2d68b566/results.json`.
+- Current ordinary-player native entry/return PASS separately, with no group and saved anchor cleared. Log: `build/T046-current-public-native.log`.
+- All 28 current scenario assertions PASS across the full run and setup-corrected reruns; no assertion weakened. Combined evidence: `build/T046-current-regression-summary.json`. Six corrected reruns: `build/regression-T046-current-recheck/20261104T225227Z-55379450/results.json`; telemetry final: `build/regression-T046-current-telemetry/20261104T225702Z-4a50dd2b/results.json`.
+- Temporary inputs adapt hardcoded Seedtest to Codextwink, use numeric self GUID 1, restore the expected initial Alchemy rank, and establish/sync telemetry's starting position. New command permissions required a private worldserver restart: `.reload rbac` refreshes account state but not global permission definitions.
+- The initial telemetry timeout exposed a small test-runner bug mixing text/bytes in TimeoutExpired output. Fixed incidentally so timeouts produce a failed report instead of crashing. All 3 runner tests PASS, including text/bytes/mixed/empty timeout output and redaction; a real subsequent timeout also reported cleanly.
 
-## Decisions made
-- Interim cap is the native DBC maximum level, falling back to its minimum when no maximum is supplied. This is replaced by one lookup when Phase 6 supplies caps.
-- Plan a separate persistent return anchor so native battleground return data is not overloaded.
+## Database/runtime notes
+- Character 06 and auth 07 SQL applied manually to Codex databases only. No main SQL or deployment performed.
+- Current private test/none runtime: `build/T046-current-runtime`, ports 3744/8105/7898. Updated only Codex's Heartseed data/schema and command permissions for current regressions; touched tables backed up under `build/T046-current-db-backup/`.
+- Telemetry output stays inside this private runtime. New entries enabled; margin 20. No duration added.
 
-## For the other agent
-- New AGENTS explicitly permits force-with-lease for one's own rebased branches; no new permission question is needed for that workflow.
-- Core hooks will require human review/merge. No SQL applied yet.
-
-## Implementation pushed (production verification pending)
-- Adapter handles eligible native joins without forming a group or reward queue; below-margin bot parties remain deferred. Public `.legacy list/status/enter/out`, GM force/selected-player inspection.
-- Saved return anchor and original difficulty survive logout/restart; return/portal/hearth arrival cleans the row. Character deletion cleans its state. Native access/lock restrictions remain; force bypasses the level margin only.
-- Minimal lock/join/return hooks and an AutoBalance active-visit check preserve original difficulty. Existing trips can return after disabling new entries. No duration added.
-- Reserved block 96000, character state and auth SQL. SQL/runtime/build/live checks remain pending.
-
-## Next
-- Policy, hooks, native access/scaling integration, GM controls and saved anchor are implemented; production compilation/live remain pending.
-- SQL copy-of-real-save/idempotence checks, default normal-queue build, native round-trip/config/relog checks and full current regressions.
-- T-041 verification remains first as soon as its build is free; T-044 build/live checks precede this branch's build.
+## Decisions and remaining review
+- Accepted interim cap: native DBC maximum, falling back to minimum if absent. Phase 6 replaces one lookup with the scaling cap table.
+- Client dungeon-list visibility are unverified. Native protocol entry and return are verified; GUI testing still requires permission under AGENTS.md.
+- Core hooks await Claude/human review on PR 91. Do not self-merge this core change.
 
 ## Map additions
-- src/server/scripts/Custom/LegacyDungeons/ (planned adapter/policy).
-
-## Migration verification
-- Both SQL files pass lint, zero issues. Strict tools/backup/save_safety.py check against real characters_codex save passes: 147 pre-existing tables identical before/after, representative saved anchor retained, two applications produce identical schema/data. Report: ignored build/T046-migration-checks/characters_codex_check_83fe78972e4b/report.json. Scratch copy removed by the guard; original save read only. Canonical runtime/main SQL not applied yet.
-
-- Rebased the prepared draft on playerbot 2c654e81 while T-044 waits in the normal queue. No main SQL; T-044 build/live still precede this branch. User approved guarded rebased publication for remaining Codex branches.
-
-- First production compile found the core stores lock details in LfgLockStatusType rather than the enum directly; corrected comparisons to its lockStatus field. Rebuild follows through the normal queue.
-
-- Production build now passes cleanly. All 16 current unit suites pass; fixed an unsigned test literal to remove MSVC optional-comparison warnings, and rechecking through the same shared mutex. Scoped character 06/auth 07 SQL is applied only to Codex runtime DBs. Matching private server is starting.
-
-- Warning-free current units: all 16 pass. Native entry/return, saved original difficulty/anchor and unscaled visit PASS with AutoBalance explicitly enabled. Ordinary-player native DF entry/out creates no group and clears anchor. Exact threshold, GM force, live margin reload and return after disabling new entries PASS. Restart persistence and queue guard next.
-
-- Saved visit and original return difficulty survive a full worldserver restart; native return clears the anchor afterward. Ordinary-player battleground queue blocks entry, queue cleaned. Original private AutoBalance.Global=0 restored; entry key/margin restored to 1/20. Full current regressions now running. Native client GUI/list filtering remains untested; backend native join/return packets and ordinary-player access are verified.
-
-- All 11 current regressions PASS: build/regression-T046/20261101T204258Z-d69a35aa/results.json. Latest playerbot advances only Capture script/README; rebasing and rebuilding this base before ready, with legacy implementation unchanged.
-
-## Resumed 2026-11-04
-- Integrated current playerbot into the existing task branch with a merge, preserving its published history. Kept Telemetry's 95000 block and LegacyDungeons' 96000 block; removed the stale Twinks reservation from this branch's ID table. Preserved both sets of configuration keys.
-- Added a repeatable native Dungeon Finder entry/return regression scenario, including group-free travel and restored heroic difficulty. Corrected stale README verification notes.
-- Current-base production build and regressions in progress. No main-server or main-database changes.
+- `src/server/scripts/Custom/LegacyDungeons/`: adapter, pure eligibility/ID parsing and README.
+- `src/server/game/DungeonFinding/SoloDungeonHooks.h`, `.cpp`: optional adapter facade.
+- `tests/legacy_dungeons/`: pure policy tests.
+- `tests/regression/scenarios/legacy-dungeons.json`: native solo Dungeon Finder round trip.

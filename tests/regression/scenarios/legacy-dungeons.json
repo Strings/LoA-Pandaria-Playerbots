@@ -36,11 +36,11 @@
     },
     {
       "type": "contains",
-      "text": "active-dungeon=4; destination=389; current-map=389"
+      "text": "grouped=0; active-dungeon=4; destination=389; current-map=389"
     },
     {
-      "type": "contains",
-      "text": "active-dungeon=0; destination=0; current-map=1"
+      "type": "regex",
+      "pattern": "(?s)step: lfg-teleport out.*?active-dungeon=0; destination=0; current-map=1"
     },
     {
       "type": "event",
