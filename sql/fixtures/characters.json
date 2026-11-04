@@ -5,7 +5,8 @@
     "probe_seconds": 5,
     "client_seconds": 180,
     "logout_seconds": 60,
-    "poll_seconds": 1
+    "poll_seconds": 1,
+    "hold_seconds": 1
   },
   "fixtures": [
     {

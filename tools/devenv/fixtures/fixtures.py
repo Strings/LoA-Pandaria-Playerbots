@@ -33,7 +33,7 @@ def load_catalog(path=CATALOG):
             raise ValueError('invalid fixture name/checkpoint')
         if row['checkpoint'] != 'fixture-' + str(row['level']) or row['race'] != 2 or row['class'] != 1:
             raise ValueError('shipped fixture checkpoint/identity mismatch')
-    if set(data['limits']) != {'query_seconds', 'probe_seconds', 'client_seconds', 'logout_seconds', 'poll_seconds'} or any(not isinstance(v, (int, float)) or v <= 0 for v in data['limits'].values()):
+    if set(data['limits']) != {'query_seconds', 'probe_seconds', 'client_seconds', 'logout_seconds', 'poll_seconds', 'hold_seconds'} or any(not isinstance(v, (int, float)) or v <= 0 for v in data['limits'].values()):
         raise ValueError('fixture timing limits must be positive')
     return data
 
@@ -200,6 +200,19 @@ def verify(env, account=None):
     return saved
 
 
+def verify_logins(env, manifest):
+    if not env.running():
+        raise ValueError('start the private world for authenticated fixture verification')
+    account = account_for(env)
+    for fixture in env.catalog['fixtures']:
+        guid = manifest['fixtures'][fixture['id']]['guid']
+        output = env.client(account, ['--cmd', 'play', '--hold', str(env.limits['hold_seconds'])], guid)
+        if 'LOGIN-OK map=' not in output or not re.search(r'EVT \d+ login .*\bguid=' + str(guid) + r'\b', output):
+            raise RuntimeError('did not authenticate the intended fixture: ' + fixture['id'])
+        env.offline(guid)
+    return verify(env, account)
+
+
 def provision(env, reset=False):
     if not env.running():
         raise ValueError('start your private world before checkpoint provisioning')
@@ -229,7 +242,7 @@ def provision(env, reset=False):
                 raise RuntimeError('fixture creation did not persist')
         steps = ['say .revive', 'say .checkpoint reload', 'say .checkpoint apply ' + fixture['checkpoint'],
                  'say .gm off', 'say .save']
-        args = ['--cmd', 'play', '--hold', '1']
+        args = ['--cmd', 'play', '--hold', str(env.limits['hold_seconds'])]
         for step in steps:
             args += ['--step', step]
         output = env.client(account, args, guid)
@@ -284,7 +297,8 @@ def main():
     sub = parser.add_subparsers(dest='command', required=True)
     apply = sub.add_parser('provision')
     apply.add_argument('--reset', action='store_true')
-    sub.add_parser('verify')
+    check = sub.add_parser('verify')
+    check.add_argument('--login', action='store_true')
     capture = sub.add_parser('snapshot')
     capture.add_argument('--config', type=Path, required=True)
     capture.add_argument('--bot-count', type=int, default=20)
@@ -298,7 +312,10 @@ def main():
             result = provision(env, args.reset)
             print('Verified', len(result['fixtures']), 'checkpoint fixtures')
         elif args.command == 'verify':
-            print('Verified', len(verify(env)['fixtures']), 'unchanged checkpoint fixtures')
+            manifest = verify(env)
+            if args.login:
+                manifest = verify_logins(env, manifest)
+            print('Verified', len(manifest['fixtures']), 'unchanged checkpoint fixtures' + (' and world logins' if args.login else ''))
         elif args.command == 'snapshot':
             print(snapshot(env, args.config, args.bot_count))
         else:

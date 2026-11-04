@@ -124,6 +124,15 @@ class Tests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 f.Environment.running(env)
 
+    def test_login_verification_rejects_the_wrong_character(self):
+        fixture = f.load_catalog()['fixtures'][0]
+        env = SimpleNamespace(running=Mock(return_value=True), catalog={'fixtures': [fixture]},
+                              limits={'hold_seconds': 1}, client=Mock(return_value='LOGIN-OK map=1\nEVT 10 login guid=999 map=1'), offline=Mock())
+        with patch.object(f, 'account_for', return_value={'id': 7}):
+            with self.assertRaises(RuntimeError):
+                f.verify_logins(env, {'fixtures': {fixture['id']: {'guid': 16}}})
+        env.offline.assert_not_called()
+
     def test_live_snapshot_is_rejected_before_capture(self):
         env = SimpleNamespace(running=Mock(return_value=True))
         with patch.object(f, 'safety_module') as module:
