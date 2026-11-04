@@ -52,6 +52,15 @@ class CloneTests(unittest.TestCase):
         # The source stays as it was.
         self.assertEqual(tables['Spell'].string(tables['Spell'].find(0, 500)[0][1]), 'Old')
 
+    def test_interrupts_copy_clears_bits(self):
+        tables = source_tables()
+        tables['Spell'].rows[0][17] = 27126
+        tables['SpellInterrupts'] = Dbc(table(8, [[27126, 500, 0, 0x18, 0, 0x18, 0, 0x28]]), 'SpellInterrupts.dbc')
+        rows = spells.clone(dict(EDIT, interrupts={'clear_aura': 0x18, 'clear_channel': 0x18}), tables)
+        self.assertEqual(rows['SpellInterrupts'], [[27127, 310100, 0, 0, 0, 0, 0, 0x28]])
+        self.assertEqual(rows['Spell'][0][17], 27127)
+        self.assertEqual(rows['ServerSpell'][0][17], 27126)   # the server's data files only have the source row
+
     def test_cast_time_index(self):
         tables = source_tables()
         self.assertEqual(spells.clone(EDIT, tables)['SpellMisc'][0][17], 0)   # the source's own

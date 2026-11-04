@@ -32,6 +32,7 @@
 #include "Player.h"
 #include "MoveSplineInit.h"
 #include "MoveSpline.h"
+#include "MountedSpeed.h"
 
 void WaypointMovementGenerator<Creature>::LoadPath(Creature* creature)
 {
@@ -299,8 +300,6 @@ void FlightPathMovementGenerator::DoFinalize(Player* player, bool, bool)
     player->RemoveFlag(PLAYER_FIELD_PLAYER_FLAGS, PLAYER_FLAGS_TAXI_BENCHMARK);
 }
 
-#define PLAYER_FLIGHT_SPEED 32.0f
-
 bool FlightPathMovementGenerator::DoReset(Player* player)
 {
     player->AddUnitState(UNIT_STATE_IN_FLIGHT);
@@ -318,7 +317,9 @@ bool FlightPathMovementGenerator::DoReset(Player* player)
     init.SetSmooth();
     init.SetUncompressed();
     init.SetWalk(true);
-    float speed = PLAYER_FLIGHT_SPEED * player->GetTotalAuraMultiplier(SPELL_AURA_MOD_TAXI_FLIGHT_SPEED);
+    // Taxi.SpeedOfTopFlight: a flight path beats the fastest flying a player can learn.
+    float speed = MountedSpeed::TaxiSpeed(MountedSpeed::StockTaxiSpeed, baseMoveSpeed[MOVE_FLIGHT], MountedSpeed::Multiplier(),
+        MountedSpeed::TaxiFactor()) * player->GetTotalAuraMultiplier(SPELL_AURA_MOD_TAXI_FLIGHT_SPEED);
     init.SetVelocity(speed);
     init.Launch();
     return true;

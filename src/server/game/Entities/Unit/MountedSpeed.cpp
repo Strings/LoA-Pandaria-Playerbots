@@ -7,6 +7,7 @@ namespace
 {
     std::atomic<float> multiplier{ 2.4f };
     std::atomic<float> ghostSpeed{ 2.0f };
+    std::atomic<float> taxiFactor{ 2.0f };
 }
 
 void MountedSpeed::Load()
@@ -24,6 +25,14 @@ void MountedSpeed::Load()
         ghost = 2.0f;
     }
     ghostSpeed.store(ghost, std::memory_order_relaxed);
+
+    float taxi = sConfigMgr->GetFloatDefault("Taxi.SpeedOfTopFlight", 2.0f);
+    if (!std::isfinite(taxi) || taxi < 0.0f)
+    {
+        TC_LOG_ERROR("server.loading", "Taxi.SpeedOfTopFlight must be finite and not negative; using 2.0.");
+        taxi = 2.0f;
+    }
+    taxiFactor.store(taxi, std::memory_order_relaxed);
 }
 
 float MountedSpeed::Multiplier()
@@ -34,4 +43,9 @@ float MountedSpeed::Multiplier()
 float MountedSpeed::GhostSpeed()
 {
     return ghostSpeed.load(std::memory_order_relaxed);
+}
+
+float MountedSpeed::TaxiFactor()
+{
+    return taxiFactor.load(std::memory_order_relaxed);
 }
