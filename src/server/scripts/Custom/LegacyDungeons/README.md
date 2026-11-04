@@ -12,4 +12,6 @@ AutoBalance recognizes an active legacy visit, leaving creatures at original dif
 
 SQL: characters 2026_11_01_codex_06_legacy_dungeons.sql; auth 2026_11_01_codex_07_legacy_dungeons.sql. Apply manually with Updates.EnableDatabases=0. This state table is read at login and inspected through commands; it is not reloadable design data. Config reload refreshes native lock caches.
 
-Pure rules live in SoloDungeonPolicy.h and tests/legacy_dungeons. Production build/live/migration checks remain pending; status/codex-T-046.md records the current recovery point. T-041/T-044 verification has priority while this is prepared in the secondary checkout.
+Pure rules live in SoloDungeonPolicy.h and tests/legacy_dungeons. The headless regression scenario tests native Dungeon Finder entry, native return, no group, and restoration of heroic difficulty using Ragefire Chasm (ID 4). Run with a dedicated GM fixture, default enable/margin settings, and the character/auth updates applied. The scenario leaves the fixture at level 90 outside Orgrimmar.
+
+Migration, boundary, config reload, ordinary-player access, AutoBalance exclusion and restart checks from the original implementation are recorded in status/codex-T-046.md. Current-base build and regression results are recorded there as they finish. The native client's dungeon-list visibility still needs a client playtest.

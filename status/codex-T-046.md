@@ -47,3 +47,8 @@
 - Saved visit and original return difficulty survive a full worldserver restart; native return clears the anchor afterward. Ordinary-player battleground queue blocks entry, queue cleaned. Original private AutoBalance.Global=0 restored; entry key/margin restored to 1/20. Full current regressions now running. Native client GUI/list filtering remains untested; backend native join/return packets and ordinary-player access are verified.
 
 - All 11 current regressions PASS: build/regression-T046/20261101T204258Z-d69a35aa/results.json. Latest playerbot advances only Capture script/README; rebasing and rebuilding this base before ready, with legacy implementation unchanged.
+
+## Resumed 2026-11-04
+- Integrated current playerbot into the existing task branch with a merge, preserving its published history. Kept Telemetry's 95000 block and LegacyDungeons' 96000 block; removed the stale Twinks reservation from this branch's ID table. Preserved both sets of configuration keys.
+- Added a repeatable native Dungeon Finder entry/return regression scenario, including group-free travel and restored heroic difficulty. Corrected stale README verification notes.
+- Current-base production build and regressions in progress. No main-server or main-database changes.
