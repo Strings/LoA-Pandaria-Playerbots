@@ -10,7 +10,7 @@
 - A custom character table saves the return point and original difficulty before transfer. Logout/restart preserves the trip; returning, leaving by portal/hearth or deleting the character clears it. Existing trips can return after disabling new entries.
 - Narrow core hooks cover native upper-level locks, joins and teleport-out. AutoBalance leaves active legacy visits at original difficulty and refreshes when visits change.
 - Added configuration, player introduction, permissions, pure policy tests, documentation and a repeatable native entry/return regression scenario.
-- Integrated playerbot 9a656fb4 on 2026-11-04, preserving published branch history. Telemetry keeps its 95000 block; legacy travel uses 96000. Both sides' configuration additions are retained.
+- Integrated playerbot 9a656fb4 on 2026-11-04, preserving published branch history. Telemetry keeps its 95000 block; legacy travel uses 97000. Both sides' configuration additions are retained.
 
 ## How it was tested
 - Current production worldserver build PASS (RelWithDebInfo, normal shared build queue, 7.7 minutes). No warnings in touched files; existing PathGenerator and playerbots transport warnings remain outside this change. Log: `build/T046-current-build.log`.

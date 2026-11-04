@@ -4,7 +4,7 @@ Specific normal/heroic five-player dungeons can be entered solo when the player'
 
 `LFG.LegacySolo.Enable=1` enables new entries. `LFG.LegacySolo.IntroOnLogin=1` introduces eligible humans on login/first eligible level. Invalid/nonpositive margins use 20. No duration is added.
 
-Public `.legacy list`, `status [id]`, `enter <id>` and `out` use self. GM permission 96001 allows selected-player targets and `force <id>` bypassing the level margin; native access/lock restrictions and travel safety remain. Permission 96000 is linked to Player Commands (199), 96001 to GM Commands (197).
+Public `.legacy list`, `status [id]`, `enter <id>` and `out` use self. GM permission 97001 allows selected-player targets and `force <id>` bypassing the level margin; native access/lock restrictions and travel safety remain. Permission 97000 is linked to Player Commands (199), 97001 to GM Commands (197).
 
 The DungeonFinding facade delegates upper-level lock, join and native teleport requests to the adapter. Native entrance/access/lock checks apply; one specific dungeon, no group, no existing queue, combat/flight/vehicle safety. It creates no matchmaking/reward queue. The custom character_legacy_trip table stores original world location and difficulty before transfer. Login reloads the anchor; completed return/portal/hearth arrivals or character deletion remove it. An existing trip can return with the entry key disabled. Normal battleground return data is not reused.
 

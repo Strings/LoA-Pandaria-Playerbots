@@ -27,8 +27,8 @@ namespace
     std::mutex tripMutex;
     std::unordered_map<uint32, Trip> trips;
     std::atomic<bool> storageReady{ false };
-    rbac::RBACPermissions const Permission = static_cast<rbac::RBACPermissions>(96000);
-    rbac::RBACPermissions const ForcePermission = static_cast<rbac::RBACPermissions>(96001);
+    rbac::RBACPermissions const Permission = static_cast<rbac::RBACPermissions>(97000);
+    rbac::RBACPermissions const ForcePermission = static_cast<rbac::RBACPermissions>(97001);
     bool Enabled() { return sConfigMgr->GetBoolDefault("LFG.LegacySolo.Enable", true); }
     uint32 Margin() { return LegacyDungeons::Margin(sConfigMgr->GetIntDefault("LFG.LegacySolo.LevelsOverCap", 20)); }
     uint32 Cap(lfg::LFGDungeonData const& data) { return LegacyDungeons::OriginalCap(data.minlevel, data.maxlevel); }
