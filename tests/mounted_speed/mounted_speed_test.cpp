@@ -17,8 +17,8 @@ void RunTests()
     UMP_CHECK(AdjustRate(0.5f, 2.0f) == 0.5f);
     UMP_CHECK(MountedSpeed::ValidMultiplier(1.0f) == 1.0f);
     UMP_CHECK(MountedSpeed::ValidMultiplier(3.0f) == 3.0f);
-    UMP_CHECK(MountedSpeed::ValidMultiplier(0.0f) == 2.0f);
-    UMP_CHECK(MountedSpeed::ValidMultiplier(-1.0f) == 2.0f);
-    UMP_CHECK(MountedSpeed::ValidMultiplier(std::numeric_limits<float>::infinity()) == 2.0f);
-    UMP_CHECK(MountedSpeed::ValidMultiplier(std::numeric_limits<float>::quiet_NaN()) == 2.0f);
+    UMP_CHECK(MountedSpeed::ValidMultiplier(0.0f) == 2.4f);
+    UMP_CHECK(MountedSpeed::ValidMultiplier(-1.0f) == 2.4f);
+    UMP_CHECK(MountedSpeed::ValidMultiplier(std::numeric_limits<float>::infinity()) == 2.4f);
+    UMP_CHECK(MountedSpeed::ValidMultiplier(std::numeric_limits<float>::quiet_NaN()) == 2.4f);
 }

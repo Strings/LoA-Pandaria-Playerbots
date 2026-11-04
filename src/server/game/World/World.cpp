@@ -1687,7 +1687,7 @@ void World::LoadRates(bool loading)
         { RATE_MOVESPEED,                               "Rate.MoveSpeed",                               1.0f,   true  },
         { RATE_CORPSE_DECAY_LOOTED,                     "Rate.Corpse.Decay.Looted",                     0.5f,   false },
         { RATE_TARGET_POS_RECALCULATION_RANGE,          "TargetPosRecalculateRange",                    1.5f,   true  },
-        { RATE_DURABILITY_LOSS_ON_DEATH,                "DurabilityLoss.OnDeath",                       10.0f,  true  },
+        { RATE_DURABILITY_LOSS_ON_DEATH,                "DurabilityLoss.OnDeath",                       10.0f,  false },
         { RATE_DURABILITY_LOSS_DAMAGE,                  "DurabilityLossChance.Damage",                  0.5f,   true  },
         { RATE_DURABILITY_LOSS_ABSORB,                  "DurabilityLossChance.Absorb",                  0.5f,   true  },
         { RATE_DURABILITY_LOSS_PARRY,                   "DurabilityLossChance.Parry",                   0.05f,  true  },
@@ -1763,7 +1763,13 @@ void World::LoadRates(bool loading)
                 }
                 break;
             case RATE_DURABILITY_LOSS_ON_DEATH:
-                if (rate_values[config.Rate] > 100.0f)
+                // 0 turns the loss off, so it skips the generic positive-only check.
+                if (rate_values[config.Rate] < 0.0f)
+                {
+                    TC_LOG_ERROR("server.loading", "DurabilityLoss.OnDeath (%f) must be >= 0. Using 0.0 instead.", rate_values[config.Rate]);
+                    rate_values[config.Rate] = 0.0f;
+                }
+                else if (rate_values[config.Rate] > 100.0f)
                 {
                     TC_LOG_ERROR("server.loading", "DurabilityLoss.OnDeath (%f) must be <= 100. Using 100.0 instead.", rate_values[config.Rate]);
                     rate_values[config.Rate] = 0.0f;
