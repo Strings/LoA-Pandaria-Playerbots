@@ -52,6 +52,12 @@ class CloneTests(unittest.TestCase):
         # The source stays as it was.
         self.assertEqual(tables['Spell'].string(tables['Spell'].find(0, 500)[0][1]), 'Old')
 
+    def test_cast_time_index(self):
+        tables = source_tables()
+        self.assertEqual(spells.clone(EDIT, tables)['SpellMisc'][0][17], 0)   # the source's own
+        tables = source_tables()
+        self.assertEqual(spells.clone(dict(EDIT, cast_time_index=1), tables)['SpellMisc'][0][17], 1)
+
     def test_skill_line_puts_clone_in_spellbook(self):
         tables = source_tables()
         abilities = [[27083, 183, 125439, 0, 0, 1] + [0] * 7, [27090, 183, 125440] + [0] * 10,
