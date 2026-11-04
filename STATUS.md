@@ -1,6 +1,6 @@
 # Project status
 
-Last folded: 2026-11-02 by Claude Code (58 fragments, T-001 to T-082, BUG-004). Agents: read this, never edit
+Last folded: 2026-11-04 by Claude Code (66 fragments, T-001 to T-086j, BUG-004, neutral-aggro fix). Agents: read this, never edit
 it; write a fragment in `status/`. Claude Code folds them.
 
 ## Current milestone: v0.1 The jewel run
@@ -8,8 +8,8 @@ it; write a fragment in `status/`. Claude Code folds them.
 **Test:** is leveling a fresh character more fun than stock MoP?
 
 **Scope:** Phase 0 (foundation and all quick wins), Phase 0a (fast iteration, GM tools, save safety,
-capture), Phase 0b (Heartseed MVP), plus the timeline decision. No bot behavior work, no client
-patch, no ML. Task list: `TASKS.md`.
+capture), Phase 0b (Heartseed MVP), plus the timeline decision. No bot behavior work, no ML. Client
+patches only as small data and interface edits through `tools/clientpatch` (the human approved). Task list: `TASKS.md`.
 
 ## State
 
@@ -18,23 +18,28 @@ patch, no ML. Task list: `TASKS.md`.
 | Fork, build, game data, databases | Done (T-001). Builds with Ninja and sccache through `tools\build\build.ps1`, which queues builds machine-wide |
 | Agent environments | Done: worktrees, per-agent databases and ports for Claude Code, Codex and Gemini (T-002, T-005) |
 | Fast iteration (Phase 0a) | Done except fixtures (T-007) and faster builds (T-060): test profiles, loader profiler, unit tests (CTest, 15 suites), Eluna prototypes, headless regression runner, save snapshots and migration checks, `.reload`, seeded test RNG, GM tools (`.clock`, `.scenario`, `.spectate`, `.bot why/state/...`), `/idea` and `/bug` capture (players too since BUG-004), regression scenarios covering every custom command set (professions added, T-074) |
-| Heartseed (Phase 0b) | MVP done (T-020 to T-026, T-049): account-wide seed, stage glows, traits and majors, path-choice gossip, feeding and essences, story flags, GM commands. The level 10 major is an active Celestial Gift (T-080): Call of Xuen, Crane Rush, Ox Stomp, Serpent's Breath, with a redesigned addon panel (mandala, castable Gift button, sounds) and art slots awaiting generated art. Each later stage adds a rider to the Gift (T-082), and Call of Xuen keeps up with a mounted owner. Active play (T-083): path meters, 20 to 60 s Gift cooldowns shortened by play, Crane's Plume and Niuzao's Retort, proc-gated casts with a button glow. The rank cap is gone: a per-character Growth XP track (battleground wins, dungeon and raid bosses, quests and rares, T-084) gives stat points the player spends, reset at a Celestial shrine. All numbers are placeholders until v0.5; glow IDs await a pick in the client |
+| Heartseed (Phase 0b) | MVP done (T-020 to T-026, T-049): account-wide seed, stage glows, traits and majors, path-choice gossip, feeding and essences, story flags, GM commands. The level 10 major is an active Celestial Gift (T-080): Call of Xuen, Crane Rush, Ox Stomp, Serpent's Breath, with a redesigned addon panel (mandala, castable Gift button, sounds) and art slots awaiting generated art. Each later stage adds a rider to the Gift (T-082), and Call of Xuen keeps up with a mounted owner. Active play (T-083): path meters, 20 to 60 s Gift cooldowns shortened by play, Crane's Plume and Niuzao's Retort, proc-gated casts with a button glow. The rank cap is gone: a per-character Growth XP track (battleground wins, dungeon and raid bosses, quests and rares, T-084) gives stat points the player spends, with diminishing returns (`max_pct * points / (points + half_points)`, T-086c); reset and major change no longer need a shrine. The Gifts and rider auras are their own client-patched spells (T-086, clones 310100 to 310114) with their own names, tooltips, cooldowns and placeholder icons. Serpent's Breath is instant, channels while moving, reaches 12 yd with a larger jade flame (T-086f to j). The panel swaps the Gift from its Celestial icons (`.seed choose`). All numbers are placeholders until v0.5; glow IDs await a pick in the client |
 | GM test suite | Done (T-048): checkpoints (`hs-10` and more), twink checkpoints, kits, ability tester, GMSuite addon |
-| Quick wins | Done: mount speed x2 (T-010), rare mounts 10% including the world bosses (T-012, T-064), free respec and dual spec from 10 (T-016), solo config defaults (T-019), twink gear +7% (T-045, generator T-050), eleven primary professions with the `/profbar` addon (T-014), trade goods stack to 1000 (T-062), 36-slot bags from vendors (T-042, T-061). Raid saves kept until finished or abandoned, resets every 2 days (T-013); first login grants riding, the racial mount and four 10-slot bags (T-011); no binding for ordinary gear, quest and progression items stay bound (T-015); guild perks for everyone, free character-service stewards in the capitals, 5-minute hearthstone, mixed-type transmog (T-041). Open: T-044, T-046, T-047 |
+| Quick wins | Done: mount speed x2 (T-010), rare mounts 10% including the world bosses (T-012, T-064), free respec and dual spec from 10 (T-016), solo config defaults (T-019), twink gear +7% (T-045, generator T-050), eleven primary professions with the `/profbar` addon (T-014), trade goods stack to 1000 (T-062), 36-slot bags from vendors (T-042, T-061). Raid saves kept until finished or abandoned, resets every 2 days (T-013); first login grants riding, the racial mount and four 10-slot bags (T-011); no binding for ordinary gear, quest and progression items stay bound (T-015); guild perks for everyone, free character-service stewards in the capitals, 5-minute hearthstone, mixed-type transmog (T-041). Riding bonus x2.4 (`Rate.MountedSpeed`), flight paths at 2x Master Riding flying (`Taxi.SpeedOfTopFlight`), ghosts run at 200% (`Death.GhostSpeed`), no durability loss on death (T-086g to j). Mounts drag from the journal to the bar (client patch, T-085). Open: T-044, T-046, T-047 |
 | Loadouts and detached storage | Done: spec loadouts with `/lo` panel (T-017), gear pages per loadout (T-018), shared detached item storage, reagent bank with crafting drawing from it and `/rb` panel (T-043). Twink templates will use the same storage. Addon panels await a real-client playtest |
-| Tooling | Done: live server MCP, crash triage, SQL validator, DBC reader and content search, SQL, config, command and legacy-script audits, `tools/map-check` for `docs/MAP.md`. Open: balance sim (T-031) |
+| Tooling | Done: live server MCP, crash triage, SQL validator, DBC reader and content search, SQL, config, command and legacy-script audits, `tools/map-check` for `docs/MAP.md`, `.areaprobe` (measures a spell's reach, cone and circle with probe dummies, T-086f). Open: balance sim (T-031) |
 | World density | Spawn thinning (T-081): hostile open-world spawns within 10 yd of an older one are left out of the grids at startup (18,495 of 85,544); world data untouched, `.spawnthin` to inspect. Awaiting playtest feedback |
 | Telemetry (T-004) | Done: server-side JSON-lines logging of human play (movement, decisions with context snapshots, outcomes, episodes), `.telemetry` player and GM commands, automatic pauses. On for main, writing to `I:/UltimateMoP/telemetry`. The client addon for UI signals is still to do |
 | Bot load baseline (T-003) | Not started. Main with 500 bots settles at about 9.9 GB private memory within the first hour and stays flat |
 | Timeline decision (T-036) | Waiting on the human |
-| Game client | `mop-clean/`, 5.4.8.18414 enUS, not patched |
+| Game client | `mop-clean/`, 5.4.8.18414 enUS. Patched by update archives in `Data/` built from `tools/clientpatch/edits.json` (T-085: DBC, DB2 and Blizzard interface edits, spell clones with matching server SQL); launch with `_Wow-64.exe` |
 
-**In progress:** Codex is out of usage: T-044 (PR 86, ready), T-046 (PR 91) and T-047 (draft PR 99) wait for it. Flash's T-075 smoke run was never pushed and is being handed out again. Claude's T-060 (draft PR 78) is shelved. Main runs the T-084 build. The human is playtesting.
+**In progress:** T-044 (Codex PR 86, ready) is under review by Claude Code; T-046 (PR 91) and T-047 (draft PR 99) wait for Codex. Flash's T-075 smoke run is handed out again. Claude's T-060 (draft PR 78) is shelved. T-086 waits on a real-client look; T-087 (taxi mount vanishing on fast flights) is next for Claude. Main runs the T-086j build. The human is playtesting.
 
 **Blocked:** nothing.
 
 ## Recent decisions (newest first)
 
+- 2026-11-03: Flight paths fly at `Taxi.SpeedOfTopFlight` (2.0) times Master Riding flying through `Rate.MountedSpeed`; temporary buffs don't count. The spline speed cap skips units in flight.
+- 2026-11-03: Serpent's Breath: instant channel, keeps going while moving, 38% of attack or spell power per tick, 12 yd reach (`Heartseed.Gift.BreathRange`). Riding multiplier 2.0 -> 2.4 ("another 20%"); ghosts at 200%; `DurabilityLoss.OnDeath = 0` now really means none.
+- 2026-11-03: Growth stats have diminishing returns (the human's call): stamina 30/20, main stat 20/20, crit 10/10, haste 10/10 (`max_pct`/`half_points`). Changing a major and resetting Growth no longer need a shrine (`...ShrineOnly = 0`).
+- 2026-11-03: Custom player-visible spells are clones of client spells in the system's ID block, never renamed borrowed spells; `tools/clientpatch` generates both the client archive and the server SQL. Placeholder icons until custom art.
+- 2026-11-03: Client patches are update archives per chain named after the client build, built from `edits.json`; edits name what they replace so a source change fails the build. Edited Blizzard addons get a placeholder `.toc.sig`. The MountBar addon is retired.
 - 2026-11-02: Quests and rares feed Heartseed Growth (T-084): 15 per quest turn-in, 40 per rare, within `LevelRange` of the character; repeatable quests other than dailies and weeklies give none. First dungeon clears are not a source; bosses already pay per kill.
 - 2026-11-02: Telemetry (T-004) writes JSON-lines files, not database tables; rows wait 15 minutes in memory so `.telemetry discard` really deletes them. The module lives in `Custom/Telemetry/`, not `game/Telemetry/`, so the core's CMake stays untouched. GM commands pause logging until the next move or cast.
 - 2026-11-02: Growth XP (T-083 part B, the human's call): minors unlock by character level, stat points are chosen by the player. Twinks with XP off earn no Growth unless `Heartseed.Growth.TwinksEarn = 1`. A reset is free but needs a Celestial shrine.
@@ -94,7 +99,10 @@ patch, no ML. Task list: `TASKS.md`.
 ## Open follow-ups
 
 - Spawn thinning: ask the human how density feels; raise `SpawnThinning.Radius` if still packed, consider faster respawns if zones feel empty.
-- Celestial Gifts: the lightning chain, kill cooldown cuts, Serpent's Breath riders and Xuen's mounted catch-up have no automated check; look in a playtest. Generated art (`addons/Heartseed/art/`, then `USE_ART = true`); Xuen's lightning visual needs a client look. Spell tooltips show the borrowed spells' text until a client patch.
+- Celestial Gifts: the lightning chain, kill cooldown cuts, Serpent's Breath riders and Xuen's mounted catch-up have no automated check; look in a playtest. Generated art (`addons/Heartseed/art/`, then `USE_ART = true`); Xuen's lightning visual needs a client look. Gift clones (T-086): check names, tooltips, icons and the breath flame's size in the real client; custom icon art (BLP writer, SpellIcon rows) when the panel art lands; the triggered helpers (Xuen's lightning 123996, the Breath tick 124947) still show their own names in the combat log.
+- Heartseed: the gossip "Change it." path didn't swap the Gift in the real client (the headless client swaps fine); the panel icons work around it.
+- T-087: on long flight paths at the doubled speed the taxi mount model vanishes partway.
+- Client patch: GlueXML and FrameXML are signed differently and untested; expect an exe patch for those.
 - Possess `AddAllowedMover` assert crashed main once; needs a look.
 - Main characters DB: apply PR 69's soulbound cleanup while main is stopped for the next restart (the human approved; back up `item_instance` first). Main world and auth already have the batch and T-082 SQL.
 - Professions (T-014): the intro shows on every login; limit it to characters with fewer than 3 primaries. The conf comment says "Range: 0-10" with default 11.
@@ -148,4 +156,6 @@ patch, no ML. Task list: `TASKS.md`.
 - **Reagent sources:** `src/server/game/Spells/ReagentSource.h` is the one hook for reagents outside the bags; one source can be registered.
 - **Regression runs** need a generated test-profile runtime: `python tools/devenv/setup.py --agent <you> --gamedata I:/UltimateMoP/gamedata --binaries build/bin --output build/devenv --profile test --load none --db-user ultimatemop` (with `MOP_DB_PASSWORD` set), start `build/devenv/worldserver.exe -c <absolute conf path>`, then `tests/regression/run.py --runtime build/devenv`. Regression SOAP replies are complete and the none bot profile is supported (Codex fix).
 - **Config:** the core refuses to start on a duplicate key in `worldserver.conf`. Before adding a key to `.conf.dist`, grep for it.
+- **Client edits** go in `tools/clientpatch/edits.json`, never by hand into the client; Claude Code installs the archives on deploy. A new custom spell: add a `spell` edit, run `build.py sql`, commit the regenerated SQL. Use `.areaprobe` to check any AoE you add (25 spokes avoid the cone edge).
+- **Core fixes worth knowing:** `spelleffect_dbc` now fills MiscValueB (upstream SQL summons got their summon properties back; a changed scripted summon may be why). `MoveSplineInit` doesn't cap velocity for units in flight. Neutral mobs accept a target already on their threat list, so casters who never auto-attack get fought back.
 - BUG-003: deleting a newly added training dummy (31144) can crash in aura removal. Avoid in GM tests until fixed.
