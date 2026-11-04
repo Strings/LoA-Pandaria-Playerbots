@@ -17,6 +17,9 @@ void RunTests()
     UMP_CHECK(AdjustRate(0.5f, 2.0f) == 0.5f);
     UMP_CHECK(MountedSpeed::ValidMultiplier(1.0f) == 1.0f);
     UMP_CHECK(MountedSpeed::ValidMultiplier(3.0f) == 3.0f);
+    UMP_CHECK(MountedSpeed::GhostRate(1.5f, 2.0f) == 2.0f);   // the Ghost aura's 150% is raised
+    UMP_CHECK(MountedSpeed::GhostRate(2.5f, 2.0f) == 2.5f);   // a faster effect keeps its speed
+    UMP_CHECK(MountedSpeed::GhostRate(1.5f, 0.0f) == 1.5f);   // 0 leaves stock ghost speed
     UMP_CHECK(MountedSpeed::ValidMultiplier(0.0f) == 2.4f);
     UMP_CHECK(MountedSpeed::ValidMultiplier(-1.0f) == 2.4f);
     UMP_CHECK(MountedSpeed::ValidMultiplier(std::numeric_limits<float>::infinity()) == 2.4f);
