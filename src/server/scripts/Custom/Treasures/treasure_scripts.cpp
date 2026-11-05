@@ -90,13 +90,16 @@ namespace
         std::string Landmark;
         bool HasRoad = false;
         float RoadX = 0.0f, RoadY = 0.0f, RoadZ = 0.0f;
+        // A treasure hidden in plain sight (a jug on an inn shelf, a crate among crates) doesn't sparkle; only the
+        // cursor turning to a hand gives it away.
+        bool Sparkle = true;
     };
     std::map<uint32, Spot> spots;
 
     void LoadSpots()
     {
         spots.clear();
-        QueryResult result = WorldDatabase.Query("SELECT spawn_guid, label, landmark, road_x, road_y, road_z FROM treasure_spot");
+        QueryResult result = WorldDatabase.Query("SELECT spawn_guid, label, landmark, road_x, road_y, road_z, sparkle FROM treasure_spot");
         if (!result)
             return;
         do
@@ -109,6 +112,7 @@ namespace
             spot.RoadY = f[4].GetFloat();
             spot.RoadZ = f[5].GetFloat();
             spot.HasRoad = spot.RoadX != 0.0f || spot.RoadY != 0.0f || spot.RoadZ != 0.0f;
+            spot.Sparkle = f[6].GetUInt8() != 0;
         } while (result->NextRow());
     }
 
@@ -154,6 +158,9 @@ namespace
     bool SparkleFilter(GameObject const* go, WorldObject const* seer)
     {
         if (!config.Enable || !IsTreasure(go) || !go->GetDBTableGUIDLow())
+            return false;
+        auto spot = spots.find(go->GetDBTableGUIDLow());
+        if (spot != spots.end() && !spot->second.Sparkle)
             return false;
         Player const* player = seer ? seer->ToPlayer() : nullptr;
         return player && !HasLooted(player->GetGUID().GetCounter(), go->GetDBTableGUIDLow());

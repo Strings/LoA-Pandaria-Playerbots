@@ -9,6 +9,7 @@ Not copied: SpellPower (clones cost nothing), SpellEffectScaling (amounts come f
 script sets real amounts) and server-side cooldowns (the core's `spell_dbc` has no cooldown column).
 """
 import bisect
+import struct
 from typing import Dict, List
 
 from dbcfile import Dbc, as_float, as_int
@@ -21,6 +22,11 @@ E_ID, E_DIFFICULTY, E_SPELL = 0, 1, 27
 M_VISUAL = 21
 M_CAST_TIME = 17
 M_RANGE = 19
+M_DURATION = 18
+# SpellEffect cells an edit may override, by name.
+EFFECT_FIELDS = {'base_points': 6, 'aura': 4, 'misc_value': 13, 'trigger_spell': 23, 'radius_index': 16}
+# Float cells: points_per_level adds that much per caster level on top of the base points.
+FLOAT_EFFECT_FIELDS = {'points_per_level': 18}
 CD_ID, CD_SPELL, CD_RECOVERY = 0, 1, 4
 S_INTERRUPTS = 17
 I_ID, I_SPELL, I_AURA, I_CHANNEL = 0, 1, 3, 5
@@ -93,6 +99,9 @@ def clone(edit: dict, tables: Dict[str, Dbc]) -> Dict[str, List[List[int]]]:
     # SpellRange row (4 is 0 to 30 yd); a thrown weapon's own range has an 8 yd minimum.
     if 'range_index' in edit:
         misc[M_RANGE] = edit['range_index']
+    # SpellDuration row (31 is 8 s, 18 is 20 s, 9 is 30 s).
+    if 'duration_index' in edit:
+        misc[M_DURATION] = edit['duration_index']
     for name, change in edit.get('attributes', {}).items():
         column = 3 + MISC_ATTRIBUTES.index(name)
         misc[column] = (misc[column] | change.get('set', 0)) & ~change.get('clear', 0)
@@ -104,6 +113,13 @@ def clone(edit: dict, tables: Dict[str, Dbc]) -> Dict[str, List[List[int]]]:
         row = list(row)
         row[E_ID] = effect_id(new_id, row[28])
         row[E_SPELL] = new_id
+        # `effects` overrides cells of one effect by its index, e.g. {"0": {"base_points": 45}}: how a borrowed
+        # spell is scaled down. Amounts are base points; clones carry no effect scaling.
+        for name, value in edit.get('effects', {}).get(str(row[28]), {}).items():
+            if name in FLOAT_EFFECT_FIELDS:
+                row[FLOAT_EFFECT_FIELDS[name]] = struct.unpack('<I', struct.pack('<f', float(value)))[0]
+            else:
+                row[EFFECT_FIELDS[name]] = value & 0xFFFFFFFF
         effects.append(row)
     if not effects:
         raise KeyError('spell %d: no effects to clone' % source_id)

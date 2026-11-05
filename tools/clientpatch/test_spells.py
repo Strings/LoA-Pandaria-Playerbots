@@ -67,6 +67,16 @@ class CloneTests(unittest.TestCase):
         tables = source_tables()
         self.assertEqual(spells.clone(dict(EDIT, cast_time_index=1), tables)['SpellMisc'][0][17], 1)
 
+    def test_duration_and_effect_overrides(self):
+        tables = source_tables()
+        rows = spells.clone(dict(EDIT, duration_index=31, effects={'1': {'base_points': 45, 'misc_value': -3}}), tables)
+        self.assertEqual(rows['SpellMisc'][0][18], 31)
+        first, second = rows['SpellEffect']
+        self.assertEqual(first[6], (-5) & 0xFFFFFFFF)            # index 0 keeps the source's base points
+        self.assertEqual((second[6], second[13]), (45, (-3) & 0xFFFFFFFF))
+        # The source effect row is untouched.
+        self.assertEqual(tables['SpellEffect'].find(0, 7001)[0][6], (-4) & 0xFFFFFFFF)
+
     def test_skill_line_puts_clone_in_spellbook(self):
         tables = source_tables()
         abilities = [[27083, 183, 125439, 0, 0, 1] + [0] * 7, [27090, 183, 125440] + [0] * 10,
