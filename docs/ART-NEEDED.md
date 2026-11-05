@@ -10,3 +10,4 @@ it done when the custom art lands in the client patch.
 | Heartseed Gift rider effects | spells 310110–310114 | icons of the cloned class spells (Berserking, Sprint, Ice Barrier and others) | small icons in each Gift's style | needed |
 | Rare affix markers (Molten, Shielded, Juggernaut and the rest) | spells 318001–318008 | stock buff icons | one icon per affix, readable at buff size | needed |
 | Second classes (multi-classing): every ability and class emblem | spells 320000+ | icons of the cloned spells | one icon per ability, an emblem per class | needed |
+| Profession tome pet | creature 69208, species 1174 | stock Gusting Grimoire (fel tome) model, name and journal entry | its own scholarly tome model and name ("Tome of Trades"), needs client DB2 rows for the journal | needed |

@@ -1,0 +1,64 @@
+{
+  "name": "profession-tome",
+  "timeout_seconds": 120,
+  "args": [
+    "--cmd",
+    "play",
+    "--char",
+    "Tometest",
+    "--hold",
+    "2"
+  ],
+  "steps": [
+    "say .revive",
+    "say .proftome status",
+    "say .modify money 100000",
+    "say .learn 2550",
+    "say .unlearn 37836",
+    "say .proftome check 37836",
+    "say .proftome summon",
+    "npcguid 69208",
+    "gossip-hello npc",
+    "gossip-select text=Cooking",
+    "trainer-buy 37836",
+    "say .proftome check 37836"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "regex",
+      "pattern": "Profession tome: enabled=1; owned=1; spell=1; summoned=[01]; trainer spells=[1-9][0-9]{3}"
+    },
+    {
+      "type": "regex",
+      "pattern": "Profession tome list: Cooking skill=185; spells=[1-9][0-9]"
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)step: say .proftome check 37836.*?Profession tome: spell=37836; listed=1; known=0"
+    },
+    {
+      "type": "contains",
+      "text": "Profession tome: summoned=1; entry=69208"
+    },
+    {
+      "type": "regex",
+      "pattern": "gossip option id=[0-9]+.*Teach me Cooking"
+    },
+    {
+      "type": "contains",
+      "text": "SMSG_TRAINER_LIST"
+    },
+    {
+      "type": "not_contains",
+      "text": "SMSG_TRAINER_BUY_FAILED"
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)step: trainer-buy 37836.*?Profession tome: spell=37836; listed=1; known=1"
+    }
+  ]
+}

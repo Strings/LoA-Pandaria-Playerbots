@@ -7,6 +7,8 @@ fixture account with a character. No account creation is implicit.
 Scenarios log in as the first character unless they pass `--char NAME`;
 `multiclass-necromancer` needs a warlock named Seedlock on the same account
 (`headless.py --cmd create --create-name Seedlock --create-race 1 --create-class 9`).
+`profession-tome` needs a character named Tometest created after T-096 deployed, so its first login
+put the tome in the account journal (`headless.py --cmd create --create-name Tometest --create-race 1 --create-class 1`).
 
 ```
 python tests/regression/run.py --runtime build/devenv
