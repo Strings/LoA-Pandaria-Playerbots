@@ -1,0 +1,66 @@
+{
+  "name": "treasure-3-items",
+  "timeout_seconds": 150,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "2",
+    "--char",
+    "1"
+  ],
+  "steps": [
+    "say .gm off",
+    "say .revive",
+    "say .additem 199005 -1",
+    "say .treasure reset all",
+    "say .treasure explain 9090016",
+    "say .treasure go 9090046",
+    "wait-for evt=never timeout=3",
+    "gameobject-use 909045:9090046",
+    "wait-for evt=never timeout=2",
+    "say .treasure explain 9090046",
+    "say .additem 199005 0",
+    "wait-for evt=never timeout=1",
+    "say .cast 319003 triggered",
+    "wait-for evt=never timeout=1",
+    "say .cast 319001 triggered",
+    "wait-for evt=never timeout=1",
+    "say .list auras",
+    "wait-for evt=never timeout=1",
+    "say .additem 199005 -1",
+    "say .go -9336 172 61.6 0",
+    "wait-for evt=never timeout=2"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "contains",
+      "text": "Hidden in plain sight: never sparkles."
+    },
+    {
+      "type": "contains",
+      "text": "You open the Offering of the Dormant Flame"
+    },
+    {
+      "type": "contains",
+      "text": "Seedtest: looted, hidden, not at client"
+    },
+    {
+      "type": "contains",
+      "text": "Cannot create item '199005'"
+    },
+    {
+      "type": "regex",
+      "pattern": "id: 319001 .*maxduration: 30000"
+    },
+    {
+      "type": "regex",
+      "pattern": "id: 319003 .*maxduration: 20000"
+    }
+  ],
+  "_comment": "Loots the epic-trinket spot (the unique item then can't be added again, which proves it arrived), checks a sparkle-off spot's explain line, and casts two treasure item spells to check their clone durations."
+}

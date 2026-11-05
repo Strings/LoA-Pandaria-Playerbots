@@ -23,15 +23,23 @@ Environment: `MOP_SOAP_HOST/PORT/USER/PASSWORD` (your own test server), `MOP_DB_
 2. **Scan each landmark.** `treasure_zone.py scan <areaId> <roadX> <roadY> <roadZ>` validates the existing spawn spots
    in that area and ranks them; covered and indoor spots score highest. Mobs already stand where the interesting
    nooks are, so this finds them for free.
+   For a landmark whose area id is shared or wrong (Valley of Trials creatures carry 363/364), scan by circle:
+   `scan 0 <roadX> <roadY> <roadZ> --near X Y R`.
 3. **Write the zone file** with the best spot per landmark (copy `zones/durotar.json`). Take the next free block from
    `docs/ID_RANGES.md` (Treasures row) for `entryBase` and `guidBase`.
 4. **Check and settle.** `check zones/<zone>.json` lists failures and anything standing on a spot (an NPC, a quest
    object). `settle --write` moves each spot up to 3 yd to the best-covered passing offset, which also gets it off
-   the mob it was borrowed from. Drop a landmark rather than force it: Thunder Ridge (flooded in the map data) and
+   the mob it was borrowed from; `settle --clear R` also pushes a spot at least R yd off NPCs and objects (towns,
+   camps). Drop a landmark rather than force it: Thunder Ridge (flooded in the map data) and
    Deadeye Shore (open sky only) were dropped in Durotar.
 5. **Loot.** Pick a theme per spot from `themes.json`, or add one for a new local faction or era with items from
    that era at the zone's level: one green pool, a curio per spot (grey or white flavour item), small gold. Raise
    `blueChance` for the hardest nooks.
+   Treasures don't have to be chests: any object model fits (`display` is a GameObjectDisplayInfo id): sacks,
+   jugs, bones, clams, books, crates in camps and towns. `"sparkle": false` hides the sparkle for a spot
+   hidden in plain sight (an object in a town that looks like decoration). `"extra": [[item, chance]]`
+   adds a guaranteed or rare named drop; custom items go in the Treasures item block of `docs/ID_RANGES.md`
+   and their spells are `tools/clientpatch` clones in the Treasures spell block.
 6. **Generate and apply.** `sql zones/<zone>.json --out sql/updates/world/<date>_claude_NN_<zone>_treasures.sql`,
    apply it to your world database twice (it must be idempotent), restart, then `.treasure check all`: every spot
    should pass. Paste that output into your status fragment.

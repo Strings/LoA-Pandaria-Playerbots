@@ -101,10 +101,18 @@ def load_zone(path):
 
 
 def cmd_scan(args):
+    where = 'map=%d' % args.map
+    if args.area:
+        where += ' AND areaId=%d' % args.area
+    if args.near:
+        cx, cy, r = args.near
+        where += ' AND POW(position_x-(%f),2)+POW(position_y-(%f),2) < %f' % (cx, cy, r * r)
+    if not args.area and not args.near:
+        sys.exit('scan needs an area id or --near')
     rows = world_query(
-        "SELECT ROUND(position_x,1), ROUND(position_y,1), ROUND(position_z,1) FROM creature WHERE map=%d AND areaId=%d "
-        "UNION SELECT ROUND(position_x,1), ROUND(position_y,1), ROUND(position_z,1) FROM gameobject WHERE map=%d AND areaId=%d"
-        % (args.map, args.area, args.map, args.area))
+        "SELECT ROUND(position_x,1), ROUND(position_y,1), ROUND(position_z,1) FROM creature WHERE %s "
+        "UNION SELECT ROUND(position_x,1), ROUND(position_y,1), ROUND(position_z,1) FROM gameobject WHERE %s"
+        % (where, where))
     points = []
     for r in rows:
         p = tuple(map(float, r))
@@ -140,14 +148,22 @@ def cmd_settle(args):
     for spot in zone['spots']:
         if args.only and spot['label'] not in args.only:
             continue
+        def clear(pos):
+            return not args.clear or not occupants(zone['map'], pos, args.clear)
+
         base = validate(zone['map'], spot['pos'], spot['road'])
+        base.ok = base.ok and clear(spot['pos'])
         best = None
-        for i in range(8):
-            a = i * math.pi / 4
-            p = (spot['pos'][0] + args.step * math.cos(a), spot['pos'][1] + args.step * math.sin(a), spot['pos'][2])
-            res = validate(zone['map'], p, spot['road'])
-            if res.ok and res.sky >= base.sky and (not best or res.score + 3 * res.sky > best.score + 3 * best.sky):
-                best = res
+        for step in (args.step, args.step * 2) if args.clear else (args.step,):
+            for i in range(8):
+                a = i * math.pi / 4
+                p = (spot['pos'][0] + step * math.cos(a), spot['pos'][1] + step * math.sin(a), spot['pos'][2])
+                res = validate(zone['map'], p, spot['road'])
+                if (res.ok and res.sky >= min(base.sky, 4) and clear(res.pos)
+                        and (not best or res.score + 3 * res.sky > best.score + 3 * best.sky)):
+                    best = res
+            if best:
+                break
         if best and (not base.ok or best.score + 3 * best.sky > base.score + 3 * base.sky):
             print('%s: move to %.2f %.2f %.2f (score %d -> %d)' % ((spot['label'],) + best.pos + (base.score, best.score)))
             spot['pos'] = [round(v, 2) for v in best.pos]
@@ -199,14 +215,17 @@ def cmd_sql(args):
         loot.append("(%d, %d, 100, '', 0, 1, 1)" % (e, s['curio']))
         loot.append("(%d, %d, 100, '', 0, -%d, 1)" % (e, ref, ref))
         loot.append("(%d, %d, %d, '', 0, -%d, 1)" % (e, blue, s.get('blueChance', themes['blue']['chance']), blue))
+        for item, chance in s.get('extra', []):
+            loot.append("(%d, %d, %s, '', 0, 1, 1)" % (e, item, chance))
     out.append(',\n'.join(loot) + ';')
     out += ['', 'INSERT INTO `gameobject` (`guid`, `id`, `map`, `zoneId`, `areaId`, `spawnMask`, `phaseMask`, `position_x`, `position_y`, `position_z`, `orientation`, `rotation0`, `rotation1`, `rotation2`, `rotation3`, `spawntimesecs`, `animprogress`, `state`) VALUES']
     out.append(',\n'.join('(%d, %d, %d, %d, %d, 1, 1, %.2f, %.2f, %.2f, %.2f, 0, 0, %.6f, %.6f, 300, 100, 1)' % (
         guid0 + i, entry0 + i, zone['map'], zone['zoneId'], s['area'], s['pos'][0], s['pos'][1], s['pos'][2], s['o'],
         math.sin(s['o'] / 2), math.cos(s['o'] / 2)) for i, s in enumerate(spots)) + ';')
-    out += ['', 'INSERT INTO `treasure_spot` (`spawn_guid`, `label`, `landmark`, `road_x`, `road_y`, `road_z`) VALUES']
-    out.append(',\n'.join("(%d, '%s', '%s', %.1f, %.1f, %.1f)" % ((guid0 + i, q(s['label']), q(s['landmark'])) + tuple(s['road']))
-                          for i, s in enumerate(spots)) + ';')
+    out += ['', 'INSERT INTO `treasure_spot` (`spawn_guid`, `label`, `landmark`, `road_x`, `road_y`, `road_z`, `sparkle`) VALUES']
+    out.append(',\n'.join("(%d, '%s', '%s', %.1f, %.1f, %.1f, %d)" % (
+        (guid0 + i, q(s['label']), q(s['landmark'])) + tuple(s['road']) + (1 if s.get('sparkle', True) else 0,))
+        for i, s in enumerate(spots)) + ';')
     with open(args.out, 'w', encoding='utf-8', newline='\n') as f:
         f.write('\n'.join(out) + '\n')
     print('wrote %s (%d spots)' % (args.out, len(spots)))
@@ -224,6 +243,8 @@ def main():
     s.add_argument('--limit', type=int, default=15, help='rows to print')
     s.add_argument('--max', type=int, default=45, help='spots to validate')
     s.add_argument('--spread', type=float, default=6.0, help='skip spots closer than this to one already taken')
+    s.add_argument('--near', type=float, nargs=3, metavar=('X', 'Y', 'R'),
+                   help='only spawns within R yd of X Y (with area 0, a whole region whatever its area ids)')
     c = sub.add_parser('check')
     c.add_argument('zone')
     c.add_argument('--radius', type=float, default=4.0)
@@ -232,6 +253,8 @@ def main():
     t.add_argument('zone')
     t.add_argument('--step', type=float, default=3.0)
     t.add_argument('--only', nargs='*')
+    t.add_argument('--clear', type=float, default=0.0,
+                   help='also move off any NPC or object within this many yards (tries one and two steps out)')
     t.add_argument('--write', action='store_true')
     g = sub.add_parser('sql')
     g.add_argument('zone')

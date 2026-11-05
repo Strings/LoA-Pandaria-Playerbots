@@ -340,6 +340,91 @@
       "cooldown": 10000,
       "description": "Make a nearby corpse burst, damaging enemies near it. Destruction: enemies hit catch your Immolate.",
       "why": "Necromancer level 10 (T-094). Clone of Corpse Explosion (creature); the server drops its caster transform."
+    },
+    {
+      "type": "spell",
+      "id": 319000,
+      "from": 16097,
+      "name": "Zalazane's Hex",
+      "cast_time_index": 1,
+      "description": "Transforms an enemy into a frog for 8 sec. Damage may break the effect.",
+      "aura_description": "Hexed.",
+      "why": "Zalazane's Hex Doll (T-097 treasure trinket). Clone of an NPC Hex: 8 sec, instant from the item."
+    },
+    {
+      "type": "spell",
+      "id": 319001,
+      "from": 130,
+      "name": "Windrider's Grace",
+      "description": "Slows your falling speed for 30 sec.",
+      "aura_description": "Slow falling.",
+      "why": "Windrider's Plume (T-097 treasure trinket). Clone of Slow Fall so the mage spell keeps its own name."
+    },
+    {
+      "type": "spell",
+      "id": 319002,
+      "from": 546,
+      "name": "Tidewalker",
+      "description": "Allows you to walk across water for 10 min. Any damage will cancel the effect.",
+      "aura_description": "Walking on water.",
+      "why": "Tidewalker's Charm (T-097 treasure trinket). Clone of Water Walking."
+    },
+    {
+      "type": "spell",
+      "id": 319003,
+      "from": 22128,
+      "name": "Thornhide",
+      "duration_index": 18,
+      "effects": {
+        "0": {
+          "base_points": 5,
+          "points_per_level": 0
+        }
+      },
+      "description": "Thorns sprout from your hide for 20 sec, dealing 5 Nature damage to attackers who strike you.",
+      "aura_description": "Attackers take 5 Nature damage.",
+      "why": "Thornhide Talisman (T-097 treasure trinket). Thorns scaled down from 20 to 5 damage, 10 min to 20 sec."
+    },
+    {
+      "type": "spell",
+      "id": 319004,
+      "from": 9613,
+      "name": "Burning Blade Brand",
+      "cast_time_index": 1,
+      "effects": {
+        "0": {
+          "base_points": 45
+        }
+      },
+      "description": "Brands an enemy with shadowflame, dealing 45 Shadow damage.",
+      "why": "Burning Blade Brand (T-097 treasure trinket). NPC Shadow Bolt made instant, 45 damage for level 10."
+    },
+    {
+      "type": "spell",
+      "id": 319005,
+      "from": 11969,
+      "name": "Dormant Flame",
+      "effects": {
+        "0": {
+          "base_points": 70
+        }
+      },
+      "description": "Wakes the dormant flame, dealing 70 Fire damage to nearby enemies.",
+      "why": "Ember of the Dormant Flame (T-097 epic trinket). NPC Fire Nova scaled to 70 damage for level 10."
+    },
+    {
+      "type": "spell",
+      "id": 319006,
+      "from": 9613,
+      "name": "Felweaver's Bite",
+      "cast_time_index": 1,
+      "effects": {
+        "0": {
+          "base_points": 22
+        }
+      },
+      "description": "Bites the target with fel shadow for 22 Shadow damage.",
+      "why": "Felweaver's Fang (T-097 epic dagger) chance on hit. NPC Shadow Bolt made instant, 22 damage."
     }
   ],
   "server_sql": "sql/updates/world/2026_11_03_claude_00_heartseed_gift_spells.sql"
