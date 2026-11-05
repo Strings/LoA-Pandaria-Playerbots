@@ -19,7 +19,12 @@
   `points_per_level`, `aura`, `misc_value`, `trigger_spell`, `radius_index`).
 
 ## How it was tested
-- TESTING
+- `.treasure check all`: 47 of 47 treasures pass.
+- New `treasure-3-items` scenario: loots the epic spot (the unique item can't be added again afterwards), checks a
+  sparkle-off spot's `.treasure explain` line, casts two item spells and checks their clone durations. Passes, as do
+  `treasure-1-loot` and `treasure-2-other`.
+- Items SQL and zone SQL applied twice to world_claude (idempotent); sql_validator clean.
+- clientpatch unit tests pass (new test for duration and effect overrides); client patch builds.
 
 ## Decisions made
 - Treasure trinkets don't share a cooldown category; each has its own cooldown.
