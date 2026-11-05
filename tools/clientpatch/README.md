@@ -10,7 +10,7 @@ the launcher will install the same files.
 python tools/clientpatch/build.py build       # build/clientpatch/<archive> from edits.json
 python tools/clientpatch/build.py check       # list the files inside the built archive
 python tools/clientpatch/build.py sql         # server SQL for the spell clones
-python tools/clientpatch/build.py install --client I:/UltimateMoP/mop-clean
+python tools/clientpatch/build.py install --client I:/UltimateMoP/mop-clean   # copies what build made; refuses if nothing is built
 python tools/clientpatch/build.py uninstall --client I:/UltimateMoP/mop-clean
 ```
 
