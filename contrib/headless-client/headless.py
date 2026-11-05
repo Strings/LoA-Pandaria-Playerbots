@@ -216,6 +216,7 @@ SMSG_LOOT_RESPONSE = 0x128A         # Opcodes.h:855
 # --- #470 additions: start-zone quest-chain verbs. Opcode wire numbers from
 # src/server/game/Server/Protocol/Opcodes.h; layouts replayed from the handler read order.
 CMSG_GOSSIP_HELLO = 0x12F3
+CMSG_TRAINER_BUY_SPELL = 0x0352
 CMSG_GOSSIP_SELECT_OPTION = 0x0748
 CMSG_SELECT_FACTION = 0x0027
 CMSG_GAMEOBJ_USE = 0x06D8
@@ -234,7 +235,8 @@ OBSERVED_470 = {0x0B01: "SMSG_TRIGGER_CINEMATIC", 0x1A9E: "SMSG_ATTACKSTART", 0x
                 0x034E: "SMSG_GOSSIP_COMPLETE", 0x06AF: "SMSG_AI_REACTION",
                 0x134C: "SMSG_QUESTGIVER_QUEST_DETAILS", 0x02D4: "SMSG_QUESTGIVER_QUEST_LIST",
                 0x15E0: "SMSG_SHOW_NEURTRAL_PLAYER_FACTION_SELECT_UI",
-                0x1AAE: "SMSG_LIST_INVENTORY", 0x189F: "SMSG_TRAINER_LIST", 0x09D8: "SMSG_SPELL_GO"}
+                0x1AAE: "SMSG_LIST_INVENTORY", 0x189F: "SMSG_TRAINER_LIST", 0x09D8: "SMSG_SPELL_GO",
+                0x042E: "SMSG_TRAINER_BUY_FAILED", 0x129A: "SMSG_LEARNED_SPELL"}
 
 # Group.h GROUP_UPDATE_FLAG_* (ascending bit order == field write order)
 GROUP_UPDATE_FIELDS = [
@@ -2011,6 +2013,19 @@ class WorldClient:
         self.send_packet(CMSG_GOSSIP_SELECT_OPTION, body)
         log("sent CMSG_GOSSIP_SELECT_OPTION option=%d menu=%d guid=%d" % (int(option), int(menu_id), guid))
         self.emit("gossip_select", option=int(option), menu=int(menu_id), guid=guid)
+
+    def trainer_buy(self, guid, spell_id, trainer_id=0):
+        """CMSG_TRAINER_BUY_SPELL (NPCHandler.cpp HandleTrainerBuySpellOpcode): u32 spellId, u32 trainerId,
+        bits [1,4,0,6,3,2,5,7], byteseq [3,1,4,7,0,5,6,2]."""
+        guid = int(guid)
+        gb = guid.to_bytes(8, "little")
+        bw = BitWriter()
+        for idx in (1, 4, 0, 6, 3, 2, 5, 7):
+            bw.bit(gb[idx] != 0)
+        body = struct.pack("<II", int(spell_id), int(trainer_id)) + bw.flush() + guid_byte_seq(guid, (3, 1, 4, 7, 0, 5, 6, 2))
+        self.send_packet(CMSG_TRAINER_BUY_SPELL, body)
+        log("sent CMSG_TRAINER_BUY_SPELL spell=%d guid=%d" % (int(spell_id), guid))
+        self.emit("trainer_buy", spell=int(spell_id), guid=guid)
 
     def _parse_gossip_message(self, body):
         """SMSG_GOSSIP_MESSAGE (GossipDef.cpp:188-278)."""
@@ -4567,6 +4582,16 @@ def run_verb(w, args_cli, line):
             return
         w.gossip_hello(g)
         w.pump(20, stop_on=(SMSG_GOSSIP_MESSAGE,))   # server can be slow under bot load
+    elif verb == "trainer-buy":
+        # trainer-buy <spellId> [guid=<npc|rawguid>]  (CMSG_TRAINER_BUY_SPELL; the trainer list must be open)
+        kv = dict(t.split("=", 1) for t in rest if "=" in t)
+        pos = [t for t in rest if "=" not in t]
+        g = w.obj_guid(kv.get("guid", "npc"))
+        if not pos or not g:
+            log("trainer-buy: need <spellId> and an npc (run `npcguid <entry>` first)")
+            return
+        w.trainer_buy(g, int(pos[0]))
+        w.pump(3)
     elif verb == "gossip-select":
         # gossip-select <optionId|text=<substring>> [code=<text>] [guid=<npc|rawguid>] [menu=<id>]
         # optionId is the id printed in the "gossip option id=" log line (not the index).
@@ -5982,6 +6007,7 @@ def main():
                          "gossip-hello <npc|rawguid> (CMSG_GOSSIP_HELLO, logs options); "
                          "gossip-select <optionId|text=SUBSTR> [code=TXT] [guid=G] [menu=M] "
                          "(CMSG_GOSSIP_SELECT_OPTION, uses last gossip menu); "
+                         "trainer-buy <spellId> [guid=G] (CMSG_TRAINER_BUY_SPELL); "
                          "faction-select <horde|alliance> (CMSG_SELECT_FACTION, neutral pandaren); "
                          "gameobject-use|gameobject-report-use <rawguid|entry:spawnId> (CMSG_GAMEOBJ_USE/REPORT_USE; "
                          "entry:spawnId builds the static GO guid); "

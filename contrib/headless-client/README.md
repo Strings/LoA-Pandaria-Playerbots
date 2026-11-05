@@ -92,7 +92,7 @@ verb in `headless.py`.
 | Chat | `say`, `party`, `raid-chat`, `whisper NAME TEXT` |
 | Movement | `setpos`, `goto`, `walk [speed=] x,y,z ...`, `mover NPC\|off`, `face`, `stop`, `mount`, `taxi`, `areatrigger ID` |
 | Transports | `board-walk ENTRY [seat]`, `board-natural`, `leave-transport` |
-| Quests and NPCs | `quest-accept`, `quest-share`, `quest-complete`, `quest-reward`, `gossip-hello NPC`, `gossip-select ID\|text=SUBSTR [code=] [guid=] [menu=]`, `faction-select horde\|alliance`, `spellclick NPC`, `gameobject-use` / `gameobject-report-use GUID\|entry:spawnId` |
+| Quests and NPCs | `quest-accept`, `quest-share`, `quest-complete`, `quest-reward`, `gossip-hello NPC`, `gossip-select ID\|text=SUBSTR [code=] [guid=] [menu=]`, `trainer-buy SPELL [guid=]`, `faction-select horde\|alliance`, `spellclick NPC`, `gameobject-use` / `gameobject-report-use GUID\|entry:spawnId` |
 | Loot and trade | `loot`, `loot-all [seconds]`, `roll`, `master-give`, `trade-open`, `trade-item`, `trade-gold`, `trade-accept`, `trade-cancel` |
 | Combat and spells | `attack NPC`, `attack-stop`, `cast SPELL [target]`, `cast-at SPELL x y z`, `cast-at-near SPELL ENTRY`, `use-item BAG SLOT`, `use-item-at BAG SLOT x y z`, `use-item-on ...`, `duel NAME`, `duel-accept [decline]` |
 | Death | `die`, `release`, `reclaim`, `res-accept`, `summon-accept` |
