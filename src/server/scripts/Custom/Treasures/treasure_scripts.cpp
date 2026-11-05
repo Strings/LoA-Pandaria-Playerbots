@@ -382,7 +382,8 @@ namespace
                         p.PathLength += legLength;
                         G3D::Vector3 end = path.GetActualEndPosition();
                         float miss = std::sqrt((end.x - x) * (end.x - x) + (end.y - y) * (end.y - y) + (end.z - gz) * (end.z - gz));
-                        bool usable = built && (p.PathType & PATHFIND_NORMAL) && !(p.PathType & (PATHFIND_NOPATH | PATHFIND_NOT_USING_PATH | PATHFIND_SHORTCUT));
+                        bool usable = built && (p.PathType & (PATHFIND_NORMAL | PATHFIND_INCOMPLETE))
+                            && !(p.PathType & (PATHFIND_NOPATH | PATHFIND_NOT_USING_PATH | PATHFIND_SHORTCUT));
                         if (usable && !(p.PathType & PATHFIND_INCOMPLETE))
                         {
                             p.M.Reachable = miss < 3.0f;
