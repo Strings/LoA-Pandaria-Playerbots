@@ -337,5 +337,5 @@ public:
 void AddSC_affixes()
 {
     new affix_unitscript();
-    new spell_script<spell_affix_marker>("spell_affix_marker");
+    new aura_script<spell_affix_marker>("spell_affix_marker");
 }

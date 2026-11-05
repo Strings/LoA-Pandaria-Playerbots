@@ -1,4 +1,4 @@
-#include "AffixMgr.h"
+#include "../Affixes/AffixMgr.h"
 #include "Chat.h"
 #include "Config.h"
 #include "Creature.h"
@@ -85,7 +85,7 @@ namespace
         return player && player->GetSession() && !player->GetSession()->IsBot() ? player : nullptr;
     }
 
-    void Roll(Creature* creature, int32 forcedCount = -1)
+    void RollAffixes(Creature* creature, int32 forcedCount = -1)
     {
         uint32 count = forcedCount >= 0 ? uint32(forcedCount) : Affixes::RollCount(config.CountWeights,
             [](uint64_t n) { return n <= 1 ? uint64_t(0) : uint64_t(urand(0, uint32(n - 1))); });
@@ -126,7 +126,7 @@ namespace
             case CreatureHooks::Event::Respawned:
                 if (!config.Enable || !IsOpenWorldRare(creature))
                     return;
-                Roll(creature);
+                RollAffixes(creature);
                 Hold(creature);
                 break;
             case CreatureHooks::Event::Evaded:
@@ -311,7 +311,7 @@ public:
         if (!affixes.empty())
             sAffixMgr->Apply(c, affixes);
         else if (sAffixMgr->Get(c->GetGUID()).empty())
-            Roll(c, 1);
+            RollAffixes(c, 1);
         Hold(c);
         Report(handler, c);
         return true;
@@ -323,7 +323,7 @@ public:
         if (!c)
             return false;
         int32 count = args && *args ? std::max(0, atoi(args)) : -1;
-        Roll(c, std::min(count, 3));
+        RollAffixes(c, std::min(count, 3));
         Hold(c);
         Report(handler, c);
         return true;
