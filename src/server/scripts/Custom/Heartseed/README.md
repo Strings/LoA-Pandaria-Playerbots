@@ -298,6 +298,7 @@ Permission 90000 (`Command: heartseed`, Gamemaster role). Target is the selected
 - `.heartseed major <10|25|40|55|70|85> <trait id | 0>`: set or clear a major in the active spec's
   loadout. Skips the level check.
 - `.heartseed probe [name]`: what each Gift does for an online character right now (any character, bots too, also from the console): its AP, SP and health, the average white hit and the class filler spell as references, Breath per cast empty and at a full meter, Retort per 10% of health taken, Plume's heal. For tuning.
+- Gift power (Breath ticks, Retort's floor) is a level base plus the higher of spell power and weighted attack power: `Heartseed.Gift.LevelBasePct`, `AttackPowerPct`, `ScalingClass`, `RetortFloorPct`.
 - `.heartseed meter [<stacks> | lit | hit <damage>]`: show the path meter, set its stacks, light it, or feed it
   a hit taken (Niuzao: records the damage and lights the meter if the hit is big enough).
 - `.heartseed reload`: reload stages, glows, traits, essences, shrines, meters and Growth stats, and refresh the target.
