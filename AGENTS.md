@@ -172,6 +172,8 @@ These come from decided rules in `docs/DESIGN.md` and apply everywhere.
 - **Client patches when they're easier.** Server-side and addon solutions are the default, but when a client patch
   (MPQ data, DB2/DBC rows, FrameXML, a client DLL) is simpler or more robust than a workaround, use it.
   Look at how other projects solved it first.
+- **Note placeholder art.** When you ship custom content on a borrowed icon, model or visual, add a row to
+  `docs/ART-NEEDED.md`.
 - **Scripted first, LLM later.** Anything that will use an LLM ships a scripted provider first, behind
   a narrow interface. Decisions read structured data only, never free text. Tests and the test
   profile always run the scripted provider.

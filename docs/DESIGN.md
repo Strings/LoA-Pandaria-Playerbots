@@ -499,57 +499,71 @@ MVP scope: a short granting quest at level 1 (gossip prototyped in Lua), ranks w
 - UI: gossip menu first, then an addon panel over the addon channel.
 - Item stats and new entries can be pushed by server hotfix (5.4.8 supports item data hotfixes). New models need a client patch; reuse existing models with new glows and names first.
 
-## Sub-specializations (proposed 2026-11-05, for review)
+## Sub-specializations (direction decided 2026-11-05; details proposed)
 
-A second identity inside your class: a Rogue who becomes a Tinker, a Warrior who becomes a Barbarian. The MoP spec
-stays the core (rotation, role, the six-tier talents); the sub-spec is a classic talent tree on top that adds a
-small kit and bends the class's own abilities toward a fantasy.
+Your class dabbles in neighboring fantasies: a Mage who raises a skeleton, a Rogue with a turret, a Warrior who
+works himself into a frenzy. The MoP spec stays the core (rotation, role, the six-tier talents); sub-specs are a
+pool of extra talents, from several themes per class, that you mix freely. Solo-first and broken-is-the-reward:
+this is about fantasy and variety, not balance.
 
-**Interpretation, not invention.** Tinkers, barbarians, witch doctors and chronomancers are genre archetypes; other
+**Decided by the human (2026-11-05):**
+
+- **From level 30, before 90.** Sub-specs open at 30 with a class quest, as part of leveling.
+- **A point every five levels:** 30, 35, 40 ... 90, so 13 points by 90 (placeholder; a config key).
+- **Character level gates the tiers, not points spent.** Basic talents are open at 30, more advanced ones at 40,
+  then 50, 60, 70, 80 and 90. Any point goes into any open talent; there is no "5 points in this tree first".
+- **Every sub-spec of the class is open at once.** Points go into any of them and come back out at any time, out of
+  combat, free. A Mage can put three points into Necromancer and two into Pyromancer, then move them tomorrow.
+- **Classes dabble in other things,** each theme tied to the class's fantasy. Classes without sub-specs elsewhere
+  (Death Knight, Monk) get their own.
+
+**Interpretation, not invention.** Tinkers, barbarians, necromancers and chronomancers are genre archetypes; other
 projects, Conquest of Azeroth among them, interpret them too, and so do we. Their open-source work is a fair
-reference for mechanics and solutions. Our versions are written for MoP and its lore (goblin and gnome engineering,
-Pandaren and mogu history, the Sha), and fit the Heartseed and the bots.
+reference for mechanics and solutions; our versions are written for MoP and its lore and fit the Heartseed and the
+bots.
 
-- **Unlock:** a class quest at 20 offers the class's sub-specs (two or three each). One is active at a time; it
-  works with all three MoP specs, and some talents read differently per spec. Swapping costs gold and a trip to the
-  class trainer; spec loadouts (T-017) save the choice and the tree with the rest of the build.
-- **Classic tree:** about 25 talents in 7 tiers. Each tier opens after 5 points in the tree above it; ranks of 1 to 5;
-  three or four new abilities, the rest modifiers to the class's own abilities; a capstone at the bottom.
-- **Points from both kinds of growth:** one per two character levels from 20 (35 by 90), then one per Heartseed
-  Growth Bloom after 90 (see Growth from the four virtues). The tree holds more points than leveling gives, so a 90
-  keeps filling it. Placeholder numbers, config keys.
-- **Heartseed boundary:** the Heartseed is the Gift and the seed (majors, Blooms, essences); the sub-spec is the
-  class kit. Reincarnation echoes may mutate sub-spec abilities like any other. A full rebirth re-earns the points
-  but remembers the last tree as a loadout.
-- **Client:** a fourth tab in the talent frame (FrameXML patch), tree data and new spells shipped in the client
-  patch with real tooltips, server tables as the source of truth (`.reload`). A client DLL only if the frame can't
-  do something in Lua.
-- **Bots:** every sub-spec ships with a playerbots strategy and default builds; bots pick a sub-spec weighted by
-  personality and class plays may use the new abilities. This is the largest cost per sub-spec.
-- **GM hooks:** set a sub-spec, grant or reset points, learn a talent at a rank, explain a character's tree.
-- **Intro:** the class quest at 20 is the introduction; the trainer explains swapping.
+**Proposed details:**
 
-**Candidate sub-specs (placeholders):**
+- **Per sub-spec:** one or two talents per level tier (30 to 90), so about 8 to 12 talents. A talent costs one point;
+  a few take a second point for a stronger rank. The 30 tier gives the theme's signature (the Necromancer's skeleton,
+  the Tinker's turret); later tiers add abilities and bend the class's own spells toward the theme.
+- **More talents than points:** 13 points against 30 or more talents per class, so builds are choices and mixing is
+  the point. After 90, extra points could come from Heartseed Blooms (open).
+- **Loadouts:** spec loadouts (T-017) save the allocation with the rest of the build. Reincarnation echoes may mutate
+  sub-spec abilities like any other; a full rebirth re-earns the points and remembers the last allocation.
+- **Heartseed boundary:** the Heartseed is the Gift and the seed (majors, Blooms, essences); sub-specs are the class
+  kit.
+- **Client:** a sub-spec tab in the talent frame (FrameXML patch) with one column per sub-spec and rows per level
+  tier; talent data and new spells in the client patch with real tooltips; server tables are the source of truth
+  (`.reload`). A client DLL only if the frame can't do something in Lua.
+- **Bots:** each sub-spec ships with a playerbots strategy for its abilities; bots allocate points by personality and
+  class plays may use the new abilities. The largest cost per sub-spec.
+- **GM hooks:** grant or set points, learn or unlearn a talent, list and explain a character's allocation.
+- **Intro:** the class quest at 30 introduces the idea and one signature talent; the trainer explains reallocation.
 
-| Class | Sub-specs |
+**Candidate themes per class (placeholders):**
+
+| Class | Themes |
 | --- | --- |
-| Warrior | Barbarian (frenzy, war cries, rage as a resource to spend), Warlord (banners and commands for allies and bots) |
-| Rogue | Tinker (gadgets, turrets, explosives, a pocket mech), Duelist (parries, ripostes, one-on-one) |
-| Hunter | Ranger (no pet, archery and traps), Beastcaller (several lesser beasts) |
-| Paladin | Inquisitor (hunts Sha corruption, purges), Templar (consecrated ground, auras) |
-| Priest | Prophet (foresight, visions; ties to the Heartseed's visions), Mystic (spirit and mind) |
-| Death Knight | Necromancer (an army of lesser undead), Plaguebringer (spreading diseases) |
-| Shaman | Witch Doctor (troll voodoo, hexes, fetishes), Stormbringer (lightning and wind) |
-| Mage | Chronomancer (time: rewinds, echoes, haste), Runemaster (placed runes) |
-| Warlock | Felsworn (melee in a demon form), Bloodmage (health as a resource) |
-| Monk | Shado-Pan Sentinel (vigilance, counters), Jade Mystic (jade serpent magic) |
-| Druid | Primalist (wild totems and beasts), Dreamwalker (the Emerald Dream) |
+| Warrior | Barbarian (frenzy, war cries), Warlord (banners, commands for allies and bots), Gladiator (arena tricks, nets, crowd-pleasing finishers) |
+| Rogue | Tinker (gadgets, turrets, a pocket mech), Duelist (parries, ripostes), Venomancer (poisons that spread and mutate) |
+| Hunter | Ranger (no pet, archery), Beastcaller (several lesser beasts), Trapper (nets, snares, kill zones) |
+| Paladin | Inquisitor (hunts Sha corruption, purges), Templar (consecrated ground, auras), Sun Cleric (sunfire, Sunwell light) |
+| Priest | Prophet (foresight, visions; ties to the Heartseed's visions), Mystic (spirit and mind), Sha Confessor (draws on and turns the Sha) |
+| Death Knight (own) | Plaguebringer (spreading plagues), Bloodreaver (vampiric), Wyrmcaller (frost wyrms), Deathlord (commands lesser undead) |
+| Shaman | Witch Doctor (voodoo, hexes, fetishes), Stormbringer (lightning and wind), Spiritwalker (ancestors at your side) |
+| Mage | Necromancer (skeletons, bone magic), Pyromancer (fire beyond Fire), Chronomancer (rewinds, echoes, haste), Runemaster (placed runes) |
+| Warlock | Felsworn (melee in a demon form), Bloodmage (health as a resource), Cultist (Old God and Sha whispers) |
+| Monk (own) | Shado-Pan Sentinel (vigilance, counters), Jade Mystic (jade serpent magic), Lorewalker (scrolls and ancestral echoes), Drunken Master (stagger, stumbling strikes) |
+| Druid | Primalist (wild totems and beasts), Dreamwalker (the Emerald Dream), Thornwarden (thorns, roots, living walls) |
 
-**First slice:** Rogue/Tinker and Warrior/Barbarian, to prove the talent tab, the data pipeline, the bot strategy
-and swapping before the other classes.
+**First slice:** Rogue (Tinker, Duelist, Venomancer) and Mage (Necromancer, Pyromancer), to prove the talent tab, the
+data pipeline, free reallocation and the bot strategies before the other classes.
 
-**Open:** whether a sub-spec can be changed per spec like majors (proposed: one for the character); how many
-points the tree holds; whether some sub-specs are race- or faction-locked (Witch Doctor for trolls first?).
+**Art:** every sub-spec talent starts on a stock icon; each gets a row in `docs/ART-NEEDED.md`.
+
+**Open:** extra points after 90 (Blooms?); whether some themes are race- or faction-flavored (Witch Doctor quest
+from the Darkspear first); exact tier contents per theme.
 
 ## Sha hunters
 
