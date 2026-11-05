@@ -1,4 +1,4 @@
-# Repo map
+﻿# Repo map
 
 Where things live, so you don't have to re-explore the repo every session. Paths are from the
 `playerbot` branch as of 2026-10-30. Add to this file through a status fragment when you find
@@ -111,7 +111,7 @@ something worth knowing.
 | `tools/devenv/` | Development environment profiles and live scenarios (`tools/devenv/solo_smoke.json`) |
 | `tests/framework/` | Test framework header (`tests/framework/TestMain.h`) defining the shared CTest runner entry point |
 | `tests/capture/` | Unit tests for feedback ticket capture commands |
-| `tests/treasures/` | Unit tests for the treasure placement rules (`TreasureRules.h`) |
+| `tests/treasures/` | Unit tests for the treasure placement rules (`src/server/scripts/Custom/Treasures/TreasureRules.h`) |
 | `tests/common/` | Shared test fixtures, mock environment, and in-memory test databases |
 | `tests/gmtools/` | Unit tests for GM checkpoint and twink kit templates |
 | `tests/heartseed/` | Unit tests for Heartseed growth and trait rules |
