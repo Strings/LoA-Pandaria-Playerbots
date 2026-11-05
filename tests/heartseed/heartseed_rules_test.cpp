@@ -53,10 +53,10 @@ namespace
 
     void DefaultUnlockLevels()
     {
-        UMP_CHECK(MajorTierLevel(0) == 10 && MajorTierLevel(5) == 85 && MajorTierLevel(MaxMajorTiers) == 0);
+        UMP_CHECK(MajorTierLevel(0) == 1 && MajorTierLevel(5) == 85 && MajorTierLevel(MaxMajorTiers) == 0);
         UMP_CHECK(MajorTierForLevel(25) == 1 && MajorTierForLevel(26) == MaxMajorTiers);
         UMP_CHECK(!MajorTierOpen(2, 39) && MajorTierOpen(2, 40));
-        UMP_CHECK(EssenceSlotsForLevel(9) == 0 && EssenceSlotsForLevel(40) == 2 && EssenceSlotsForLevel(90) == 3);
+        UMP_CHECK(EssenceSlotsForLevel(0) == 0 && EssenceSlotsForLevel(1) == 1 && EssenceSlotsForLevel(39) == 1 && EssenceSlotsForLevel(40) == 2 && EssenceSlotsForLevel(90) == 3);
     }
 
     void ConfiguredUnlockLevels()

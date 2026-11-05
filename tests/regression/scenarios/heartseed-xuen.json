@@ -15,7 +15,7 @@
     "say .cooldown",
     "say .npc add temp 6",
     "npcguid 6",
-    "say .heartseed major 10 2",
+    "say .heartseed major 1 2",
     "cast 310100 npc",
     "wait-for evt=never timeout=3",
     "npcguid 63508",

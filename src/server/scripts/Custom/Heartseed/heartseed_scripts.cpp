@@ -18,6 +18,7 @@
 #include "SpellAuraEffects.h"
 #include "SpellAuras.h"
 #include "SpellInfo.h"
+#include "SpellMgr.h"
 #include "SpellScript.h"
 #include "TemporarySummon.h"
 #include "WorldPacket.h"
@@ -375,6 +376,7 @@ public:
             { "traits", &HandleTraitsCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "major",  &HandleMajorCommand,  RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "meter",  &HandleMeterCommand,  RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
+            { "probe",  &HandleProbeCommand,  RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::Yes },
             { "reload", &HandleReloadCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
             { "shrines", &HandleShrinesCommand, RBAC_PERM_COMMAND_HEARTSEED, Trinity::ChatCommands::Console::No },
         };
@@ -400,6 +402,94 @@ public:
         if (Player* target = handler->getSelectedPlayer())
             return target;
         return handler->GetSession() ? handler->GetSession()->GetPlayer() : nullptr;
+    }
+
+    // .heartseed probe [name]: what each Gift would do for this character right now, next to the class's own
+    // basic hits, so tuning reads real stats. Works on any online character (bots included) and from the
+    // console; the character needs no Heartseed.
+    static bool HandleProbeCommand(ChatHandler* handler, char const* args)
+    {
+        Player* target = nullptr;
+        if (args && *args)
+            target = ObjectAccessor::FindPlayerByName(args);
+        else if (handler->GetSession())
+            target = GetTarget(handler);
+        if (!target)
+        {
+            handler->SendSysMessage("Usage: .heartseed probe <online character name> (or select a player).");
+            return true;
+        }
+
+        // References: the average white hit (melee, or ranged for hunters) and the class's filler spell.
+        bool ranged = target->GetClass() == CLASS_HUNTER;
+        float white = ranged
+            ? (target->GetFloatValue(UNIT_FIELD_MIN_RANGED_DAMAGE) + target->GetFloatValue(UNIT_FIELD_MAX_RANGED_DAMAGE)) / 2.0f
+            : (target->GetFloatValue(UNIT_FIELD_MIN_DAMAGE) + target->GetFloatValue(UNIT_FIELD_MAX_DAMAGE)) / 2.0f;
+        uint32 fillerId = 0;
+        switch (target->GetClass())
+        {
+            case CLASS_PRIEST:  fillerId = 585;  break;   // Smite
+            case CLASS_SHAMAN:  fillerId = 403;  break;   // Lightning Bolt
+            case CLASS_MAGE:    fillerId = 116;  break;   // Frostbolt
+            case CLASS_WARLOCK: fillerId = 686;  break;   // Shadow Bolt
+            case CLASS_DRUID:   fillerId = 5176; break;   // Wrath
+            default: break;
+        }
+        int32 filler = 0;
+        if (SpellInfo const* info = fillerId ? sSpellMgr->GetSpellInfo(fillerId) : nullptr)
+            filler = target->SpellDamageBonusDone(target, info, EFFECT_0, info->Effects[EFFECT_0].CalcValue(target), SPELL_DIRECT_DAMAGE);
+        float reference = std::max(white, float(filler));
+
+        float attackPower = std::max(target->GetTotalAttackPowerValue(BASE_ATTACK), target->GetTotalAttackPowerValue(RANGED_ATTACK));
+        handler->PSendSysMessage("Probe %s: level %u class %u spec %u. AP %.0f, SP %d, health %u. White hit %.0f, filler %u = %d.",
+            target->GetName().c_str(), uint32(target->GetLevel()), uint32(target->GetClass()), uint32(target->GetTalentSpecialization()),
+            attackPower, target->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_ALL), target->GetMaxHealth(), white, fillerId, filler);
+
+        for (Heartseed::TraitInfo const& gift : sHeartseedMgr->GetGiftTraits())
+        {
+            int32 amount = std::max(sHeartseedMgr->GetGiftAmount(target, gift), 0);
+            Heartseed::MeterRule rule;
+            uint32 fullPct = 100;
+            if (sHeartseedMgr->GetMeterRule(uint8(gift.TraitPath), rule) && rule.MaxStacks)
+                fullPct = uint32(std::max(0, 100 + rule.MaxStacks * rule.SpendBonusPct));
+            SpellInfo const* spell = sSpellMgr->GetSpellInfo(gift.GiftSpellId);
+            char const* name = gift.Name.c_str();
+            float ref = reference > 0.0f ? reference : 1.0f;
+
+            std::string line;
+            switch (gift.GiftSpellId)
+            {
+                case 310103:   // Serpent's Breath: every tick of the channel deals the Gift's power to each enemy in the cone
+                {
+                    uint32 ticks = 0;
+                    if (spell && spell->Effects[EFFECT_0].ApplyAuraTickCount > 0)   // the period in ms, despite its name
+                        ticks = uint32(std::max(0, spell->GetMaxDuration()) / spell->Effects[EFFECT_0].ApplyAuraTickCount);
+                    uint32 cast = uint32(amount) * ticks;
+                    line = Trinity::StringFormat("%u ticks x %d = %u per enemy (%.1fx reference), %u full meter (%.1fx)",
+                        ticks, amount, cast, cast / ref, cast * fullPct / 100, cast * fullPct / 100 / ref);
+                    break;
+                }
+                case 310102:   // Niuzao's Retort: a share of the damage taken in the window, to each enemy
+                {
+                    uint32 tenPct = target->GetMaxHealth() / 10 * uint32(std::max(gift.GiftBaseAmount, 0)) / 100;
+                    line = Trinity::StringFormat("%d%% of damage taken per enemy: %u per 10%% of health taken (%.1fx reference)",
+                        gift.GiftBaseAmount, tenPct, tenPct / ref);
+                    break;
+                }
+                case 310101:   // Crane's Plume: a share of the caster's max health to each target
+                {
+                    uint32 heal = target->GetMaxHealth() / 100 * uint32(std::max(gift.GiftBaseAmount, 0));
+                    line = Trinity::StringFormat("heals %u per target, %u full meter", heal, heal * fullPct / 100);
+                    break;
+                }
+                default:       // Call of Xuen: the tiger's own guardian stats; measure in play
+                    line = Trinity::StringFormat("summon for %u ms (%u ms full meter); damage from the guardian's stats",
+                        gift.GiftDuration, gift.GiftDuration * fullPct / 100);
+                    break;
+            }
+            handler->PSendSysMessage("  %s (cd %u ms): %s.", name, gift.GiftCooldown, line.c_str());
+        }
+        return true;
     }
 
     static bool HandleInfoCommand(ChatHandler* handler, char const* /*args*/)
@@ -530,7 +620,10 @@ public:
         long traitId = end && end != args ? strtol(end, &end, 10) : -1;
         if (tier >= Heartseed::MaxMajorTiers || traitId < 0)
         {
-            handler->SendSysMessage("Usage: .heartseed major <10|25|40|55|70|85> <trait id, or 0 to clear>; see .heartseed traits");
+            std::string levels;
+            for (uint8 i = 0; i < Heartseed::MaxMajorTiers; ++i)
+                levels += (i ? "|" : "") + std::to_string(Heartseed::MajorTierLevel(i));
+            handler->PSendSysMessage("Usage: .heartseed major <%s> <trait id, or 0 to clear>; see .heartseed traits", levels.c_str());
             handler->SetSentErrorMessage(true);
             return false;
         }

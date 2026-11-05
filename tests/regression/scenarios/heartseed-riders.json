@@ -14,7 +14,7 @@
     "say .heartseed grant",
     "say .character level Seedtest 85",
     "say .cooldown",
-    "say .heartseed major 10 6",
+    "say .heartseed major 1 6",
     "say .heartseed info",
     "say .npc add temp 6",
     "say .npc add temp 6",
@@ -23,12 +23,12 @@
     "say .heartseed meter hit 50000",
     "cast 310102",
     "say .list auras",
-    "say .heartseed major 10 4",
+    "say .heartseed major 1 4",
     "say .heartseed meter 5",
     "cast 310101",
     "say .list auras",
     "say .heartseed info",
-    "say .heartseed major 10 2",
+    "say .heartseed major 1 2",
     "say .npc add temp 6",
     "npcguid 6",
     "cast 310100 npc",
@@ -44,7 +44,7 @@
     },
     {
       "type": "contains",
-      "text": "riders: stage 1 kind 11 amount 30, stage 2 kind 5 amount -20, stage 3 kind 7 amount 50, stage 4 kind 10 amount 2000."
+      "text": "riders: stage 0 kind 11 amount 30, stage 2 kind 5 amount -20, stage 3 kind 7 amount 50, stage 4 kind 10 amount 2000."
     },
     {
       "type": "regex",

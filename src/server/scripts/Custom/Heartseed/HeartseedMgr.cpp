@@ -217,9 +217,9 @@ void HeartseedMgr::LoadConfig()
     _choiceShrineOnly = sConfigMgr->GetBoolDefault("Heartseed.Choice.ChangeAtShrineOnly", false);
 
     Heartseed::UnlockLevels& unlocks = Heartseed::Unlocks();
-    if (!Heartseed::SetLevels(unlocks.MajorTiers, ParseList<uint32>(sConfigMgr->GetStringDefault("Heartseed.Majors.TierLevels", "10 25 40 55 70 85"))))
+    if (!Heartseed::SetLevels(unlocks.MajorTiers, ParseList<uint32>(sConfigMgr->GetStringDefault("Heartseed.Majors.TierLevels", "1 25 40 55 70 85"))))
         TC_LOG_ERROR("server.loading", "Heartseed.Majors.TierLevels needs %u ascending levels from 1 to 255; keeping the current levels.", uint32(Heartseed::MaxMajorTiers));
-    if (!Heartseed::SetLevels(unlocks.EssenceSlots, ParseList<uint32>(sConfigMgr->GetStringDefault("Heartseed.Essence.SlotLevels", "10 40 70"))))
+    if (!Heartseed::SetLevels(unlocks.EssenceSlots, ParseList<uint32>(sConfigMgr->GetStringDefault("Heartseed.Essence.SlotLevels", "1 40 70"))))
         TC_LOG_ERROR("server.loading", "Heartseed.Essence.SlotLevels needs %u ascending levels from 1 to 255; keeping the current levels.", uint32(Heartseed::MaxEssenceSlots));
 }
 
@@ -1124,7 +1124,13 @@ void HeartseedMgr::OnQuestRewarded(Player* player, Quest const* quest)
 {
     // Any way of completing the quest grants it: this one, and later the Theramore intro scenario.
     if (quest->GetQuestId() == _grantQuestId && Grant(player))
+    {
         ChatHandler(player->GetSession()).SendSysMessage("A Heartseed has taken root in your weapon.");
+        // The Gift tier opens at 1 by default: the seed's first act is to offer its power, once the reward
+        // window has closed.
+        if (!player->GetSession()->IsBot())
+            player->m_Events.AddEvent(new HeartseedChoicePromptEvent(player), player->m_Events.CalculateTime(GetChoicePromptDelay()));
+    }
 
     // Questing is how a fresh character levels, so it feeds Growth too. Repeatable turn-ins other than dailies and
     // weeklies could be farmed, and quests far below the character are skipped like gray bosses.
@@ -2138,6 +2144,26 @@ Heartseed::GiftSpend HeartseedMgr::GetLastSpend(Player const* player) const
     std::lock_guard<std::mutex> guard(_lock);
     auto itr = _states.find(player->GetGUID().GetCounter());
     return itr == _states.end() ? Heartseed::GiftSpend() : itr->second.LastSpend;
+}
+
+std::vector<Heartseed::TraitInfo> HeartseedMgr::GetGiftTraits() const
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    std::vector<Heartseed::TraitInfo> gifts;
+    for (auto const& [traitId, trait] : _traits)
+        if (trait.GiftSpellId)
+            gifts.push_back(trait);
+    return gifts;
+}
+
+bool HeartseedMgr::GetMeterRule(uint8 path, Heartseed::MeterRule& rule) const
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    auto found = _meters.find(path);
+    if (found == _meters.end())
+        return false;
+    rule = found->second;
+    return true;
 }
 
 bool HeartseedMgr::GetMeter(Player const* player, Heartseed::MeterRule& rule, Heartseed::MeterState& meter) const

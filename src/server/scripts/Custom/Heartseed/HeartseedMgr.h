@@ -383,6 +383,9 @@ public:
     bool GetActiveGift(Player const* player, uint32 spellId, Heartseed::TraitInfo& out) const;
     // Serpent's Breath tick: GiftBaseAmount % of the higher of attack power and spell power.
     int32 GetGiftAmount(Player const* player, Heartseed::TraitInfo const& gift) const;
+    // Every trait that teaches a Gift, and a path's meter rule (.heartseed probe).
+    std::vector<Heartseed::TraitInfo> GetGiftTraits() const;
+    bool GetMeterRule(uint8 path, Heartseed::MeterRule& rule) const;
     // The Gift's riders the character's stage has reached.
     std::vector<Heartseed::GiftRider> GetGiftRiders(Player const* player, Heartseed::TraitInfo const& gift) const;
     // Rider of this kind from spellId's active Gift; false when the character has none.

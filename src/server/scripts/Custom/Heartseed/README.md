@@ -217,13 +217,13 @@ Dungeons whose instance has no script never call `UpdateEncounterState`, so they
   (remembered as story flag 1001, a hint).
 - **Appearances:** every weapon fed or deleted is recorded in `character_weapon_appearance`.
 - **Essences** fill the first free open slot when first collected (`Heartseed.Essence.AutoSlot`). Slots
-  open at 10, 40 and 70; an essence in an open slot rolls its proc on damage the character deals, with its
+  open at 1, 40 and 70 (`Heartseed.Essence.SlotLevels`); an essence in an open slot rolls its proc on damage the character deals, with its
   own `Heartseed.Essence.ProcCooldown`, dealt like the core proc. `SetEssenceSlot` is what the shrine
   gossip (T-023) will call.
 
 ## Traits and the core passive
 
-- **Majors** are chosen, one per tier (levels 10, 25, 40, 55, 70, 85), into the loadout of the active
+- **Majors** are chosen, one per tier (levels 1, 25, 40, 55, 70, 85, `Heartseed.Majors.TierLevels`; the first is the Gift, offered right after the granting quest), into the loadout of the active
   specialization. `HeartseedMgr::ChooseMajor` validates the choice; the shrine gossip (T-023) calls it.
 - **Minors** fill in by character level on every path the active loadout has at least one major in (path 0 =
   every Heartseed).
@@ -297,6 +297,7 @@ Permission 90000 (`Command: heartseed`, Gamemaster role). Target is the selected
 - `.heartseed traits`: every trait, marking the ones active on the target.
 - `.heartseed major <10|25|40|55|70|85> <trait id | 0>`: set or clear a major in the active spec's
   loadout. Skips the level check.
+- `.heartseed probe [name]`: what each Gift does for an online character right now (any character, bots too, also from the console): its AP, SP and health, the average white hit and the class filler spell as references, Breath per cast empty and at a full meter, Retort per 10% of health taken, Plume's heal. For tuning.
 - `.heartseed meter [<stacks> | lit | hit <damage>]`: show the path meter, set its stacks, light it, or feed it
   a hit taken (Niuzao: records the damage and lights the meter if the hit is big enough).
 - `.heartseed reload`: reload stages, glows, traits, essences, shrines, meters and Growth stats, and refresh the target.

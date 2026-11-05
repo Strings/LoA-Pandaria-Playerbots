@@ -5575,17 +5575,18 @@ Heartseed.Essence.AutoSlot = 1
 #
 #    Heartseed.Essence.SlotLevels
 #        Description: Character level that opens each of the three essence slots, ascending.
-#        Default:     "10 40 70"
+#        Default:     "1 40 70"
 
-Heartseed.Essence.SlotLevels = "10 40 70"
+Heartseed.Essence.SlotLevels = "1 40 70"
 
 #
 #    Heartseed.Majors.TierLevels
 #        Description: Character level that opens each of the six major tiers, ascending. Saved
 #                     loadouts keep their tier index, so changing a level moves the tier, not the choice.
-#        Default:     "10 25 40 55 70 85"
+#                     The first tier is the Celestial Gift; at 1 a fresh character has it from the start.
+#        Default:     "1 25 40 55 70 85"
 
-Heartseed.Majors.TierLevels = "10 25 40 55 70 85"
+Heartseed.Majors.TierLevels = "1 25 40 55 70 85"
 
 #
 #    Heartseed.Story.Hooks

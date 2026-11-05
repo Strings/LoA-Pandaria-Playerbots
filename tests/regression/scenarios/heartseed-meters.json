@@ -14,19 +14,19 @@
     "say .heartseed grant",
     "say .character level Seedtest 10",
     "say .cooldown",
-    "say .heartseed major 10 8",
+    "say .heartseed major 1 8",
     "say .heartseed meter",
     "say .cast 6673",
     "say .heartseed meter",
-    "say .heartseed major 10 4",
+    "say .heartseed major 1 4",
     "target 1",
     "say .damage 150",
     "say .cast 2061",
     "wait-for evt=never timeout=2",
     "say .heartseed meter",
-    "say .heartseed major 10 6",
+    "say .heartseed major 1 6",
     "say .heartseed meter hit 10",
-    "say .heartseed major 10 2",
+    "say .heartseed major 1 2",
     "target 1",
     "say .aura 75060",
     "say .npc add temp 6",
@@ -44,7 +44,7 @@
     },
     {
       "type": "regex",
-      "pattern": "(?s)step: say .heartseed major 10 8.*?Meter of Seedtest: stacks 0/5.*?step: say .cast 6673.*?Meter of Seedtest: stacks 1/5"
+      "pattern": "(?s)step: say .heartseed major 1 8.*?Meter of Seedtest: stacks 0/5.*?step: say .cast 6673.*?Meter of Seedtest: stacks 1/5"
     },
     {
       "type": "regex",
