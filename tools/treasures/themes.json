@@ -1,0 +1,11 @@
+{
+  "_comment": "Shared loot pools for hand-placed treasures. Each theme is a reference_loot_template entry: one item rolled with equal chance. Reuse a theme in every zone where it fits; add a new one (next ref id in the Treasures block of docs/ID_RANGES.md) for a new local faction or era.",
+  "themes": {
+    "burning-blade": {"ref": 909100, "level": "5-15", "items": [5112, 5069, 5071, 3308, 3307, 4766]},
+    "troll":         {"ref": 909101, "level": "5-15", "items": [3287, 3288, 3653, 3314, 816, 3291, 3292]},
+    "quilboar-farm": {"ref": 909102, "level": "5-15", "items": [5255, 8180, 3652, 2976, 5968, 4861]},
+    "kul-tiras":     {"ref": 909103, "level": "5-15", "items": [3302, 3654, 3188, 4577, 1394, 3283, 3282]},
+    "harpy-canyon":  {"ref": 909104, "level": "5-15", "items": [2978, 2980, 3651, 3036, 1355, 2965]}
+  },
+  "blue": {"ref": 909105, "chance": 8, "level": "13-18", "_comment": "Ragefire-era blues; raise blueChance per spot for harder-to-reach nooks", "items": [14145, 14147, 14148, 14149, 14150, 14151]}
+}

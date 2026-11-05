@@ -29,6 +29,7 @@
 #include "ObjectMgr.h"
 #include "OutdoorPvPMgr.h"
 #include "PoolMgr.h"
+#include "GameObjectHooks.h"
 #include "ScriptMgr.h"
 #include "SpellMgr.h"
 #include "UpdateFieldFlags.h"
@@ -1069,6 +1070,10 @@ bool GameObject::IsNeverVisibleFor(WorldObject const* seer, bool allowServerside
         return true;
 
     if (GetGOInfo()->GetServerOnly() && !allowServersideObjects)
+        return true;
+
+    // Per-viewer hiding for custom systems (a treasure this character already looted)
+    if (GameObjectHooks::Hides(this, seer))
         return true;
 
     return false;
@@ -2682,7 +2687,7 @@ void GameObject::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* t
                 {
                     case GAMEOBJECT_TYPE_CHEST:
                     case GAMEOBJECT_TYPE_GOOBER:
-                        if (ActivateToQuest(target))
+                        if (ActivateToQuest(target) || GameObjectHooks::Sparkles(this, target))
                             dynFlags |= GO_DYNFLAG_LO_ACTIVATE | GO_DYNFLAG_LO_SPARKLE;
                         else if (targetIsGM)
                             dynFlags |= GO_DYNFLAG_LO_ACTIVATE;

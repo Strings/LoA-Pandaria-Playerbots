@@ -76,6 +76,20 @@ entry when something took more than one wrong turn to find, and say what would h
   for everyone (Berserking is the troll racial). A clone in the custom block keeps the effects and visuals under its
   own name, tooltip and icon; bind the source's class scripts to the clone and port its `SpellMgr` corrections into
   the clone's attributes.
+- **`PathGenerator` from a GM command needs a ground-only probe unit.** It dereferences its source unit, so commands
+  without a nearby player create a probe `Creature` (not added to the map). A creature that can fly (entry 1, the
+  waypoint) gets a straight-line shortcut (`PATHFIND_SHORTCUT`/`NOT_USING_PATH`), not a walk; T-093 uses 3296.
+- **Long navmesh walks end `PATHFIND_INCOMPLETE` (0x4, no NORMAL bit),** because the node budget runs out, not because
+  the spot is unreachable. Chain legs from where the last one ended, and try both directions: spot to road often
+  finds a path when road to spot runs dry. Snap the road point to the ground first or the walk starts underground.
+- **Terrain checks over SOAP must load the grids themselves** (`Map::LoadGrid` along the line), since no player is
+  there. Without it height, vmap and navmesh queries quietly answer "nothing".
+- **Map data quirks found by the placement validator:** Durotar's Thunder Ridge reads as deep water everywhere.
+- **`CanStoreNewItem` per item hands several items the same empty slot.** Granting a list of items straight to the
+  bags: check total free slots first, then call `CanStoreNewItem` right before each `StoreNewItem`. Otherwise the
+  second item is silently lost.
+- **Gameobject loot here is personal by default** (`m_normalLootMode` is false for objects in this fork): `Loot::AddItem`
+  takes the personal branch and filters by `AllowedForPlayer` at fill time.
 
 ## Tools and environment
 
@@ -88,3 +102,9 @@ entry when something took more than one wrong turn to find, and say what would h
 - **Check which exe a test ran against.** A "PASS" from a devenv still running the old `worldserver.exe` proves
   nothing. Compare the exe's timestamp with the build before trusting a result.
 - **Agent "done" means the agent stopped,** not that the work is pushed. Check the branch before relying on it.
+- **Regression scenarios share one character, so state leaks between them.** A scenario that teleports or changes
+  Seedtest must put it back (`telemetry` walks from a fixed Elwynn spot and is disconnected if Seedtest is elsewhere).
+  Run a new scenario, then the full suite, before trusting either.
+- **Placing world objects: query the server, don't eyeball screenshots.** `.treasure validate` and
+  `tools/treasures/treasure_zone.py` answer ground, cover, liquid and reachability from map data; spawn tables give
+  candidate spots for free, since mobs already stand in the caves and camps worth hiding things in.

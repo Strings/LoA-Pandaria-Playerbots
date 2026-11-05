@@ -6069,3 +6069,53 @@ Rares.BotsWaitForPlayer = 1
 Rares.Xp.BaseLevelFraction = 0.25
 Rares.Xp.MaxLevelFraction = 1.0
 Rares.IntroOnFirstClaim = 1
+
+###################################################################################################
+# TREASURES (T-093)
+#
+#    Treasures.Enable
+#        Description: Hand-placed treasures (gameobjects using the go_treasure script) open once per character,
+#                     then are hidden from that character only. 0 makes them ordinary unscripted chests.
+#        Default:     1
+#
+#    Treasures.GmSeesLooted
+#        Description: A GM in GM mode still sees treasures their character has opened (placement checks).
+#        Default:     1
+#
+#    Treasures.IntroOnFirstFind
+#        Description: A character's first treasure shows a short popup explaining treasures.
+#        Default:     1
+#
+#    Treasures.Validate.MaxGroundOffset
+#    Treasures.Validate.MaxSlope
+#    Treasures.Validate.MinSpacing
+#    Treasures.Validate.MaxPathFactor
+#        Description: .treasure validate limits: yards between a candidate's z and the ground, steepest slope in
+#                     degrees, yards to the nearest other treasure, and how many times longer than the straight
+#                     line the walking path from the road point may be before it warns.
+#        Default:     3, 40, 60, 4
+#
+#    Treasures.Validate.RequireCover
+#        Description: 1 fails spots with open sky above them (DESIGN.md, Flying rule); 0 only warns.
+#        Default:     0
+#
+#    Treasures.Validate.SkyRayHeight
+#        Description: Length in yards of the upward rays that test for cover.
+#        Default:     60
+#
+#    Treasures.Validate.NudgeRadius
+#    Treasures.Validate.NudgeStep
+#        Description: '.treasure validate ... nudge' tries rings this many yards apart out to this radius.
+#        Default:     6, 1.5
+
+Treasures.Enable = 1
+Treasures.GmSeesLooted = 1
+Treasures.IntroOnFirstFind = 1
+Treasures.Validate.MaxGroundOffset = 3
+Treasures.Validate.MaxSlope = 40
+Treasures.Validate.MinSpacing = 60
+Treasures.Validate.MaxPathFactor = 4
+Treasures.Validate.RequireCover = 0
+Treasures.Validate.SkyRayHeight = 60
+Treasures.Validate.NudgeRadius = 6
+Treasures.Validate.NudgeStep = 1.5

@@ -250,6 +250,10 @@ def main(argv=None) -> int:
     elif args.command in ('install', 'uninstall'):
         if not args.client or not (args.client / 'Data').is_dir():
             parser.error('--client must be a WoW folder with a Data directory')
+        # A chain without an archive is removed on install (it has no edits), so an unbuilt checkout would strip
+        # the installed patch. Refuse instead.
+        if args.command == 'install' and not any(out_path(chain).exists() for chain in names):
+            parser.error('nothing built in %s; run build first' % args.out)
         for chain in names:
             target = args.client / 'Data' / names[chain].replace('\\', '/')
             if args.command == 'install' and out_path(chain).exists():
