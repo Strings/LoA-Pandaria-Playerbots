@@ -1,9 +1,10 @@
-﻿#include "TreasureRules.h"
+#include "TreasureRules.h"
 #include "CellImpl.h"
 #include "Chat.h"
 #include "Config.h"
 #include "Creature.h"
 #include "DatabaseEnv.h"
+#include "DetourNavMesh.h"
 #include "GameObject.h"
 #include "GameObjectHooks.h"
 #include "GridNotifiers.h"
@@ -38,7 +39,7 @@ namespace
 {
     rbac::RBACPermissions const GmPermission = static_cast<rbac::RBACPermissions>(99000);
     char const* const TreasureScript = "go_treasure";
-    uint32 const ProbeCreatureEntry = 1; // "Waypoint (Only GM can see it)": a never-spawned path probe
+    uint32 const ProbeCreatureEntry = 3296; // Orgrimmar Grunt: a ground walker, never spawned, used only as a path probe
 
     struct Config
     {
@@ -258,6 +259,7 @@ namespace
         float PathLength = 0.0f;
         uint32 PathType = 0;
         uint32 NearestId = 0;
+        std::string Tiles = "no navmesh";
         Treasures::Measurement M;
         Treasures::Verdict V;
     };
@@ -356,13 +358,25 @@ namespace
                 {
                     PathGenerator path(probe);
                     bool built = path.CalculatePath(x, y, gz, false, false);
+                    if (dtNavMesh const* mesh = MMAP::MMapFactory::createOrGetMMapManager()->GetNavMesh(map->GetId()))
+                    {
+                        auto tileAt = [mesh](float px, float py, float pz)
+                        {
+                            float point[3] = { py, pz, px };
+                            int tx = -1, ty = -1;
+                            mesh->calcTileLoc(point, &tx, &ty);
+                            return tx >= 0 && ty >= 0 && mesh->getTileAt(tx, ty, 0) != nullptr;
+                        };
+                        p.Tiles = std::string(tileAt(rx, ry, rz) ? "road tile" : "NO road tile") + ", " +
+                            (tileAt(x, y, gz) ? "spot tile" : "NO spot tile");
+                    }
                     p.PathType = path.GetPathType();
                     Movement::PointsArray const& points = path.GetPath();
                     for (size_t i = 1; i < points.size(); ++i)
                         p.PathLength += (points[i] - points[i - 1]).length();
                     G3D::Vector3 end = path.GetActualEndPosition();
                     float miss = std::sqrt((end.x - x) * (end.x - x) + (end.y - y) * (end.y - y) + (end.z - gz) * (end.z - gz));
-                    p.M.Reachable = built && (p.PathType & PATHFIND_NORMAL) && !(p.PathType & PATHFIND_NOPATH) && miss < 3.0f;
+                    p.M.Reachable = built && (p.PathType & PATHFIND_NORMAL) && !(p.PathType & (PATHFIND_NOPATH | PATHFIND_NOT_USING_PATH | PATHFIND_SHORTCUT | PATHFIND_INCOMPLETE)) && miss < 3.0f;
                     p.M.PathLength = p.PathLength;
                 }
                 delete probe;
@@ -401,9 +415,9 @@ namespace
             p.M.GroundFound ? "found" : "missing", p.M.GroundOffset, p.Outdoors ? "outdoors" : "indoors",
             p.InWmo ? (" (WMO " + std::to_string(p.RootId) + "/" + std::to_string(p.GroupId) + ")").c_str() : "",
             p.Liquid.c_str(), p.M.Slope);
-        handler->PSendSysMessage("  sky %s (%d/%d rays blocked); path %s %.0f yd (straight %.0f, type 0x%X); line of sight %s",
+        handler->PSendSysMessage("  sky %s (%d/%d rays blocked); path %s %.0f yd (straight %.0f, type 0x%X, %s); line of sight %s",
             Treasures::SkyName(p.M.SkyState), p.RaysBlocked, p.RaysTotal, p.M.Reachable ? "ok" : "none", p.M.PathLength,
-            p.M.StraightDistance, p.PathType, p.M.LineOfSight ? "yes" : "no");
+            p.M.StraightDistance, p.PathType, p.Tiles.c_str(), p.M.LineOfSight ? "yes" : "no");
         if (p.M.NearestTreasure >= 0.0f)
             handler->PSendSysMessage("  nearest treasure %u at %.0f yd; warnings: %s", p.NearestId, p.M.NearestTreasure,
                 p.V.Warnings.empty() ? "none" : Treasures::Join(p.V.Warnings).c_str());
