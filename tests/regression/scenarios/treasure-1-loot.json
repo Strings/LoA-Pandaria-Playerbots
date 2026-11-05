@@ -14,6 +14,8 @@
     "say .treasure explain 9090009",
     "say .treasure looted",
     "gameobject-use 909008:9090009",
+    "wait-for evt=never timeout=2",
+    "say .go -9336 172 61.6 0",
     "wait-for evt=never timeout=2"
   ],
   "assertions": [
