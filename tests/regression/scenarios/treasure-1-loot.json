@@ -1,0 +1,27 @@
+{
+  "name": "treasure-1-loot",
+  "timeout_seconds": 120,
+  "args": ["--cmd", "play", "--hold", "2", "--char", "1"],
+  "steps": [
+    "say .gm off",
+    "say .revive",
+    "say .treasure reset all",
+    "say .treasure go 9090009",
+    "wait-for evt=never timeout=3",
+    "say .treasure explain 9090009",
+    "gameobject-use 909008:9090009",
+    "wait-for evt=never timeout=2",
+    "say .treasure explain 9090009",
+    "say .treasure looted",
+    "gameobject-use 909008:9090009",
+    "wait-for evt=never timeout=2"
+  ],
+  "assertions": [
+    {"type": "contains", "text": "LOGIN-OK map="},
+    {"type": "contains", "text": "Seedtest: not looted, visible, at client"},
+    {"type": "contains", "text": "You open the Waterlogged Sea Chest"},
+    {"type": "contains", "text": "Seedtest: looted, hidden, not at client"},
+    {"type": "regex", "pattern": "9090009.*scuttle"},
+    {"type": "contains", "text": "You already emptied this treasure."}
+  ]
+}
