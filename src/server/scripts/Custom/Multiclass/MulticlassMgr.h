@@ -49,14 +49,14 @@ namespace Multiclass
         std::string Description;
     };
 
-    enum class Trigger : uint8
+    enum class RuleTrigger : uint8
     {
         Cast = 1,                   // the character casts TriggerSpell (not triggered)
         Hit  = 2,                   // a second-class ability (TriggerSpell) hits a target
         Kill = 3,                   // the character deals a killing blow to a creature (TriggerSpell 0 = any)
     };
 
-    enum class Condition : uint8
+    enum class RuleCondition : uint8
     {
         None              = 0,
         TargetAura        = 1,      // the target has ConditionSpell from the character
@@ -64,7 +64,7 @@ namespace Multiclass
         TargetNotOnCaster = 3,      // the target is attacking someone else
     };
 
-    enum class Effect : uint8
+    enum class RuleEffect : uint8
     {
         CastOnTarget = 1,           // EffectSpell, triggered, on the target
         CastOnSelf   = 2,           // EffectSpell, triggered, on the character
@@ -77,11 +77,11 @@ namespace Multiclass
         uint32 ClassId = 0;
         uint32 BaseSpec = 0;        // ChrSpecialization id; 0 for any spec
         uint8 MinLevel = 1;         // second-class level
-        Trigger On = Trigger::Cast;
+        RuleTrigger On = RuleTrigger::Cast;
         uint32 TriggerSpell = 0;
-        Condition If = Condition::None;
+        RuleCondition If = RuleCondition::None;
         uint32 ConditionSpell = 0;
-        Effect Do = Effect::CastOnTarget;
+        RuleEffect Do = RuleEffect::CastOnTarget;
         uint32 EffectSpell = 0;
         int32 Amount = 0;
         uint32 CooldownMs = 0;
@@ -130,7 +130,7 @@ public:
     void Clear(Player* player);
 
     // Rules engine: runs every rule of the character's active second class for this trigger.
-    void Fire(Player* player, Multiclass::Trigger on, uint32 spellId, Unit* target);
+    void Fire(Player* player, Multiclass::RuleTrigger on, uint32 spellId, Unit* target);
 
     void SendSync(Player* player) const;
 

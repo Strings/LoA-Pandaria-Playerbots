@@ -92,23 +92,23 @@ void MulticlassMgr::LoadData()
             rule.ClassId = fields[1].GetUInt32();
             rule.BaseSpec = fields[2].GetUInt32();
             rule.MinLevel = fields[3].GetUInt8();
-            rule.On = Trigger(fields[4].GetUInt8());
+            rule.On = RuleTrigger(fields[4].GetUInt8());
             rule.TriggerSpell = fields[5].GetUInt32();
-            rule.If = Condition(fields[6].GetUInt8());
+            rule.If = RuleCondition(fields[6].GetUInt8());
             rule.ConditionSpell = fields[7].GetUInt32();
-            rule.Do = Effect(fields[8].GetUInt8());
+            rule.Do = RuleEffect(fields[8].GetUInt8());
             rule.EffectSpell = fields[9].GetUInt32();
             rule.Amount = fields[10].GetInt32();
             rule.CooldownMs = fields[11].GetUInt32();
             rule.Comment = fields[12].GetString();
-            bool castsSpell = rule.Do == Effect::CastOnTarget || rule.Do == Effect::CastOnSelf;
+            bool castsSpell = rule.Do == RuleEffect::CastOnTarget || rule.Do == RuleEffect::CastOnSelf;
             if (!classes.count(rule.ClassId) || (castsSpell && !sSpellMgr->GetSpellInfo(rule.EffectSpell))
-                || rule.On < Trigger::Cast || rule.On > Trigger::Kill || rule.Do < Effect::CastOnTarget || rule.Do > Effect::Energize)
+                || rule.On < RuleTrigger::Cast || rule.On > RuleTrigger::Kill || rule.Do < RuleEffect::CastOnTarget || rule.Do > RuleEffect::Energize)
             {
                 TC_LOG_ERROR("sql.sql", "multiclass_rule %u skipped: unknown class, trigger, effect or effect spell.", rule.Id);
                 continue;
             }
-            if (rule.On == Trigger::Kill)
+            if (rule.On == RuleTrigger::Kill)
                 killRules.push_back(rule);
             else
                 rulesBySpell[rule.TriggerSpell].push_back(rule);
@@ -389,7 +389,7 @@ void MulticlassMgr::Save(Player const* player) const
     CharacterDatabase.CommitTransaction(trans);
 }
 
-void MulticlassMgr::Fire(Player* player, Trigger on, uint32 spellId, Unit* target)
+void MulticlassMgr::Fire(Player* player, RuleTrigger on, uint32 spellId, Unit* target)
 {
     if (!_enabled)
         return;
@@ -405,7 +405,7 @@ void MulticlassMgr::Fire(Player* player, Trigger on, uint32 spellId, Unit* targe
             level = itr->second.Level;
 
         std::vector<RuleInfo> const* rules = nullptr;
-        if (on == Trigger::Kill)
+        if (on == RuleTrigger::Kill)
             rules = &_killRules;
         else if (auto itr = _rulesBySpell.find(spellId); itr != _rulesBySpell.end())
             rules = &itr->second;
@@ -418,7 +418,7 @@ void MulticlassMgr::Fire(Player* player, Trigger on, uint32 spellId, Unit* targe
         {
             if (rule.On != on || rule.ClassId != active || level < rule.MinLevel || (rule.BaseSpec && rule.BaseSpec != spec))
                 continue;
-            if (on == Trigger::Kill && rule.TriggerSpell && rule.TriggerSpell != spellId)
+            if (on == RuleTrigger::Kill && rule.TriggerSpell && rule.TriggerSpell != spellId)
                 continue;
             uint32& firedAt = state->second.RuleFiredAt[rule.Id];
             if (!RuleReady(firedAt, now, rule.CooldownMs))
@@ -431,15 +431,15 @@ void MulticlassMgr::Fire(Player* player, Trigger on, uint32 spellId, Unit* targe
     {
         switch (rule.If)
         {
-            case Condition::TargetAura:
+            case RuleCondition::TargetAura:
                 if (!target || !target->HasAura(rule.ConditionSpell, player->GetGUID()))
                     continue;
                 break;
-            case Condition::CasterAura:
+            case RuleCondition::CasterAura:
                 if (!player->HasAura(rule.ConditionSpell))
                     continue;
                 break;
-            case Condition::TargetNotOnCaster:
+            case RuleCondition::TargetNotOnCaster:
                 if (!target || target->GetVictim() == player)
                     continue;
                 break;
@@ -449,15 +449,15 @@ void MulticlassMgr::Fire(Player* player, Trigger on, uint32 spellId, Unit* targe
 
         switch (rule.Do)
         {
-            case Effect::CastOnTarget:
+            case RuleEffect::CastOnTarget:
                 if (!target || !target->IsAlive())
                     continue;
                 player->CastSpell(target, rule.EffectSpell, TRIGGERED_FULL_MASK);
                 break;
-            case Effect::CastOnSelf:
+            case RuleEffect::CastOnSelf:
                 player->CastSpell(player, rule.EffectSpell, TRIGGERED_FULL_MASK);
                 break;
-            case Effect::Energize:
+            case RuleEffect::Energize:
                 if (rule.EffectSpell < MAX_POWERS)
                     player->ModifyPower(Powers(rule.EffectSpell), rule.Amount);
                 break;

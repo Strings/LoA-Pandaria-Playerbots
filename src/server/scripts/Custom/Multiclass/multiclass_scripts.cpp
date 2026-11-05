@@ -75,7 +75,7 @@ public:
         Player* player = caster ? caster->ToPlayer() : nullptr;
         if (!player || !spell || spell->IsTriggered())
             return;
-        sMulticlassMgr->Fire(player, Trigger::Cast, spellInfo->Id, spell->m_targets.GetUnitTarget());
+        sMulticlassMgr->Fire(player, RuleTrigger::Cast, spellInfo->Id, spell->m_targets.GetUnitTarget());
     }
 
     // Kill rules run on the killing blow, before death clears the victim's auras, so conditions can read them.
@@ -85,7 +85,7 @@ public:
             return;
         Player* player = attacker->GetCharmerOrOwnerPlayerOrPlayerItself();
         if (player && player->IsInWorld())
-            sMulticlassMgr->Fire(player, Trigger::Kill, 0, victim);
+            sMulticlassMgr->Fire(player, RuleTrigger::Kill, 0, victim);
     }
 };
 
@@ -323,7 +323,7 @@ class spell_multiclass_ability : public SpellScript
         return true;
     }
 
-    uint32 Cost() const
+    uint32 Cost()
     {
         Player* player = GetCaster()->ToPlayer();
         return uint32(uint64(player->GetMaxPower(Powers(_ability.PowerType))) * _ability.CostPct / 100);
@@ -375,7 +375,7 @@ class spell_multiclass_ability : public SpellScript
     {
         if (GetSpell()->IsTriggered())
             return;
-        sMulticlassMgr->Fire(GetCaster()->ToPlayer(), Trigger::Hit, GetSpellInfo()->Id, GetHitUnit());
+        sMulticlassMgr->Fire(GetCaster()->ToPlayer(), RuleTrigger::Hit, GetSpellInfo()->Id, GetHitUnit());
     }
 
     void Register() override
