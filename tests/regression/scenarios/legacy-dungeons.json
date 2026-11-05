@@ -1,0 +1,70 @@
+{
+  "name": "legacy-dungeons",
+  "timeout_seconds": 150,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "2"
+  ],
+  "steps": [
+    "say .revive",
+    "say .gm on",
+    "say .levelup 90",
+    "say .legacy out",
+    "say .go -618 -4251 38 1",
+    "wait-for map=1 timeout=15",
+    "dungeon-difficulty heroic timeout=8",
+    "say .legacy status 4",
+    "lfg-join 4 roles=dps",
+    "wait-for map=389 timeout=20",
+    "say .legacy status 4",
+    "lfg-teleport out",
+    "wait-for map=1 timeout=20",
+    "say .legacy status 4"
+  ],
+  "assertions": [
+    {
+      "type": "event",
+      "kind": "login",
+      "minimum": 1,
+      "maximum": 1
+    },
+    {
+      "type": "contains",
+      "text": "Legacy solo: enabled=1; storage=1; margin=20; grouped=0"
+    },
+    {
+      "type": "contains",
+      "text": "grouped=0; active-dungeon=4; destination=389; current-map=389"
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)step: lfg-teleport out.*?active-dungeon=0; destination=0; current-map=1"
+    },
+    {
+      "type": "event",
+      "kind": "worldport",
+      "fields": {
+        "map": 389
+      },
+      "minimum": 1
+    },
+    {
+      "type": "event",
+      "kind": "dungeon_difficulty",
+      "fields": {
+        "mode": 2
+      },
+      "minimum": 2
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback"
+    }
+  ]
+}
