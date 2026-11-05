@@ -65,6 +65,7 @@ something worth knowing.
 | `Custom/Capture/` | `.idea`, `.bug`, and `.capture` feedback ticket capture commands |
 | `Custom/Telemetry/` | Player telemetry for human-like bots: game-agnostic core, WoW adapter, `.telemetry` commands, schema README (core call sites in `game/Scripting/TelemetryHooks.h`) |
 | `Custom/Professions/` | All professions unlock and management commands (`.professions`) |
+| `Custom/Treasures/` | Hand-placed world treasures: placement validator (`.treasure validate`), loot once per character, per-character hide via `GameObjectHooks` |
 | `ScriptLoader/ScriptLoader.cpp` | Script registration (shared hotspot) |
 | `Pandaria/` | MoP raids, dungeons, zones, world bosses; `Pandaria/Scenarios/` has 17 scenarios including `FallOfTheramoreAlliance` and `FallOfTheramoreHorde` (jewel intro candidates) |
 | `EasternKingdoms/`, `Kalimdor/`, `Outland/`, `Northrend/`, `Maelstrom/` | Older content, including every Classic to Cata raid |
@@ -109,6 +110,7 @@ something worth knowing.
 | `tools/devenv/` | Development environment profiles and live scenarios (`tools/devenv/solo_smoke.json`) |
 | `tests/framework/` | Test framework header (`tests/framework/TestMain.h`) defining the shared CTest runner entry point |
 | `tests/capture/` | Unit tests for feedback ticket capture commands |
+| `tests/treasures/` | Unit tests for the treasure placement rules (`TreasureRules.h`) |
 | `tests/common/` | Shared test fixtures, mock environment, and in-memory test databases |
 | `tests/gmtools/` | Unit tests for GM checkpoint and twink kit templates |
 | `tests/heartseed/` | Unit tests for Heartseed growth and trait rules |
