@@ -6,7 +6,7 @@
     "say .revive",
     "say .heartseed revoke",
     "say .heartseed grant",
-    "say .heartseed major 10 8",
+    "say .heartseed major 1 8",
     "say .seed choose Yu'lon",
     "say .seed choose chiji",
     "say .seed choose Xuen",

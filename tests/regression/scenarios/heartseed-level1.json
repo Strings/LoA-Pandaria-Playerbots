@@ -1,0 +1,55 @@
+{
+  "name": "heartseed-level1",
+  "timeout_seconds": 90,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "2"
+  ],
+  "steps": [
+    "say .revive",
+    "say .character level Seedtest 1",
+    "say .heartseed revoke",
+    "say .heartseed grant",
+    "say .heartseed major 1 8",
+    "say .heartseed info",
+    "say .heartseed probe Seedtest",
+    "say .heartseed major 10 8",
+    "say .character level Seedtest 10"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)step: say .heartseed info.*?Gift spell 310103"
+    },
+    {
+      "type": "regex",
+      "pattern": "Probe Seedtest: level 1 class [0-9]+ spec [0-9]+. AP [0-9]+, SP [0-9]+"
+    },
+    {
+      "type": "regex",
+      "pattern": "Serpent's Breath .cd 30000 ms.: 3 ticks x [0-9]+ = [0-9]+ per enemy"
+    },
+    {
+      "type": "regex",
+      "pattern": "Niuzao's Retort .cd 20000 ms.: 50% of damage taken"
+    },
+    {
+      "type": "contains",
+      "text": "Usage: .heartseed major <1|25|40|55|70|85>"
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback"
+    }
+  ]
+}

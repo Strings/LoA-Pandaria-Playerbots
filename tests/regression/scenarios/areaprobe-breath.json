@@ -7,7 +7,7 @@
     "say .go -9339.7 170.2 61.6 0",
     "say .heartseed revoke",
     "say .heartseed grant",
-    "say .heartseed major 10 8",
+    "say .heartseed major 1 8",
     "say .cooldown",
     "say .areaprobe place 2 10 25",
     "cast 310103",

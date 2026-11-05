@@ -26,16 +26,16 @@ namespace Heartseed
     };
 
     constexpr uint8_t MaxPaths = 5;          // including None
-    constexpr uint8_t MaxMajorTiers = 6;     // majors at 10, 25, 40, 55, 70, 85 by default
-    constexpr uint8_t MaxEssenceSlots = 3;   // slots open at 10, 40, 70 by default
+    constexpr uint8_t MaxMajorTiers = 6;     // majors at 1 (the Gift), 25, 40, 55, 70, 85 by default
+    constexpr uint8_t MaxEssenceSlots = 3;   // slots open at 1, 40, 70 by default
 
     // Character levels that open each major tier and each essence slot. The counts are fixed (saved data uses
     // the tier and slot indexes); the levels come from Heartseed.Majors.TierLevels and
     // Heartseed.Essence.SlotLevels, set once at config load.
     struct UnlockLevels
     {
-        std::array<uint8_t, MaxMajorTiers> MajorTiers = { 10, 25, 40, 55, 70, 85 };
-        std::array<uint8_t, MaxEssenceSlots> EssenceSlots = { 10, 40, 70 };
+        std::array<uint8_t, MaxMajorTiers> MajorTiers = { 1, 25, 40, 55, 70, 85 };
+        std::array<uint8_t, MaxEssenceSlots> EssenceSlots = { 1, 40, 70 };
     };
 
     inline UnlockLevels& Unlocks()
