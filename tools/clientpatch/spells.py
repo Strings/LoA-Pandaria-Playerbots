@@ -20,6 +20,7 @@ S_COOLDOWNS = 15
 E_ID, E_DIFFICULTY, E_SPELL = 0, 1, 27
 M_VISUAL = 21
 M_CAST_TIME = 17
+M_RANGE = 19
 CD_ID, CD_SPELL, CD_RECOVERY = 0, 1, 4
 S_INTERRUPTS = 17
 I_ID, I_SPELL, I_AURA, I_CHANNEL = 0, 1, 3, 5
@@ -38,7 +39,9 @@ SERVER_MISC = ([('Id', 0)] + [('Attributes' if i == 0 else 'AttributesEx' + ('' 
                                for i in range(14)]
                + [('CastingTimeIndex', 17), ('DurationIndex', 18), ('RangeIndex', 19), ('SchoolMask', 25)])
 FLOAT, INT = 'f', 'i'
-SERVER_EFFECT = [('Id', 0), ('Effect', 2), ('EffectValueMultiplier', 3, FLOAT), ('EffectApplyAuraName', 4),
+# The server's EffectValueMultiplier column is FLOAT UNSIGNED; a client value below zero (summons use -10) is clamped.
+UFLOAT = 'uf'
+SERVER_EFFECT = [('Id', 0), ('Effect', 2), ('EffectValueMultiplier', 3, UFLOAT), ('EffectApplyAuraName', 4),
                  ('EffectAplitude', 5), ('EffectBasePoints', 6, INT), ('EffectBonusMultiplier', 7, FLOAT),
                  ('EffectDamageMultiplier', 8, FLOAT), ('EffectChainTarget', 9), ('EffectDieSides', 11),
                  ('EffectMechanic', 12), ('EffectMiscValue', 13, INT), ('EffectMiscValueB', 14, INT),
@@ -87,6 +90,9 @@ def clone(edit: dict, tables: Dict[str, Dbc]) -> Dict[str, List[List[int]]]:
     # SpellCastTimes row; 1 is instant (a channel then starts at once).
     if 'cast_time_index' in edit:
         misc[M_CAST_TIME] = edit['cast_time_index']
+    # SpellRange row (4 is 0 to 30 yd); a thrown weapon's own range has an 8 yd minimum.
+    if 'range_index' in edit:
+        misc[M_RANGE] = edit['range_index']
     for name, change in edit.get('attributes', {}).items():
         column = 3 + MISC_ATTRIBUTES.index(name)
         misc[column] = (misc[column] | change.get('set', 0)) & ~change.get('clear', 0)
@@ -175,6 +181,8 @@ def clone(edit: dict, tables: Dict[str, Dbc]) -> Dict[str, List[List[int]]]:
 def _value(row, column, kind=None):
     if kind == FLOAT:
         return repr(round(as_float(row[column]), 6))
+    if kind == UFLOAT:
+        return repr(round(max(0.0, as_float(row[column])), 6))
     if kind == INT:
         return str(as_int(row[column]))
     return str(row[column])

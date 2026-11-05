@@ -499,71 +499,90 @@ MVP scope: a short granting quest at level 1 (gossip prototyped in Lua), ranks w
 - UI: gossip menu first, then an addon panel over the addon channel.
 - Item stats and new entries can be pushed by server hotfix (5.4.8 supports item data hotfixes). New models need a client patch; reuse existing models with new glows and names first.
 
-## Sub-specializations (direction decided 2026-11-05; details proposed)
+## Multi-classing (decided 2026-11-05)
 
-Your class dabbles in neighboring fantasies: a Mage who raises a skeleton, a Rogue with a turret, a Warrior who
-works himself into a frenzy. The MoP spec stays the core (rotation, role, the six-tier talents); sub-specs are a
-pool of extra talents, from several themes per class, that you mix freely. Solo-first and broken-is-the-reward:
-this is about fantasy and variety, not balance.
+Your base class takes on a second, related class and levels it on its own: a Warlock who becomes a Necromancer, a
+Death Knight who becomes an Acolyte of the Lich King, a Warrior who becomes a Barbarian. The base class stays whole
+(spec, rotation, role, MoP talents); the second class adds its own kit. This replaces the earlier sub-specialization
+idea.
 
 **Decided by the human (2026-11-05):**
 
-- **From level 30, before 90.** Sub-specs open at 30 with a class quest, as part of leveling.
-- **A point every five levels:** 30, 35, 40 ... 90, so 13 points by 90 (placeholder; a config key).
-- **Character level gates the tiers, not points spent.** Basic talents are open at 30, more advanced ones at 40,
-  then 50, 60, 70, 80 and 90. Any point goes into any open talent; there is no "5 points in this tree first".
-- **Every sub-spec of the class is open at once.** Points go into any of them and come back out at any time, out of
-  combat, free. A Mage can put three points into Necromancer and two into Pyromancer, then move them tomorrow.
-- **Classes dabble in other things,** each theme tied to the class's fantasy. Classes without sub-specs elsewhere
-  (Death Knight, Monk) get their own.
+- **Two classes active:** the base class and one second class. Several second classes can be leveled over time and
+  switched between.
+- **Second classes are new, CoA-inspired classes only,** and each fits its base class's fantasy. A Death Knight can
+  become an Acolyte of the Lich King but not a Pyromancer; Necromancer belongs to the Warlock, not the Mage. Base
+  classes never multi-class with each other.
+- **Each second class levels on its own,** with its own level and experience.
+- **New resources where a class needs one,** added to the core and drawn by our UI (precedent below).
+- **Kit size is not a problem.** You pick and choose; you don't need every ability.
+- **Interactions make choices meaningful, per spec.** Not every ability plays off the base class, but every one must
+  make sense within it, and the key ones get interactions designed for each spec of the base class: a Barbarian's
+  throw roots a target that has Hamstring on it (Arms) or throws a second axe while Enraged (Fury).
+- **UI:** a second-class panel on its own key, Alt-N by default (N stays talents), with the second class's
+  spellbook in it so abilities drag to action bars.
 
 **Interpretation, not invention.** Tinkers, barbarians, necromancers and chronomancers are genre archetypes; other
-projects, Conquest of Azeroth among them, interpret them too, and so do we. Their open-source work is a fair
-reference for mechanics and solutions; our versions are written for MoP and its lore and fit the Heartseed and the
-bots.
+projects, Conquest of Azeroth among them, interpret them too, and so do we. Their open-source work is a fair reference;
+our versions are written for MoP and its lore.
+
+**Precedent in our fusion-server project (MoP, same core family):** `Fusion::PowerHooks` (F-021) gives a character
+resources its class doesn't have, with native bars and cost checks, through one core interface; a new class id was
+rejected there (MAX_CLASSES and many client tables), so second classes are kits, not classes the client knows.
+FusionUI draws the extra resources (F-022). Passive rules that react to the player's own casts run from rows in one
+engine (F-051); interactions here use the same model.
 
 **Proposed details:**
 
-- **Per sub-spec:** one or two talents per level tier (30 to 90), so about 8 to 12 talents. A talent costs one point;
-  a few take a second point for a stronger rank. The 30 tier gives the theme's signature (the Necromancer's skeleton,
-  the Tinker's turret); later tiers add abilities and bend the class's own spells toward the theme.
-- **More talents than points:** 13 points against 30 or more talents per class, so builds are choices and mixing is
-  the point. After 90, extra points could come from Heartseed Blooms (open).
-- **Loadouts:** spec loadouts (T-017) save the allocation with the rest of the build. Reincarnation echoes may mutate
-  sub-spec abilities like any other; a full rebirth re-earns the points and remembers the last allocation.
-- **Heartseed boundary:** the Heartseed is the Gift and the seed (majors, Blooms, essences); sub-specs are the class
-  kit.
-- **Client:** a sub-spec tab in the talent frame (FrameXML patch) with one column per sub-spec and rows per level
-  tier; talent data and new spells in the client patch with real tooltips; server tables are the source of truth
-  (`.reload`). A client DLL only if the frame can't do something in Lua.
-- **Bots:** each sub-spec ships with a playerbots strategy for its abilities; bots allocate points by personality and
-  class plays may use the new abilities. The largest cost per sub-spec.
-- **GM hooks:** grant or set points, learn or unlearn a talent, list and explain a character's allocation.
-- **Intro:** the class quest at 30 introduces the idea and one signature talent; the trainer explains reallocation.
+- **Unlock at 30** with a quest from the second class's order (a warband for the Barbarian, a cabal for the
+  Necromancer). Track length about 30 levels; each level adds an ability, a rank or a passive. Config keys.
+- **Experience mirrored, never split:** the active second class earns what the character earns from kills and quests
+  (computed the same way at 90), so the base class never levels slower and a 90 keeps progressing. Each second-class
+  level costs a share of the character's own next level (`Multiclass.XpPct`).
+- **Power from the character:** second-class damage and healing are a share of the Gift power (level base plus
+  weighted attack or spell power), so a fresh second class at 90 is short of abilities, not of numbers.
+- **Swapping:** free out of combat; every second class keeps its level. The panel lists every second class the base
+  class can take, learned or not.
+- **Interaction rules as rows:** trigger (a cast of a spell, a hit of an ability, a kill), condition (an aura on the
+  target or on yourself, the base class's spec), effect (cast a spell, extra damage, a refund), with `.reload`.
+- **Heartseed and echoes:** the Heartseed is the Gift and the seed; the second class is the second kit; echoes mutate
+  abilities you already have, from either class.
+- **Client:** abilities are spell clones in the client patch (`tools/clientpatch`, spell edits) with their own names,
+  tooltips and, later, icons; the panel is an addon (`addons/Multiclass`).
+- **Bots:** each second class gets one playerbots strategy layered on the base class's; bots choose by personality.
+- **GM hooks:** grant, set level and experience, switch, list rules, explain a character's classes.
 
-**Candidate themes per class (placeholders):**
+**Second classes by base class (placeholders apart from the first two):**
 
-| Class | Themes |
+| Base class | Second classes |
 | --- | --- |
-| Warrior | Barbarian (frenzy, war cries), Warlord (banners, commands for allies and bots), Gladiator (arena tricks, nets, crowd-pleasing finishers) |
+| Warrior | Barbarian (frenzy, throws, war cries), Warlord (banners, commands), Gladiator (nets, crowd-pleasing finishers) |
 | Rogue | Tinker (gadgets, turrets, a pocket mech), Duelist (parries, ripostes), Venomancer (poisons that spread and mutate) |
 | Hunter | Ranger (no pet, archery), Beastcaller (several lesser beasts), Trapper (nets, snares, kill zones) |
-| Paladin | Inquisitor (hunts Sha corruption, purges), Templar (consecrated ground, auras), Sun Cleric (sunfire, Sunwell light) |
-| Priest | Prophet (foresight, visions; ties to the Heartseed's visions), Mystic (spirit and mind), Sha Confessor (draws on and turns the Sha) |
-| Death Knight (own) | Plaguebringer (spreading plagues), Bloodreaver (vampiric), Wyrmcaller (frost wyrms), Deathlord (commands lesser undead) |
+| Paladin | Inquisitor (hunts Sha corruption, purges), Templar (consecrated ground, auras) |
+| Priest | Prophet (foresight, visions), Sun Cleric (sunfire), Sha Confessor (draws on and turns the Sha) |
+| Death Knight | Acolyte of the Lich King (Cult of the Damned rites, ghouls, plague altars), Wyrmcaller (frost wyrms), Bloodreaver (vampiric) |
 | Shaman | Witch Doctor (voodoo, hexes, fetishes), Stormbringer (lightning and wind), Spiritwalker (ancestors at your side) |
-| Mage | Necromancer (skeletons, bone magic), Pyromancer (fire beyond Fire), Chronomancer (rewinds, echoes, haste), Runemaster (placed runes) |
-| Warlock | Felsworn (melee in a demon form), Bloodmage (health as a resource), Cultist (Old God and Sha whispers) |
-| Monk (own) | Shado-Pan Sentinel (vigilance, counters), Jade Mystic (jade serpent magic), Lorewalker (scrolls and ancestral echoes), Drunken Master (stagger, stumbling strikes) |
+| Mage | Pyromancer (fire beyond Fire), Chronomancer (rewinds, echoes, haste), Runemaster (placed runes) |
+| Warlock | Necromancer (skeletons, bone magic, corpses), Felsworn (melee in a demon form), Bloodmage (health as a resource) |
+| Monk | Shado-Pan Sentinel (vigilance, counters), Jade Mystic (jade serpent magic), Lorewalker (scrolls, ancestral echoes) |
 | Druid | Primalist (wild totems and beasts), Dreamwalker (the Emerald Dream), Thornwarden (thorns, roots, living walls) |
 
-**First slice:** Rogue (Tinker, Duelist, Venomancer) and Mage (Necromancer, Pyromancer), to prove the talent tab, the
-data pipeline, free reallocation and the bot strategies before the other classes.
+**First two (T-094): Warrior / Barbarian and Warlock / Necromancer.** Barbarian runs on rage; Necromancer on mana.
 
-**Art:** every sub-spec talent starts on a stock icon; each gets a row in `docs/ART-NEEDED.md`.
+| Second class | Level | Ability | Interactions by spec |
+| --- | --- | --- | --- |
+| Barbarian | 1 | Hurl Axe: a thrown axe | Arms: roots a target with Hamstring. Fury: a second axe while Enraged. Protection: taunts a target that is not attacking you |
+| Barbarian | 5 | War Cry: nearby enemies cower, allies gain attack power | none (stands on its own) |
+| Barbarian | 10 | Frenzy (passive): Mortal Strike, Bloodthirst and Shield Slam add a stack of attack speed | the trigger is the spec's core strike |
+| Necromancer | 1 | Raise Skeleton: a skeletal warrior fights for you | Affliction: an enemy that dies with Corruption on it raises a free skeleton |
+| Necromancer | 5 | Bone Spear: a piercing bolt of bone | Demonology: grants Demonic Fury |
+| Necromancer | 10 | Corpse Explosion: a nearby corpse bursts | Destruction: spreads Immolate from the target to enemies hit |
 
-**Open:** extra points after 90 (Blooms?); whether some themes are race- or faction-flavored (Witch Doctor quest
-from the Darkspear first); exact tier contents per theme.
+**Art:** every second class starts on stock icons; each gets rows in `docs/ART-NEEDED.md`.
+
+**Open:** how second classes find you beyond the first quest (trainer, world event, rare drop); whether a second
+second class unlocks later; new resources for the classes that need them (Tinker's heat, Bloodmage's blood).
 
 ## Sha hunters
 

@@ -1,0 +1,97 @@
+{
+  "name": "multiclass",
+  "timeout_seconds": 180,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "2"
+  ],
+  "steps": [
+    "say .revive",
+    "say .character level Seedtest 30",
+    "say .multiclass clear",
+    "say .mc switch necromancer",
+    "say .mc switch barbarian",
+    "say .multiclass info",
+    "say .multiclass xp 999999999",
+    "say .multiclass rules 1",
+    "say .character level Seedtest 40",
+    "say .respec reset spec",
+    "say .multiclass spec 0",
+    "say .modify rage 100",
+    "say .npc add temp 3098",
+    "npcguid 3098",
+    "target npc",
+    "say .npc set level 41",
+    "face 0",
+    "cast 1715 npc",
+    "wait-for evt=never timeout=1",
+    "cast 320000 npc",
+    "wait-for evt=never timeout=2",
+    "say .multiclass info",
+    "say .die",
+    "say .mc switch none",
+    "say .multiclass info",
+    "say .respec reset spec",
+    "say .character level Seedtest 10"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "contains",
+      "text": "No second class 'necromancer' for your class."
+    },
+    {
+      "type": "contains",
+      "text": "You walk the path of the Barbarian."
+    },
+    {
+      "type": "regex",
+      "pattern": "1 Barbarian .active.: level 1/30, xp 0. Abilities: Hurl Axe 320000[.]"
+    },
+    {
+      "type": "regex",
+      "pattern": "1 Barbarian .active.: level 30/30, xp 0. Abilities: Hurl Axe 320000, War Cry 320001, Frenzy 320002 .passive.[.]"
+    },
+    {
+      "type": "contains",
+      "text": "6 interaction rules."
+    },
+    {
+      "type": "contains",
+      "text": "Arms: Hurl Axe roots (Net) a target you have Hamstrung"
+    },
+    {
+      "type": "contains",
+      "text": "Seedtest: spec 71."
+    },
+    {
+      "type": "regex",
+      "pattern": "spell_go size=[0-9]+ spell=[0-9]+[|]6533"
+    },
+    {
+      "type": "contains",
+      "text": "Last interaction: rule 1."
+    },
+    {
+      "type": "contains",
+      "text": "You set your second class aside."
+    },
+    {
+      "type": "regex",
+      "pattern": "1 Barbarian: level 30/30, xp 0. Abilities: Hurl Axe 320000 .not learned., War Cry 320001 .not learned."
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback"
+    }
+  ]
+}

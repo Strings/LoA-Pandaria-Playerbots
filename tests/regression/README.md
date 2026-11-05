@@ -4,6 +4,9 @@ Python 3.9+ standard library; no game client, build or external test framework.
 Start your generated **test/none** runtime from T-002/T-005 (local is supported
 when the scenario needs bots). Set MOP_ACCOUNT/MOP_PASSWORD for a dedicated
 fixture account with a character. No account creation is implicit.
+Scenarios log in as the first character unless they pass `--char NAME`;
+`multiclass-necromancer` needs a warlock named Seedlock on the same account
+(`headless.py --cmd create --create-name Seedlock --create-race 1 --create-class 9`).
 
 ```
 python tests/regression/run.py --runtime build/devenv

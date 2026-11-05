@@ -5948,7 +5948,7 @@ def main():
     ap.add_argument("--account", default=_default("MOP_ACCOUNT", "account", None, local))
     ap.add_argument("--password", default=_default("MOP_PASSWORD", "password", None, local))
     ap.add_argument("--char", default=os.environ.get("MOP_CHAR_GUID", "auto"),
-                    help="character guid (the DB `characters.guid` counter); 'auto'/'0' picks the first enumerated character")
+                    help="character guid (the DB `characters.guid` counter) or name; 'auto'/'0' picks the first enumerated character")
     ap.add_argument("--realm", type=int, default=1)
     ap.add_argument("--queue", type=int, default=0, help="battleground type id to queue")
     ap.add_argument("--accept", action="store_true", help="accept the popup and enter")
@@ -6048,6 +6048,12 @@ def main():
         log("auto-selected first character: guid=%d name=%s level=%d" %
             (chosen["guid"], chosen["name"], chosen["level"]))
         char_guid = chosen["guid"]
+    elif not args.char.isdigit():
+        named = [c for c in chars if c["name"].lower() == args.char.lower()]
+        if not named:
+            log("ERROR: --char %s: no such character on the account" % args.char)
+            return 1
+        char_guid = named[0]["guid"]
     else:
         char_guid = int(args.char)
 

@@ -78,8 +78,8 @@ class DbcPatchTests(unittest.TestCase):
             if edit.get('type', 'dbc') == 'dbc':
                 self.assertTrue(get_schema(edit['file']), edit['file'])
             elif edit['type'] == 'spell':
-                # Spell clones live in the reserved custom block (docs/ID_RANGES.md).
-                self.assertTrue(310000 <= edit['id'] <= 310999 and edit['name'], edit['id'])
+                # Spell clones live in a reserved custom spell block (310000 and up, docs/ID_RANGES.md).
+                self.assertTrue(310000 <= edit["id"] <= 399999 and edit["name"], edit["id"])
             elif edit['type'] == 'row':
                 self.assertTrue(get_schema(edit['file']), edit['file'])
                 self.assertTrue(310000 <= edit['id'] <= 310999, edit['id'])
