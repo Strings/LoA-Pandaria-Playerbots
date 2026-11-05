@@ -368,17 +368,18 @@ namespace
                 if (probe->Create(map->GenerateLowGuid<HighGuid::Unit>(), map, PHASEMASK_NORMAL, ProbeCreatureEntry, 0, 0, rx, ry, rz, 0.0f))
                 {
                     // A long walk ends INCOMPLETE at the path node limit: carry on from where each partial path
-                    // stopped while it keeps getting closer, up to MaxPathSegments legs.
+                    // stopped, up to MaxPathSegments legs. At a real dead end the next leg goes nowhere.
                     float sx = rx, sy = ry, sz = rz;
-                    float remaining = p.M.StraightDistance;
                     for (uint32 leg = 0; leg < MaxPathSegments; ++leg)
                     {
                         PathGenerator path(probe);
                         bool built = path.CalculatePath(sx, sy, sz, x, y, gz, false, false);
                         p.PathType = path.GetPathType();
                         Movement::PointsArray const& points = path.GetPath();
+                        float legLength = 0.0f;
                         for (size_t i = 1; i < points.size(); ++i)
-                            p.PathLength += (points[i] - points[i - 1]).length();
+                            legLength += (points[i] - points[i - 1]).length();
+                        p.PathLength += legLength;
                         G3D::Vector3 end = path.GetActualEndPosition();
                         float miss = std::sqrt((end.x - x) * (end.x - x) + (end.y - y) * (end.y - y) + (end.z - gz) * (end.z - gz));
                         bool usable = built && (p.PathType & PATHFIND_NORMAL) && !(p.PathType & (PATHFIND_NOPATH | PATHFIND_NOT_USING_PATH | PATHFIND_SHORTCUT));
@@ -387,9 +388,8 @@ namespace
                             p.M.Reachable = miss < 3.0f;
                             break;
                         }
-                        if (!usable || points.empty() || miss > remaining - 5.0f)
+                        if (!usable || legLength < 5.0f)
                             break; // a dead end: the partial path stopped making progress
-                        remaining = miss;
                         sx = end.x; sy = end.y; sz = end.z;
                         p.Legs = leg + 2;
                     }
