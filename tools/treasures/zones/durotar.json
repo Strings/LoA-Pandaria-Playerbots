@@ -1,0 +1,301 @@
+{
+  "name": "Durotar",
+  "map": 1,
+  "zoneId": 14,
+  "entryBase": 909000,
+  "guidBase": 9090001,
+  "spots": [
+    {
+      "label": "coven",
+      "name": "Burning Blade Coffer",
+      "display": 10,
+      "area": 365,
+      "landmark": "Burning Blade Coven, Valley of Trials",
+      "pos": [
+        -132.62,
+        -4315.18,
+        66.05
+      ],
+      "o": 1.2,
+      "road": [
+        -100.0,
+        -4250.0,
+        60.0
+      ],
+      "gold": [
+        60,
+        150
+      ],
+      "curio": 3671,
+      "theme": "burning-blade",
+      "blueChance": 15
+    },
+    {
+      "label": "skull-depths",
+      "name": "Burning Blade Strongbox",
+      "display": 10,
+      "area": 817,
+      "landmark": "Skull Rock, lower tunnels",
+      "pos": [
+        1489.1,
+        -4821.8,
+        8.61
+      ],
+      "o": 3.0,
+      "road": [
+        1373.8,
+        -4918.0,
+        11.8
+      ],
+      "gold": [
+        300,
+        700
+      ],
+      "curio": 16583,
+      "theme": "burning-blade",
+      "blueChance": 15
+    },
+    {
+      "label": "skull-hall",
+      "name": "Felweaver's Satchel",
+      "display": 644,
+      "area": 817,
+      "landmark": "Skull Rock, Felweaver Scornn's hall",
+      "pos": [
+        1468.08,
+        -4692.88,
+        6.53
+      ],
+      "o": 4.1,
+      "road": [
+        1373.8,
+        -4918.0,
+        11.8
+      ],
+      "gold": [
+        300,
+        700
+      ],
+      "curio": 6297,
+      "theme": "burning-blade",
+      "blueChance": 15
+    },
+    {
+      "label": "dustwind",
+      "name": "Cultist's Cache",
+      "display": 259,
+      "area": 371,
+      "landmark": "Dustwind Cave",
+      "pos": [
+        915.2,
+        -4748.2,
+        20.11
+      ],
+      "o": 2.4,
+      "road": [
+        1102.1,
+        -4945.4,
+        15.7
+      ],
+      "gold": [
+        250,
+        600
+      ],
+      "curio": 3671,
+      "theme": "burning-blade",
+      "blueChance": 15
+    },
+    {
+      "label": "drygulch",
+      "name": "Harpy's Hoard",
+      "display": 644,
+      "area": 370,
+      "landmark": "Drygulch Ravine, harpy overhang",
+      "pos": [
+        993.08,
+        -4680.12,
+        46.52
+      ],
+      "o": 5.2,
+      "road": [
+        1102.1,
+        -4945.4,
+        15.7
+      ],
+      "gold": [
+        200,
+        550
+      ],
+      "curio": 5636,
+      "theme": "harpy-canyon"
+    },
+    {
+      "label": "razorwind",
+      "name": "Pillager's Stash",
+      "display": 644,
+      "area": 410,
+      "landmark": "Razorwind Canyon",
+      "pos": [
+        722.2,
+        -4448.6,
+        15.67
+      ],
+      "o": 0.7,
+      "road": [
+        999.8,
+        -4414.4,
+        14.5
+      ],
+      "gold": [
+        200,
+        550
+      ],
+      "curio": 5430,
+      "theme": "harpy-canyon"
+    },
+    {
+      "label": "razormane",
+      "name": "Razormane War Cache",
+      "display": 336,
+      "area": 816,
+      "landmark": "Razormane Grounds",
+      "pos": [
+        66.32,
+        -4567.12,
+        57.93
+      ],
+      "o": 2.0,
+      "road": [
+        49.2,
+        -4220.3,
+        35.4
+      ],
+      "gold": [
+        150,
+        450
+      ],
+      "curio": 3403,
+      "theme": "quilboar-farm"
+    },
+    {
+      "label": "tiragarde",
+      "name": "Kul Tiran Footlocker",
+      "display": 5743,
+      "area": 372,
+      "landmark": "Tiragarde Keep, inside",
+      "pos": [
+        -244.78,
+        -5088.48,
+        23.73
+      ],
+      "o": 0.3,
+      "road": [
+        -15.9,
+        -5050.4,
+        8.1
+      ],
+      "gold": [
+        250,
+        650
+      ],
+      "curio": 5373,
+      "theme": "kul-tiras"
+    },
+    {
+      "label": "scuttle",
+      "name": "Waterlogged Sea Chest",
+      "display": 5744,
+      "area": 373,
+      "landmark": "Scuttle Coast shipwreck",
+      "pos": [
+        226.68,
+        -5141.22,
+        2.28
+      ],
+      "o": 3.6,
+      "road": [
+        196.0,
+        -5125.9,
+        0.1
+      ],
+      "gold": [
+        200,
+        600
+      ],
+      "curio": 5329,
+      "theme": "kul-tiras"
+    },
+    {
+      "label": "echo",
+      "name": "Darkspear Offering",
+      "display": 644,
+      "area": 6453,
+      "landmark": "Echo Isles",
+      "pos": [
+        -1127.8,
+        -5134.2,
+        4.21
+      ],
+      "o": 4.6,
+      "road": [
+        -852.0,
+        -5348.3,
+        4.4
+      ],
+      "gold": [
+        60,
+        150
+      ],
+      "curio": 9336,
+      "theme": "troll"
+    },
+    {
+      "label": "northwatch",
+      "name": "Northwatch Supply Cache",
+      "display": 336,
+      "area": 366,
+      "landmark": "Northwatch Foothold",
+      "pos": [
+        -973.02,
+        -4479.98,
+        25.71
+      ],
+      "o": 1.6,
+      "road": [
+        -770.8,
+        -4875.7,
+        20.3
+      ],
+      "gold": [
+        200,
+        550
+      ],
+      "curio": 5373,
+      "theme": "kul-tiras"
+    },
+    {
+      "label": "jaggedswine",
+      "name": "Swineherd's Cache",
+      "display": 259,
+      "area": 1297,
+      "landmark": "Jaggedswine Farm",
+      "pos": [
+        1184.5,
+        -4625.2,
+        18.37
+      ],
+      "o": 5.8,
+      "road": [
+        999.8,
+        -4414.4,
+        14.5
+      ],
+      "gold": [
+        150,
+        450
+      ],
+      "curio": 2295,
+      "theme": "quilboar-farm"
+    }
+  ]
+}
