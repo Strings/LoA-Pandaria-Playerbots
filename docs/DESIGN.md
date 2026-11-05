@@ -353,16 +353,58 @@ Later threads: Jaina's reconciliation when she sees the seed bloom in Pandaria; 
 - **Three tracks, no rank cap (decided 2026-11-02, replaces the level-capped rank):**
   - **Growth XP** (per character): battleground wins and dungeon and raid boss kills near your level fill a bar; each
     level of it grants a small permanent percentage stat point (stamina, main stat or a secondary). No cap on
-    points; each stat's bonus has diminishing returns toward its own ceiling (decided 2026-11-03).
+    points; each stat's bonus has diminishing returns toward its own ceiling (decided 2026-11-03). Proposed rework:
+    Growth from the four virtues, below.
   - **Feeding** (account-wide): replaced weapons are consumed for essences, appearances and the seed's identity.
-  - **Character level** unlocks the stages and the major choices (10, 25, 40, 55, 70, 85).
+  - **Character level** unlocks the stages and the major choices (1, 25, 40, 55, 70, 85; the Gift at 1, decided
+    2026-11-05: Heartseed power from the first minute sets solo play apart from MoP Classic).
   - Low-level balance comes from scaling every Heartseed effect with the character's own health, damage or healing,
     never flat numbers. Sha energy stays separate for the endgame and reincarnation.
 
+**Growth from the four virtues (proposed 2026-11-05, for review).** Each Celestial put a virtue into the seed,
+so the seed grows when you live one out, not from a generic bar. Growth comes often and in small steps, and every
+fifth level changes the Gift you press.
+
+- **One Growth bar, four virtues.** Every Growth source belongs to a virtue and adds to the bar and to that virtue's
+  tally. The tallies weight the dominant path (glow and color) next to the majors, and pick which Blooms are
+  offered. A warrior who fights rares grows Xuen-bright; a healer who carries a group grows toward Chi-Ji.
+
+  | Virtue | Celestial | Earned by (placeholder Growth XP) |
+  | --- | --- | --- |
+  | Strength | Xuen | Rares (60, +20 per affix), elites (5), dungeon and raid bosses (50, 100), battleground wins (100), a small trickle from kills near your level (1) |
+  | Hope | Chi-Ji | Quest turn-ins (15), healing others (5 per 100% of your own health healed on allies), saving an ally who was below 20% health (10) |
+  | Endurance | Niuzao | Winning a fight you were in below 20% health (10), killing an enemy 3 or more levels above you (8), finishing a dungeon (50) |
+  | Wisdom | Yu'lon | Discovering an area (10), a first visit to a zone (25), reading a lore book or plaque (10), treasures (20), a rare's Memory (100) |
+
+- **Rares are the headline source.** Each kill pays Strength, more per affix. The first kill of each rare entry
+  adds a **Memory** to the Heartseed journal (name, zone, the affixes it carried, the date) and a large Wisdom
+  reward: the seed remembers the beast. A Sha-touched rare also feeds Sha energy and has an essence chance.
+  Seedsense (Sapling) points the seed at rares it has no Memory of yet.
+- **Regular pacing.** Target one Growth level per 30 to 45 minutes of ordinary play at any character level.
+  Costs flatten (placeholder: 200 + 10 per Growth level) so progress never stalls; numbers are config keys.
+- **Every level:** a stat point, as now.
+- **Every fifth level, a Bloom:** the seed opens a flower and offers three modifiers to the active Gift, drawn
+  from the pools of your two strongest virtues. Picks are permanent for the character (changed at a Celestial
+  shrine), are data rows with a `.reload`, and stack with stage riders. Examples: Serpent's Breath gains a tick;
+  Niuzao's Retort always deals at least 8% of your health; Xuen's tiger stays 2 s longer and pounces on arrival;
+  Crane's Plume reaches one more ally. The Bloom has a name and a line of the seed's voice ("It remembers the
+  storm you walked through."), scripted first, LLM later.
+- **The seed shows it.** Between stages, the glow brightens with Growth level, and a Bloom plays a short visual on
+  the weapon.
+- **GM hooks:** grant Growth by virtue, set Growth level, force a Bloom offer, list Memories.
+- **Open:** whether Blooms are per spec like majors (proposed: no, they are the seed's own growth); whether the
+  kill trickle stays once playtests show the pace.
+
+**Gift power targets (proposed 2026-11-05).** A Gift is a solid nuke when it comes up, not the rotation: with an
+empty meter about 2x the class's filler hit, at a full meter about 4 to 5x, for melee and casters alike.
+Measure with `.heartseed probe` across classes and levels before tuning. Attack power and spell power are put on
+one scale before "the higher of the two" is taken, so melee and casters hit alike. Niuzao's Retort gets a floor
+based on the character's health so it always lands.
+
 | Stage | Levels | Glow | Unlocks |
 | --- | --- | --- | --- |
-| Seed | 1–9 | Faint | Core passive: weapon-scaled proc |
-| Sprout | 10–29 | Soft | First major choice (10), first essence slot, major at 25 |
+| Seed | 1–9 | Faint | Core passive: weapon-scaled proc; the Celestial Gift and the first essence slot (1) |
+| Sprout | 10–29 | Soft | First Gift riders, major at 25 |
 | Sapling | 30–59 | Clear | Majors at 40 and 55, second essence slot, Seedsense |
 | Bloom | 60–84 | Bright | Majors at 70 and 85, third essence slot |
 | Full Bloom | 85–89 | Radiant, flickering | Morph quest unlocks |
@@ -372,7 +414,7 @@ Later threads: Jaina's reconciliation when she sees the seed bloom in Pandaria; 
 
 1. **Core passive:** bonus weapon damage plus one proc, both scaling with weapon item level.
 2. **Four Celestial paths** with minor traits that fill in automatically and a major choice at each major tier (10, 25, 40, 55, 70, 85, between MoP's talent tiers at 15, 30, 45, 60, 75, 90): Xuen the Tiger (offense and speed), Chi-Ji the Crane (healing and hope), Niuzao the Ox (endurance and defense), Yu'lon the Serpent (wisdom and spell power).
-   - **The Celestial Gift (decided, replaces the stat major at 10).** The major at 10 is an active ability, one per Celestial. Lesson from the Heart of Azeroth and Legion artifacts: the system orbits one button you press, and later unlocks change that button visibly.
+   - **The Celestial Gift (decided, replaces the stat major at 10; at level 1 since 2026-11-05).** The first major is an active ability, one per Celestial. Lesson from the Heart of Azeroth and Legion artifacts: the system orbits one button you press, and later unlocks change that button visibly.
    - **Active play, not big cooldowns (decided 2026-11-02, replaces the 1.5 to 2 minute Gifts).** Each path has a
      meter or proc built by normal play of any class, and the Gift spends it. Cooldowns are moderate (20 to 60 s)
      and play shortens them; majors change how the meter fills or what spending it does. Proc-gated buttons are
