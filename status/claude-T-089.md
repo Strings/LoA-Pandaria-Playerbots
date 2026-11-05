@@ -21,7 +21,7 @@
 - GM: `.rare near | spawn <entry> [affix...] | reroll [n] | set [affix...] | claim | affixes`.
 
 ## How it was tested
-- Unit tests: 24/24 (new `unit_affix_rules`).
+- Unit tests: 24/24 (new affix-rules suite).
 - New scenario `affixed-rares`: spawn with chosen affixes, Juggernaut health, claim on first hit, kill bonus.
 - Manual, playerbots enabled in the devenv: a warrior bot stood next to an unclaimed rare for 15 s, rare stayed
   206/206; after one GM hit the bot killed it and the group got the bonus. (The regression profile runs with
