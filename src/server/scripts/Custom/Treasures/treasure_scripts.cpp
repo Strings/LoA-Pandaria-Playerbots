@@ -39,6 +39,7 @@ namespace
 {
     rbac::RBACPermissions const GmPermission = static_cast<rbac::RBACPermissions>(99000);
     char const* const TreasureScript = "go_treasure";
+    uint32 const MaxPathSegments = 8;
     uint32 const ProbeCreatureEntry = 3296; // Orgrimmar Grunt: a ground walker, never spawned, used only as a path probe
 
     struct Config
@@ -261,6 +262,7 @@ namespace
         uint32 NearestId = 0;
         std::string Tiles = "no navmesh";
         float RoadZ = 0.0f;
+        uint32 Legs = 1;
         Treasures::Measurement M;
         Treasures::Verdict V;
     };
@@ -365,8 +367,33 @@ namespace
                 Creature* probe = new Creature();
                 if (probe->Create(map->GenerateLowGuid<HighGuid::Unit>(), map, PHASEMASK_NORMAL, ProbeCreatureEntry, 0, 0, rx, ry, rz, 0.0f))
                 {
-                    PathGenerator path(probe);
-                    bool built = path.CalculatePath(x, y, gz, false, false);
+                    // A long walk ends INCOMPLETE at the path node limit: carry on from where each partial path
+                    // stopped while it keeps getting closer, up to MaxPathSegments legs.
+                    float sx = rx, sy = ry, sz = rz;
+                    float remaining = p.M.StraightDistance;
+                    for (uint32 leg = 0; leg < MaxPathSegments; ++leg)
+                    {
+                        PathGenerator path(probe);
+                        bool built = path.CalculatePath(sx, sy, sz, x, y, gz, false, false);
+                        p.PathType = path.GetPathType();
+                        Movement::PointsArray const& points = path.GetPath();
+                        for (size_t i = 1; i < points.size(); ++i)
+                            p.PathLength += (points[i] - points[i - 1]).length();
+                        G3D::Vector3 end = path.GetActualEndPosition();
+                        float miss = std::sqrt((end.x - x) * (end.x - x) + (end.y - y) * (end.y - y) + (end.z - gz) * (end.z - gz));
+                        bool usable = built && (p.PathType & PATHFIND_NORMAL) && !(p.PathType & (PATHFIND_NOPATH | PATHFIND_NOT_USING_PATH | PATHFIND_SHORTCUT));
+                        if (usable && !(p.PathType & PATHFIND_INCOMPLETE))
+                        {
+                            p.M.Reachable = miss < 3.0f;
+                            break;
+                        }
+                        if (!usable || points.empty() || miss > remaining - 5.0f)
+                            break; // a dead end: the partial path stopped making progress
+                        remaining = miss;
+                        sx = end.x; sy = end.y; sz = end.z;
+                        p.Legs = leg + 2;
+                    }
+                    p.M.PathLength = p.PathLength;
                     if (dtNavMesh const* mesh = MMAP::MMapFactory::createOrGetMMapManager()->GetNavMesh(map->GetId()))
                     {
                         auto tileAt = [mesh](float px, float py, float pz)
@@ -379,14 +406,6 @@ namespace
                         p.Tiles = std::string(tileAt(rx, ry, rz) ? "road tile" : "NO road tile") + ", " +
                             (tileAt(x, y, gz) ? "spot tile" : "NO spot tile");
                     }
-                    p.PathType = path.GetPathType();
-                    Movement::PointsArray const& points = path.GetPath();
-                    for (size_t i = 1; i < points.size(); ++i)
-                        p.PathLength += (points[i] - points[i - 1]).length();
-                    G3D::Vector3 end = path.GetActualEndPosition();
-                    float miss = std::sqrt((end.x - x) * (end.x - x) + (end.y - y) * (end.y - y) + (end.z - gz) * (end.z - gz));
-                    p.M.Reachable = built && (p.PathType & PATHFIND_NORMAL) && !(p.PathType & (PATHFIND_NOPATH | PATHFIND_NOT_USING_PATH | PATHFIND_SHORTCUT | PATHFIND_INCOMPLETE)) && miss < 3.0f;
-                    p.M.PathLength = p.PathLength;
                 }
                 delete probe;
             }
@@ -428,7 +447,7 @@ namespace
             Treasures::SkyName(p.M.SkyState), p.RaysBlocked, p.RaysTotal, p.M.Reachable ? "ok" : "none", p.M.PathLength,
             p.M.StraightDistance, p.PathType, p.Tiles.c_str(), p.M.LineOfSight ? "yes" : "no");
         if (p.M.StraightDistance > 0.0f)
-            handler->PSendSysMessage("  road point ground z %.2f", p.RoadZ);
+            handler->PSendSysMessage("  road point ground z %.2f, path in %u leg%s", p.RoadZ, p.Legs, p.Legs == 1 ? "" : "s");
         if (p.M.NearestTreasure >= 0.0f)
             handler->PSendSysMessage("  nearest treasure %u at %.0f yd; warnings: %s", p.NearestId, p.M.NearestTreasure,
                 p.V.Warnings.empty() ? "none" : Treasures::Join(p.V.Warnings).c_str());
