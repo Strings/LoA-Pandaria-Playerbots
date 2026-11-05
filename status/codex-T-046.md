@@ -46,3 +46,9 @@
 - Requested native legacy, xp-toggle and telemetry scenarios PASS: build/regression-T046-renumber/20261104T230635Z-fcec28c2/results.json. Only telemetry's initial position/bookkeeping is normalized in temporary input; assertions unchanged.
 - Ordinary-player native travel PASS again. Exact threshold, force, margin reload and return after disabling entries PASS again from a known starting map; logs build/T046-renumber-*.log. Entry/margin defaults restored to 1/20.
 - Ready for Claude review; native client list visibility still awaits a client playtest.
+
+## Finish-up 2026-11-05
+- Rebased again on current playerbot 08b80192 after shared loader/config/range conflicts appeared. Retained all upstream hooks/configuration and its explicit Legacy 97000 reservation. Affixes now owns 98000; Next system is 99000, as upstream already documents. Legacy auth still writes only 97000/97001; no XP/telemetry/rare permission collision.
+- Production rebuild PASS: build/T046-finish-build.log. All 25 current C++ suites PASS: build/T046-finish-units.log.
+- Fresh matching-binary legacy-dungeons, telemetry and xp-toggle scenarios all PASS: build/regression-T046-finish/20261105T162116Z-fcb2127b/results.json.
+- Applied current upstream affix/Heartseed data updates to Codex only after backing up touched spell tables in build/T046-finish-backup. The isolated travel profile disables unrelated affixed rares. No main runtime/database or client changes.
