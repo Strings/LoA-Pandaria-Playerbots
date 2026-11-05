@@ -5461,6 +5461,29 @@ Heartseed.Gift.RetortRadius = 8
 Heartseed.Gift.BreathRange = 12
 
 #
+#    Heartseed.Gift.LevelBasePct
+#    Heartseed.Gift.AttackPowerPct
+#    Heartseed.Gift.ScalingClass
+#        Description: Gift power, which Serpent's Breath ticks and Niuzao's Retort's floor are a share of, is a level
+#                     base plus the higher of spell power and attack power. The base is LevelBasePct of the
+#                     gtSpellScaling value for the character's level, read from one class's row (ScalingClass, a
+#                     class id, the same row for everyone). Attack power counts at AttackPowerPct, because melee
+#                     carry more attack power than casters carry spell power. `.heartseed probe` shows the result.
+#        Default:     122, 80, 8 (mage)
+
+Heartseed.Gift.LevelBasePct = 122
+Heartseed.Gift.AttackPowerPct = 80
+Heartseed.Gift.ScalingClass = 8
+
+#
+#    Heartseed.Gift.RetortFloorPct
+#        Description: Niuzao's Retort deals at least this percentage of the Gift power to each enemy, however
+#                     little damage was taken. 200 is about two thirds of an empty Serpent's Breath.
+#        Default:     200
+
+Heartseed.Gift.RetortFloorPct = 200
+
+#
 #    Heartseed.Proc.Chance
 #        Description: Chance in percent for damage the character deals to roll the core proc.
 #        Default:     10

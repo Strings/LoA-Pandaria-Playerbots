@@ -183,6 +183,10 @@ void HeartseedMgr::LoadConfig()
     _plumeTargets = uint32(std::max(1, sConfigMgr->GetIntDefault("Heartseed.Gift.PlumeTargets", 3)));
     _retortRadius = std::max(0.0f, sConfigMgr->GetFloatDefault("Heartseed.Gift.RetortRadius", 8.0f));
     _breathRange = std::max(0.0f, sConfigMgr->GetFloatDefault("Heartseed.Gift.BreathRange", 12.0f));
+    _giftLevelBasePct = std::max(0, sConfigMgr->GetIntDefault("Heartseed.Gift.LevelBasePct", 122));
+    _giftAttackPowerPct = std::max(0, sConfigMgr->GetIntDefault("Heartseed.Gift.AttackPowerPct", 80));
+    _giftScalingClass = uint32(std::clamp(sConfigMgr->GetIntDefault("Heartseed.Gift.ScalingClass", CLASS_MAGE), 1, 11));
+    _retortFloorPct = std::max(0, sConfigMgr->GetIntDefault("Heartseed.Gift.RetortFloorPct", 200));
     _procChance = sConfigMgr->GetFloatDefault("Heartseed.Proc.Chance", 10.0f);
     _procWeaponDamagePct = sConfigMgr->GetFloatDefault("Heartseed.Proc.WeaponDamagePct", 50.0f);
     _procCooldown = sConfigMgr->GetIntDefault("Heartseed.Proc.Cooldown", 3000);
@@ -1998,12 +2002,22 @@ bool HeartseedMgr::GetActiveGift(Player const* player, uint32 spellId, Heartseed
     return false;
 }
 
-int32 HeartseedMgr::GetGiftAmount(Player const* player, Heartseed::TraitInfo const& gift) const
+uint32 HeartseedMgr::GetGiftPower(Player const* player) const
 {
-    // A share of the character's own power, so the Gift is as strong at 12 as at 90 relative to the character.
+    // The level base reads one class's row of gtSpellScaling (Blizzard's own per-level spell damage curve) for
+    // everyone, so every class gets the same base.
+    float levelScaling = 0.0f;
+    uint32 level = std::clamp<uint32>(player->GetLevel(), 1, 100);
+    if (GtSpellScalingEntry const* scaling = sGtSpellScalingStore.LookupEntry((_giftScalingClass - 1) * 100 + level - 1))
+        levelScaling = scaling->value;
     float attackPower = std::max(player->GetTotalAttackPowerValue(BASE_ATTACK), player->GetTotalAttackPowerValue(RANGED_ATTACK));
     float spellPower = float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_ALL));
-    uint32 power = uint32(std::max(0.0f, std::max(attackPower, spellPower)));
+    return Heartseed::GiftPower(levelScaling, attackPower, spellPower, _giftLevelBasePct, _giftAttackPowerPct);
+}
+
+int32 HeartseedMgr::GetGiftAmount(Player const* player, Heartseed::TraitInfo const& gift) const
+{
+    uint32 power = GetGiftPower(player);
     Item* weapon = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
     uint32 itemLevel = weapon && !weapon->IsBroken() && weapon->GetTemplate()->Class == ITEM_CLASS_WEAPON ? weapon->GetItemLevel() : 0;
     return int32(Heartseed::PercentOf(power, gift.GiftBaseAmount)) + Heartseed::TraitAmount(0, gift.GiftAmountPerItemLevel, itemLevel);

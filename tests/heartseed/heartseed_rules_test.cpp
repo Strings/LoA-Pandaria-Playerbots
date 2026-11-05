@@ -96,6 +96,10 @@ namespace
     void GiftRiderAmounts()
     {
         UMP_CHECK(PercentOf(200000, 10) == 20000);
+        UMP_CHECK(GiftPower(100.0f, 0.0f, 50.0f, 120, 80) == 170);    // level base plus spell power
+        UMP_CHECK(GiftPower(100.0f, 100.0f, 50.0f, 120, 80) == 200);  // attack power counts at 80%
+        UMP_CHECK(GiftPower(0.0f, 100.0f, 90.0f, 120, 80) == 90);     // the higher of the two
+        UMP_CHECK(GiftPower(-5.0f, -1.0f, -1.0f, 120, 80) == 0);
         UMP_CHECK(PercentOf(1000, 0) == 0 && PercentOf(1000, -5) == 0);
         UMP_CHECK(PercentOf(UINT32_MAX, 200) == UINT32_MAX);
         UMP_CHECK(CooldownCut(20000, 1000) == 1000);

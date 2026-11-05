@@ -29,7 +29,7 @@
     },
     {
       "type": "regex",
-      "pattern": "Probe Seedtest: level 1 class [0-9]+ spec [0-9]+. AP [0-9]+, SP [0-9]+"
+      "pattern": "Probe Seedtest: level 1 class [0-9]+ spec [0-9]+. AP [0-9]+, SP [0-9]+, health [0-9]+, Gift power [1-9][0-9]*"
     },
     {
       "type": "regex",
