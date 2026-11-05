@@ -10,7 +10,8 @@
   "loads": {
     "none": {"AiPlayerbot.Enabled": "0", "AiPlayerbot.RandomBotAutologin": "0", "AiPlayerbot.RandomBotLoginAtStartup": "0", "AiPlayerbot.MinRandomBots": "0", "AiPlayerbot.MaxRandomBots": "0"},
     "local": {"AiPlayerbot.Enabled": "1", "AiPlayerbot.RandomBotAutologin": "0", "AiPlayerbot.RandomBotLoginAtStartup": "0", "AiPlayerbot.RandomBotAccountCount": "20", "AiPlayerbot.MinRandomBots": "0", "AiPlayerbot.MaxRandomBots": "50", "AiPlayerbot.AutoTeleportForLevel": "0"},
-    "scale": {"AiPlayerbot.Enabled": "1", "AiPlayerbot.RandomBotAutologin": "1", "AiPlayerbot.RandomBotLoginAtStartup": "1", "AiPlayerbot.RandomBotAccountCount": "220", "AiPlayerbot.MinRandomBots": "500", "AiPlayerbot.MaxRandomBots": "2000"}
+    "scale": {"AiPlayerbot.Enabled": "1", "AiPlayerbot.RandomBotAutologin": "1", "AiPlayerbot.RandomBotLoginAtStartup": "1", "AiPlayerbot.RandomBotAccountCount": "220", "AiPlayerbot.MinRandomBots": "500", "AiPlayerbot.MaxRandomBots": "2000"},
+    "bootstrap": {"AiPlayerbot.Enabled": "1", "AiPlayerbot.RandomBotAutologin": "0", "AiPlayerbot.RandomBotLoginAtStartup": "0", "AiPlayerbot.RandomBotAccountCount": "3", "AiPlayerbot.MinRandomBots": "0", "AiPlayerbot.MaxRandomBots": "0"}
   },
   "local": {"minimum": 20, "maximum": 50, "duration_seconds": 300, "login_timeout_seconds": 60, "retry_seconds": 1, "soap_timeout_seconds": 10, "map": 0, "x": -8833.0, "y": 628.0, "z": 95.0}
 }

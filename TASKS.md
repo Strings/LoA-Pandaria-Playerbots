@@ -32,7 +32,7 @@ The first playtest starts when the quick wins are merged. T-003, T-004 and T-031
 |---|---|---|---|---|
 | T-005 | Test profile config: bots off or minimal, smaller logs, grid preloading off, short timers; bot load profiles (none, local, scale) | `tools/devenv/` | codex | done |
 | T-006 | Startup profiling script that ranks the server's loader timings from the log; report the top costs in a fragment | `tools/bench/` | codex | done |
-| T-007 | Fixture characters (levels 1, 30, 60, 85, 90 with gear), pre-generated bot snapshot, file-copy database restore | `tools/devenv/`, `sql/fixtures/` | codex | open |
+| T-007 | Fixture characters (levels 1, 30, 60, 85, 90 with gear), pre-generated bot snapshot, file-copy database restore | `tools/devenv/`, `sql/fixtures/` | codex | review |
 | T-008 | Unit test framework in CMake behind an option, with one example test; document how to add tests | `tests/`, `CMakeLists.txt` | codex | done |
 | BUG-001 | Guard unknown phase groups in Creature::Create so .npc add cannot dereference null | `src/server/game/Entities/Creature/Creature.cpp` | codex | done |
 | BUG-003 | Investigate aura-removal crash after deleting a newly added training dummy (entry 31144) | `src/server/game/Spells/Auras/` | codex | open |

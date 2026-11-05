@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "limits": {
+    "query_seconds": 30,
+    "probe_seconds": 5,
+    "client_seconds": 180,
+    "logout_seconds": 60,
+    "poll_seconds": 1,
+    "hold_seconds": 1
+  },
+  "fixtures": [
+    {
+      "id": "warrior-001",
+      "name": "Ckone",
+      "race": 2,
+      "class": 1,
+      "level": 1,
+      "checkpoint": "fixture-1",
+      "minimum_equipped": 3
+    },
+    {
+      "id": "warrior-030",
+      "name": "Ckthirty",
+      "race": 2,
+      "class": 1,
+      "level": 30,
+      "checkpoint": "fixture-30",
+      "minimum_equipped": 10
+    },
+    {
+      "id": "warrior-060",
+      "name": "Cksixty",
+      "race": 2,
+      "class": 1,
+      "level": 60,
+      "checkpoint": "fixture-60",
+      "minimum_equipped": 10
+    },
+    {
+      "id": "warrior-085",
+      "name": "Ckeightyfive",
+      "race": 2,
+      "class": 1,
+      "level": 85,
+      "checkpoint": "fixture-85",
+      "minimum_equipped": 10
+    },
+    {
+      "id": "warrior-090",
+      "name": "Ckninety",
+      "race": 2,
+      "class": 1,
+      "level": 90,
+      "checkpoint": "fixture-90",
+      "minimum_equipped": 10
+    }
+  ]
+}

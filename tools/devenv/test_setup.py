@@ -26,6 +26,14 @@ class Tests(unittest.TestCase):
         with self.assertRaises(ValueError):
             s.local_commands(names + [names[0]], policy)
 
+    def test_bootstrap_creates_only_a_small_offline_pool(self):
+        policy = json.loads(Path(__file__).with_name('profiles.json').read_text())['loads']['bootstrap']
+        self.assertEqual(policy['AiPlayerbot.Enabled'], '1')
+        self.assertLessEqual(int(policy['AiPlayerbot.RandomBotAccountCount']), 5)
+        for key in ('AiPlayerbot.RandomBotAutologin', 'AiPlayerbot.RandomBotLoginAtStartup',
+                    'AiPlayerbot.MinRandomBots', 'AiPlayerbot.MaxRandomBots'):
+            self.assertEqual(policy[key], '0')
+
     def test_profile_keys_exist_in_the_fork(self):
         profiles = json.loads(Path(__file__).with_name('profiles.json').read_text())
         world = (s.ROOT / 'src/server/worldserver/worldserver.conf.dist').read_text(encoding='utf-8-sig')
