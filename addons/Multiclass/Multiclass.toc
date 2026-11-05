@@ -1,0 +1,6 @@
+## Interface: 50400
+## Title: Multiclass
+## Notes: UltimateMoP second classes: levels, experience, switching and the second-class spellbook. Alt-N or /mc.
+## Version: 0.1
+
+Multiclass.lua

@@ -1,0 +1,69 @@
+{
+  "name": "multiclass",
+  "timeout_seconds": 120,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "2"
+  ],
+  "steps": [
+    "say .revive",
+    "say .character level Seedtest 30",
+    "say .multiclass clear",
+    "say .mc switch necromancer",
+    "say .mc switch barbarian",
+    "say .multiclass info",
+    "say .multiclass xp 999999999",
+    "say .multiclass rules 1",
+    "say .mc switch none",
+    "say .multiclass info",
+    "say .character level Seedtest 10"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "contains",
+      "text": "No second class 'necromancer' for your class."
+    },
+    {
+      "type": "contains",
+      "text": "You walk the path of the Barbarian."
+    },
+    {
+      "type": "regex",
+      "pattern": "1 Barbarian .active.: level 1/30, xp 0. Abilities: Hurl Axe 320000\."
+    },
+    {
+      "type": "regex",
+      "pattern": "1 Barbarian .active.: level 30/30, xp 0. Abilities: Hurl Axe 320000, War Cry 320001, Frenzy 320002 .passive.\."
+    },
+    {
+      "type": "contains",
+      "text": "6 interaction rules."
+    },
+    {
+      "type": "contains",
+      "text": "Arms: Hurl Axe roots (Net) a target you have Hamstrung"
+    },
+    {
+      "type": "contains",
+      "text": "You set your second class aside."
+    },
+    {
+      "type": "regex",
+      "pattern": "1 Barbarian: level 30/30, xp 0. Abilities: Hurl Axe 320000 .not learned., War Cry 320001 .not learned."
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback"
+    }
+  ]
+}
