@@ -19,6 +19,10 @@ Build the ultimate single-player Mists of Pandaria server: a world that feels al
 - **Tooling that lets AI work in the world.** Spatial grounding (navmesh + screenshots) removes the content-placement bottleneck.
 - **Broken is the reward.** No power budget: systems stack freely, and the corruption dial is the counterweight when you want a challenge.
 - **Modular where possible.** Build systems as reusable modules with clean interfaces so they can serve other projects: the consciousness system (an engine-agnostic core plus a WoW adapter), the placement tool and classifiers, the MCP servers, the headless client, the DBC and patch tool. Each lives in its own folder with its own README and config, and core-game changes stay behind config keys in their own module folders so the fork stays easy to rebase on upstream.
+- **Client patches when they're easier (decided 2026-11-05).** Server-side and addon solutions stay the default, but
+  we don't shy away from the client: when a client patch (MPQ data, DB2/DBC rows, FrameXML, a client DLL) is simpler
+  or more robust than a workaround, use it. Weigh the two honestly before building a shim, and look at how other
+  projects solved the same problem first.
 
 **Design structure (decided)**
 
@@ -452,6 +456,58 @@ MVP scope: a short granting quest at level 1 (gossip prototyped in Lua), ranks w
 - Traits are passive auras learned and unlearned by rank and choice; procs are spell scripts reading weapon damage.
 - UI: gossip menu first, then an addon panel over the addon channel.
 - Item stats and new entries can be pushed by server hotfix (5.4.8 supports item data hotfixes). New models need a client patch; reuse existing models with new glows and names first.
+
+## Sub-specializations (proposed 2026-11-05, for review)
+
+A second identity inside your class: a Rogue who becomes a Tinker, a Warrior who becomes a Barbarian. The MoP spec
+stays the core (rotation, role, the six-tier talents); the sub-spec is a classic talent tree on top that adds a
+small kit and bends the class's own abilities toward a fantasy.
+
+**Interpretation, not invention.** Tinkers, barbarians, witch doctors and chronomancers are genre archetypes; other
+projects, Conquest of Azeroth among them, interpret them too, and so do we. Their open-source work is a fair
+reference for mechanics and solutions. Our versions are written for MoP and its lore (goblin and gnome engineering,
+Pandaren and mogu history, the Sha), and fit the Heartseed and the bots.
+
+- **Unlock:** a class quest at 20 offers the class's sub-specs (two or three each). One is active at a time; it
+  works with all three MoP specs, and some talents read differently per spec. Swapping costs gold and a trip to the
+  class trainer; spec loadouts (T-017) save the choice and the tree with the rest of the build.
+- **Classic tree:** about 25 talents in 7 tiers. Each tier opens after 5 points in the tree above it; ranks of 1 to 5;
+  three or four new abilities, the rest modifiers to the class's own abilities; a capstone at the bottom.
+- **Points from both kinds of growth:** one per two character levels from 20 (35 by 90), then one per Heartseed
+  Growth Bloom after 90 (see Growth from the four virtues). The tree holds more points than leveling gives, so a 90
+  keeps filling it. Placeholder numbers, config keys.
+- **Heartseed boundary:** the Heartseed is the Gift and the seed (majors, Blooms, essences); the sub-spec is the
+  class kit. Reincarnation echoes may mutate sub-spec abilities like any other. A full rebirth re-earns the points
+  but remembers the last tree as a loadout.
+- **Client:** a fourth tab in the talent frame (FrameXML patch), tree data and new spells shipped in the client
+  patch with real tooltips, server tables as the source of truth (`.reload`). A client DLL only if the frame can't
+  do something in Lua.
+- **Bots:** every sub-spec ships with a playerbots strategy and default builds; bots pick a sub-spec weighted by
+  personality and class plays may use the new abilities. This is the largest cost per sub-spec.
+- **GM hooks:** set a sub-spec, grant or reset points, learn a talent at a rank, explain a character's tree.
+- **Intro:** the class quest at 20 is the introduction; the trainer explains swapping.
+
+**Candidate sub-specs (placeholders):**
+
+| Class | Sub-specs |
+| --- | --- |
+| Warrior | Barbarian (frenzy, war cries, rage as a resource to spend), Warlord (banners and commands for allies and bots) |
+| Rogue | Tinker (gadgets, turrets, explosives, a pocket mech), Duelist (parries, ripostes, one-on-one) |
+| Hunter | Ranger (no pet, archery and traps), Beastcaller (several lesser beasts) |
+| Paladin | Inquisitor (hunts Sha corruption, purges), Templar (consecrated ground, auras) |
+| Priest | Prophet (foresight, visions; ties to the Heartseed's visions), Mystic (spirit and mind) |
+| Death Knight | Necromancer (an army of lesser undead), Plaguebringer (spreading diseases) |
+| Shaman | Witch Doctor (troll voodoo, hexes, fetishes), Stormbringer (lightning and wind) |
+| Mage | Chronomancer (time: rewinds, echoes, haste), Runemaster (placed runes) |
+| Warlock | Felsworn (melee in a demon form), Bloodmage (health as a resource) |
+| Monk | Shado-Pan Sentinel (vigilance, counters), Jade Mystic (jade serpent magic) |
+| Druid | Primalist (wild totems and beasts), Dreamwalker (the Emerald Dream) |
+
+**First slice:** Rogue/Tinker and Warrior/Barbarian, to prove the talent tab, the data pipeline, the bot strategy
+and swapping before the other classes.
+
+**Open:** whether a sub-spec can be changed per spec like majors (proposed: one for the character); how many
+points the tree holds; whether some sub-specs are race- or faction-locked (Witch Doctor for trolls first?).
 
 ## Sha hunters
 

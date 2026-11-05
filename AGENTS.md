@@ -169,6 +169,9 @@ These come from decided rules in `docs/DESIGN.md` and apply everywhere.
   the affix module (rares, corruption dial, Brawler mutators, wild gems, consumable modifiers), the
   call board (battlegrounds, ambushes, war fronts, dungeons), the storyteller director, the rumor
   interface, detached item storage (gear pages, reagent bank, twink templates).
+- **Client patches when they're easier.** Server-side and addon solutions are the default, but when a client patch
+  (MPQ data, DB2/DBC rows, FrameXML, a client DLL) is simpler or more robust than a workaround, use it.
+  Look at how other projects solved it first.
 - **Scripted first, LLM later.** Anything that will use an LLM ships a scripted provider first, behind
   a narrow interface. Decisions read structured data only, never free text. Tests and the test
   profile always run the scripted provider.
