@@ -2173,11 +2173,13 @@ void AddSC_gmtools_areaprobe();
 
 void AddSC_twink_xp();
 void AddSC_rares();
+void AddSC_treasures();
 
 void AddCustomScripts()
 {
     AddSC_twink_xp();
     AddSC_rares();
+    AddSC_treasures();
 #ifdef SCRIPTS
     /* This is where custom scripts should be added. */
 //AddSC_npc_teleport();
