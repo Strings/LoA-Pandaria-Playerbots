@@ -36,7 +36,7 @@
 // character only, plus the server-side placement validator (DESIGN.md, World placement tool step 3).
 namespace
 {
-    rbac::RBACPermissions const GmPermission = static_cast<rbac::RBACPermissions>(98100);
+    rbac::RBACPermissions const GmPermission = static_cast<rbac::RBACPermissions>(99000);
     char const* const TreasureScript = "go_treasure";
     uint32 const ProbeCreatureEntry = 1; // "Waypoint (Only GM can see it)": a never-spawned path probe
 
