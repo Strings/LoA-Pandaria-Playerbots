@@ -1,4 +1,4 @@
-﻿# T-093: Hand-placed world treasures, first pass in Durotar
+# T-093: Hand-placed world treasures, first pass in Durotar
 
 **Agent:** claude
 **Branch:** claude/T-093-durotar-treasures

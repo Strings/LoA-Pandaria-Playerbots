@@ -1,4 +1,4 @@
-﻿# Repo map
+# Repo map
 
 Where things live, so you don't have to re-explore the repo every session. Paths are from the
 `playerbot` branch as of 2026-10-30. Add to this file through a status fragment when you find

@@ -1,4 +1,4 @@
-﻿# Treasures (T-093)
+# Treasures (T-093)
 
 Hand-placed world treasures and the server-side placement validator (DESIGN.md, "World placement tool",
 step 3, and "Treasures in nooks across every zone, with era-matched loot").

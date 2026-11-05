@@ -1,4 +1,4 @@
-﻿#include "TreasureRules.h"
+#include "TreasureRules.h"
 #include "Bag.h"
 #include "CellImpl.h"
 #include "Chat.h"
