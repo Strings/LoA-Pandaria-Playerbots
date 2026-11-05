@@ -66,6 +66,7 @@ something worth knowing.
 | `Custom/Capture/` | `.idea`, `.bug`, and `.capture` feedback ticket capture commands |
 | `Custom/Telemetry/` | Player telemetry for human-like bots: game-agnostic core, WoW adapter, `.telemetry` commands, schema README (core call sites in `game/Scripting/TelemetryHooks.h`) |
 | `Custom/Professions/` | All professions unlock and management commands (`.professions`) |
+| `Custom/ProfessionTome/` | Profession tome journal pet that trains every profession (`.proftome`) |
 | `Custom/Treasures/` | Hand-placed world treasures: placement validator (`.treasure validate`), loot once per character, per-character hide via `GameObjectHooks` |
 | `ScriptLoader/ScriptLoader.cpp` | Script registration (shared hotspot) |
 | `Pandaria/` | MoP raids, dungeons, zones, world bosses; `Pandaria/Scenarios/` has 17 scenarios including `FallOfTheramoreAlliance` and `FallOfTheramoreHorde` (jewel intro candidates) |

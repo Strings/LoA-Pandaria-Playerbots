@@ -5960,6 +5960,13 @@ Telemetry.InterruptSpells = "6552 96231 147362 1766 15487 47528 57994 2139 11670
 # character knows a third primary profession.
 Professions.IntroOnLogin = 1
 
+# Profession tome (T-096): the Gusting Grimoire journal pet trains every profession when summoned.
+# ProfessionTome.Enable: 0 hides the tome's trainer menu (the pet stays in the journal). Default 1.
+# ProfessionTome.GrantOnFirstLogin: add the pet to the account's journal on a human character's first
+# login if the account lacks it. Default 1. Both are read live, so .reload config applies them.
+ProfessionTome.Enable = 1
+ProfessionTome.GrantOnFirstLogin = 1
+
 ###################################################################################################
 # SPAWN THINNING (T-081)
 #

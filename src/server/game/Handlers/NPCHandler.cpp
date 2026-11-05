@@ -36,6 +36,7 @@
 #include "ScriptMgr.h"
 #include "CreatureAI.h"
 #include "SpellInfo.h"
+#include "TrainerListPacket.h"
 
 #ifdef ELUNA
 #include "HookMgr.h"
@@ -241,7 +242,15 @@ void WorldSession::SendTrainerList(ObjectGuid guid, const std::string& strTitle,
         return;
     }
 
-    ObjectGuid oGuid = guid;
+    TrainerListPacket::Send(this, unit, strTitle, *trainer_spells);
+}
+
+// Builds SMSG_TRAINER_LIST from any spell list, so scripts can show a filtered view of a trainer's spells.
+void TrainerListPacket::Send(WorldSession* session, Creature* unit, std::string const& strTitle, TrainerSpellData const& spells)
+{
+    Player* player = session->GetPlayer();
+    TrainerSpellData const* trainer_spells = &spells;
+    ObjectGuid oGuid = unit->GetGUID();
 
     WorldPacket data(SMSG_TRAINER_LIST, 1 + 8 + 4 + (trainer_spells->spellList.size() * 30) + 4 + 4 + strTitle.size());
     data.WriteBit(oGuid[4]);
@@ -262,7 +271,7 @@ void WorldSession::SendTrainerList(ObjectGuid guid, const std::string& strTitle,
     data.WriteByteSeq(oGuid[4]);
 
     // reputation discount
-    float fDiscountMod = _player->GetReputationPriceDiscount(unit);
+    float fDiscountMod = player->GetReputationPriceDiscount(unit);
 
     uint32 count = 0;
     for (TrainerSpellMap::const_iterator itr = trainer_spells->spellList.begin(); itr != trainer_spells->spellList.end(); ++itr)
@@ -274,8 +283,8 @@ void WorldSession::SendTrainerList(ObjectGuid guid, const std::string& strTitle,
         {
             if (!tSpell->learnedSpell[i])
                 continue;
-            if (!_player->IsSpellFitByClassAndRace(tSpell->learnedSpell[i]) ||
-                (tSpell->learnedSpell[i] == 40120 && _player->GetClass() != CLASS_DRUID)) // Idk why it hasn't class mask
+            if (!player->IsSpellFitByClassAndRace(tSpell->learnedSpell[i]) ||
+                (tSpell->learnedSpell[i] == 40120 && player->GetClass() != CLASS_DRUID)) // Idk why it hasn't class mask
             {
                 valid = false;
                 break;
@@ -312,7 +321,7 @@ void WorldSession::SendTrainerList(ObjectGuid guid, const std::string& strTitle,
         data << uint32(tSpell->reqSkill);
         data << uint32(tSpell->reqSkillValue);
 
-        TrainerSpellState state = _player->GetTrainerSpellState(tSpell);
+        TrainerSpellState state = player->GetTrainerSpellState(tSpell);
         data << uint8(state == TRAINER_SPELL_GREEN_DISABLED ? TRAINER_SPELL_GREEN : state);
 
         ++count;
@@ -330,7 +339,7 @@ void WorldSession::SendTrainerList(ObjectGuid guid, const std::string& strTitle,
     data << uint32(trainer_spells->trainerType);
 
     data.PutBits(count_pos, count, 19);
-    SendPacket(&data);
+    session->SendPacket(&data);
 }
 
 void WorldSession::HandleTrainerBuySpellOpcode(WorldPacket& recvData)
