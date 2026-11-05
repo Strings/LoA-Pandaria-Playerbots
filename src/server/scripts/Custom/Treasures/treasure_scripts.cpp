@@ -260,6 +260,7 @@ namespace
         uint32 PathType = 0;
         uint32 NearestId = 0;
         std::string Tiles = "no navmesh";
+        float RoadZ = 0.0f;
         Treasures::Measurement M;
         Treasures::Verdict V;
     };
@@ -348,6 +349,14 @@ namespace
 
         if (hasRoad)
         {
+            // Road points are often read off a map: snap them to the ground, searching from above when the given z
+            // is under the terrain.
+            float roadGround = HeightAt(map, rx, ry, rz);
+            if (!HasHeight(roadGround))
+                roadGround = HeightAt(map, rx, ry, rz + 60.0f);
+            if (HasHeight(roadGround))
+                rz = roadGround;
+            p.RoadZ = rz;
             p.M.StraightDistance = std::sqrt((x - rx) * (x - rx) + (y - ry) * (y - ry) + (gz - rz) * (gz - rz));
             p.M.LineOfSight = map->isInLineOfSight(rx, ry, rz + 2.0f, x, y, gz + 0.5f, PHASEMASK_NORMAL, VMAP::ModelIgnoreFlags::Nothing);
             if (MMAP::MMapFactory::createOrGetMMapManager()->GetNavMesh(map->GetId()))
@@ -418,6 +427,8 @@ namespace
         handler->PSendSysMessage("  sky %s (%d/%d rays blocked); path %s %.0f yd (straight %.0f, type 0x%X, %s); line of sight %s",
             Treasures::SkyName(p.M.SkyState), p.RaysBlocked, p.RaysTotal, p.M.Reachable ? "ok" : "none", p.M.PathLength,
             p.M.StraightDistance, p.PathType, p.Tiles.c_str(), p.M.LineOfSight ? "yes" : "no");
+        if (p.M.StraightDistance > 0.0f)
+            handler->PSendSysMessage("  road point ground z %.2f", p.RoadZ);
         if (p.M.NearestTreasure >= 0.0f)
             handler->PSendSysMessage("  nearest treasure %u at %.0f yd; warnings: %s", p.NearestId, p.M.NearestTreasure,
                 p.V.Warnings.empty() ? "none" : Treasures::Join(p.V.Warnings).c_str());
