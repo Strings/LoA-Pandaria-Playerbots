@@ -23,6 +23,7 @@
     "npcguid 3098",
     "target npc",
     "say .npc set level 41",
+    "face 0",
     "cast 320004 npc",
     "wait-for evt=never timeout=3",
     "say .multiclass info",
