@@ -30,7 +30,7 @@ There is no built-in account or password.
 | `--realm` | | `1` |
 | `--account` | `MOP_ACCOUNT` | none (required) |
 | `--password` | `MOP_PASSWORD` | none (required) |
-| `--char` | `MOP_CHAR_GUID` | `auto` (first character on the account) |
+| `--char` | `MOP_CHAR_GUID` | `auto` (first character on the account); a guid or a character name |
 | `--soap-host` | `MOP_SOAP_HOST` | `127.0.0.1` |
 | `--soap-port` | `MOP_SOAP_PORT` | `7878` |
 | `--soap-user` | `MOP_SOAP_USER` | none (needed only for SOAP verbs) |

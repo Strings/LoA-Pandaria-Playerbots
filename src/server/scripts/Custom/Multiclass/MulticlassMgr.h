@@ -93,6 +93,7 @@ namespace Multiclass
         std::map<uint32, Progress> Classes;
         uint32 Active = 0;
         std::map<uint32, uint32> RuleFiredAt;
+        uint32 LastRule = 0;         // for .multiclass info
     };
 }
 
@@ -122,6 +123,7 @@ public:
     // The active second class and its progress; false when none.
     bool GetActive(Player const* player, uint32& classId, Multiclass::Progress& progress) const;
     std::map<uint32, Multiclass::Progress> GetProgress(Player const* player) const;
+    uint32 GetLastRule(Player const* player) const;
 
     // Makes classId active (learning it at level 1 if new). False with a reason for the player.
     bool Switch(Player* player, uint32 classId, std::string& error, bool gm = false);

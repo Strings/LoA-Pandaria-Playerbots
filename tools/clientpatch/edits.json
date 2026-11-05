@@ -279,7 +279,8 @@
       "rank": "Barbarian",
       "cooldown": 6000,
       "description": "Hurl an axe at an enemy. Arms: roots a target you have Hamstrung. Fury: a second axe follows while you are Enraged. Protection: taunts a target that is attacking someone else.",
-      "why": "Barbarian level 1 (T-094). Clone of Throw Axe (weapon throw)."
+      "why": "Barbarian level 1 (T-094). Clone of Throw Axe (weapon throw). Range 0 to 30 yd (the source's has an 8 yd minimum).",
+      "range_index": 4
     },
     {
       "type": "spell",
@@ -320,9 +321,14 @@
       "skill_line": 183,
       "from": 113999,
       "name": "Bone Spear",
+      "attributes": {
+        "attributes_ex3": {
+          "clear": 256
+        }
+      },
       "rank": "Necromancer",
       "description": "Hurl a spear of bone at an enemy. Demonology: grants Demonic Fury.",
-      "why": "Necromancer level 5 (T-094). Clone of Bone Spike (creature)."
+      "why": "Necromancer level 5 (T-094). Clone of Bone Spike (creature), which targets players only (attributes_ex3 0x100 cleared); the server script drops its knockback."
     },
     {
       "type": "spell",

@@ -1,0 +1,72 @@
+{
+  "name": "multiclass-necromancer",
+  "timeout_seconds": 150,
+  "args": [
+    "--cmd",
+    "play",
+    "--char",
+    "Seedlock",
+    "--hold",
+    "2"
+  ],
+  "steps": [
+    "say .revive",
+    "say .character level Seedlock 40",
+    "say .multiclass clear",
+    "say .respec reset spec",
+    "say .multiclass spec 1",
+    "say .mc switch barbarian",
+    "say .multiclass set 2 10",
+    "say .mc switch necromancer",
+    "say .multiclass info",
+    "say .npc add temp 3098",
+    "npcguid 3098",
+    "target npc",
+    "say .npc set level 41",
+    "cast 320004 npc",
+    "wait-for evt=never timeout=3",
+    "say .multiclass info",
+    "say .die",
+    "say .mc switch none",
+    "say .respec reset spec",
+    "say .character level Seedlock 1"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "contains",
+      "text": "No second class 'barbarian' for your class."
+    },
+    {
+      "type": "contains",
+      "text": "Seedlock: spec 266."
+    },
+    {
+      "type": "regex",
+      "pattern": "2 Necromancer .active.: level 10/30, xp 0. Abilities: Raise Skeleton 320003, Bone Spear 320004, Corpse Explosion 320005[.]"
+    },
+    {
+      "type": "regex",
+      "pattern": "spell_go size=[0-9]+ spell=[0-9]+[|]320004"
+    },
+    {
+      "type": "not_contains",
+      "text": "CAST_FAILED spell=320004"
+    },
+    {
+      "type": "contains",
+      "text": "Last interaction: rule 8."
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback"
+    }
+  ]
+}

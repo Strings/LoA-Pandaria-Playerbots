@@ -262,6 +262,13 @@ std::map<uint32, Progress> MulticlassMgr::GetProgress(Player const* player) cons
     return state != _states.end() ? state->second.Classes : std::map<uint32, Progress>{};
 }
 
+uint32 MulticlassMgr::GetLastRule(Player const* player) const
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    auto state = _states.find(player->GetGUID().GetCounter());
+    return state != _states.end() ? state->second.LastRule : 0;
+}
+
 bool MulticlassMgr::Switch(Player* player, uint32 classId, std::string& error, bool gm)
 {
     if (!_enabled)
@@ -466,7 +473,10 @@ void MulticlassMgr::Fire(Player* player, RuleTrigger on, uint32 spellId, Unit* t
         std::lock_guard<std::mutex> guard(_lock);
         auto state = _states.find(player->GetGUID().GetCounter());
         if (state != _states.end())
+        {
             state->second.RuleFiredAt[rule.Id] = std::max<uint32>(getMSTime(), 1);
+            state->second.LastRule = rule.Id;
+        }
     }
 }
 

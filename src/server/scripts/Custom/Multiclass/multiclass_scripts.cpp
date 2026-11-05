@@ -8,6 +8,7 @@
 #include "../Reload/ReloadRegistry.h"
 #include "Chat.h"
 #include "Creature.h"
+#include "DBCStores.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 #include "Log.h"
@@ -113,6 +114,7 @@ public:
             { "switch", &HandleGmSwitch, GmPermission, Trinity::ChatCommands::Console::No },
             { "clear",  &HandleClear,  GmPermission, Trinity::ChatCommands::Console::No },
             { "rules",  &HandleRules,  GmPermission, Trinity::ChatCommands::Console::Yes },
+            { "spec",   &HandleSpec,   GmPermission, Trinity::ChatCommands::Console::No },
         };
         static std::vector<ChatCommand> playerTable =
         {
@@ -288,6 +290,36 @@ public:
             handler->PSendSysMessage("  %u %s%s: level %u/%u, xp %u. Abilities: %s.", info.Id, info.Name.c_str(), info.Id == active ? " (active)" : "",
                 uint32(itr->second.Level), uint32(info.MaxLevel), itr->second.Xp, learned.empty() ? "none" : learned.c_str());
         }
+        if (uint32 last = sMulticlassMgr->GetLastRule(target))
+            handler->PSendSysMessage("  Last interaction: rule %u.", last);
+        return true;
+    }
+
+    // .multiclass spec <0-2>: picks the target's specialization the way the client's spec choice does (the target
+    // must have none; .respec reset spec clears it), so per-spec interactions can be tested without the client UI.
+    static bool HandleSpec(ChatHandler* handler, char const* args)
+    {
+        Player* target = Target(handler);
+        std::vector<std::string> words = Words(args);
+        if (words.empty() || words[0].size() != 1 || words[0][0] < '0' || words[0][0] > '2')
+        {
+            handler->SendSysMessage("Usage: .multiclass spec <0|1|2> (the class's spec tab)");
+            return true;
+        }
+        if (target->GetTalentSpecialization(target->GetActiveSpec()))
+        {
+            handler->PSendSysMessage("%s already has spec %u; clear it with .respec reset spec.", target->GetName().c_str(),
+                target->GetTalentSpecialization());
+            return true;
+        }
+        uint32 specializationId = dbc::GetClassSpecializations(target->GetClass())[words[0][0] - '0'];
+        target->SetTalentSpecialization(target->GetActiveSpec(), Specializations(specializationId));
+        target->SetUInt32Value(PLAYER_FIELD_CURRENT_SPEC_ID, specializationId);
+        target->SendTalentsInfoData();
+        target->LearnSpecializationSpells();
+        target->UpdatePvpPower();
+        sScriptMgr->OnPlayerSpecializationChanged(target);
+        handler->PSendSysMessage("%s: spec %u.", target->GetName().c_str(), specializationId);
         return true;
     }
 
@@ -371,6 +403,12 @@ class spell_multiclass_ability : public SpellScript
         SetHitDamage(int32(std::min<uint32>(Heartseed::PercentOf(sHeartseedMgr->GetGiftPower(player), _ability.PowerPct), INT32_MAX)));
     }
 
+    // Some source spells (Bone Spike for Bone Spear) knock the target back; a second-class ability never does.
+    void HandleNoKnockback(SpellEffIndex effIndex)
+    {
+        PreventHitDefaultEffect(effIndex);
+    }
+
     void HandleHitRules()
     {
         if (GetSpell()->IsTriggered())
@@ -383,6 +421,7 @@ class spell_multiclass_ability : public SpellScript
         OnCheckCast += SpellCheckCastFn(spell_multiclass_ability::CheckCost);
         AfterCast += SpellCastFn(spell_multiclass_ability::PayAndCool);
         OnEffectHitTarget += SpellEffectFn(spell_multiclass_ability::HandleDamage, EFFECT_0, SPELL_EFFECT_ANY);
+        OnEffectHitTarget += SpellEffectFn(spell_multiclass_ability::HandleNoKnockback, EFFECT_ALL, SPELL_EFFECT_KNOCK_BACK);
         AfterHit += SpellHitFn(spell_multiclass_ability::HandleHitRules);
     }
 

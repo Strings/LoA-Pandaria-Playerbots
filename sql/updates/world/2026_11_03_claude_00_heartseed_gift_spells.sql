@@ -47,11 +47,11 @@ INSERT INTO `spellmisc_dbc` (`Id`, `Attributes`, `AttributesEx`, `AttributesEx2`
 (318006, 262400, 268435456, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 21, 1, 1, 'Juggernaut (clone of 33208)'),
 (318007, 262400, 268435456, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 21, 1, 1, 'Summoner (clone of 33208)'),
 (318008, 262400, 268435456, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 21, 1, 1, 'Sha-touched (clone of 33208)'),
-(320000, 65552, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 197, 1, 'Hurl Axe (clone of 126375)'),
+(320000, 65552, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 4, 1, 'Hurl Axe (clone of 126375)'),
 (320001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 8, 1, 1, 'War Cry (clone of 128360)'),
 (320002, 262160, 0, 0, 268435456, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 4, 1, 1, 'Barbarian Frenzy (clone of 8269)'),
 (320003, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 26, 1, 1, 'Raise Skeleton (clone of 20464)'),
-(320004, 0, 0, 0, 256, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 6, 1, 'Bone Spear (clone of 113999)'),
+(320004, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 6, 1, 'Bone Spear (clone of 113999)'),
 (320005, 8388608, 268435592, 1, 1048576, 1, 0, 1024, 0, 0, 0, 0, 0, 0, 0, 1, 21, 4, 32, 'Corpse Explosion (clone of 61614)');
 INSERT INTO `spelleffect_dbc` (`Id`, `Effect`, `EffectValueMultiplier`, `EffectApplyAuraName`, `EffectAplitude`, `EffectBasePoints`, `EffectBonusMultiplier`, `EffectDamageMultiplier`, `EffectChainTarget`, `EffectDieSides`, `EffectMechanic`, `EffectMiscValue`, `EffectMiscValueB`, `EffectRadiusIndex`, `EffectRadiusIndexMax`, `EffectRealPointsPerLevel`, `EffectSpellClassMaskA`, `EffectSpellClassMaskB`, `EffectSpellClassMaskC`, `EffectSpellClassMaskD`, `EffectTriggerSpell`, `EffectImplicitTargetA`, `EffectImplicitTargetB`, `EffectSpellId`, `EffectIndex`, `EffectAttributes`) VALUES
 (3101000, 28, 0.0, 0, 0, 0, 0.0, 1.0, 0, 0, 0, 63508, 3262, 0, 0, 0.0, 0, 0, 0, 0, 0, 53, 0, 310100, 0, 0),
@@ -78,7 +78,7 @@ INSERT INTO `spelleffect_dbc` (`Id`, `Effect`, `EffectValueMultiplier`, `EffectA
 (3200020, 6, 0.0, 138, 0, 60, 0.0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 1, 0, 320002, 0, 0),
 (3200021, 6, 0.0, 61, 0, 15, 0.0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 1, 0, 320002, 1, 0),
 (3200022, 0, 0.0, 0, 0, 1, 0.0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 0, 0, 320002, 2, 0),
-(3200030, 28, -10.0, 0, 0, 3, 1.0, 1.0, 0, 0, 0, 6412, 61, 8, 0, 0.0, 0, 0, 0, 0, 0, 32, 0, 320003, 0, 0),
+(3200030, 28, 0.0, 0, 0, 3, 1.0, 1.0, 0, 0, 0, 6412, 61, 8, 0, 0.0, 0, 0, 0, 0, 0, 32, 0, 320003, 0, 0),
 (3200040, 2, 0.0, 0, 0, 600, 0.0, 1.0, 0, 0, 20, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 6, 0, 320004, 0, 0),
 (3200041, 98, 0.0, 0, 0, 100, 0.0, 1.0, 0, 0, 23, 200, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 6, 0, 320004, 1, 0),
 (3200050, 2, 0.0, 0, 0, 300, 0.0, 1.0, 0, 0, 0, 0, 0, 8, 0, 0.0, 0, 0, 0, 0, 0, 22, 15, 320005, 0, 0),
