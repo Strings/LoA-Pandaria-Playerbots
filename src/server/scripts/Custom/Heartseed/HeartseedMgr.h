@@ -381,8 +381,12 @@ public:
     // The active Celestial Gift trait that taught spellId to the character; false when none did. Spell scripts
     // use it for the Gift cooldown and power. spellId 0 finds whichever Gift the character was taught.
     bool GetActiveGift(Player const* player, uint32 spellId, Heartseed::TraitInfo& out) const;
-    // Serpent's Breath tick: GiftBaseAmount % of the higher of attack power and spell power.
+    // Serpent's Breath tick: GiftBaseAmount % of the Gift power, plus the weapon item level part.
     int32 GetGiftAmount(Player const* player, Heartseed::TraitInfo const& gift) const;
+    // The level base plus weighted attack or spell power that Gift damage is a share of (Heartseed::GiftPower).
+    uint32 GetGiftPower(Player const* player) const;
+    // Niuzao's Retort deals at least this share of the Gift power to each enemy.
+    int32 GetRetortFloorPct() const { return _retortFloorPct; }
     // Every trait that teaches a Gift, and a path's meter rule (.heartseed probe).
     std::vector<Heartseed::TraitInfo> GetGiftTraits() const;
     bool GetMeterRule(uint8 path, Heartseed::MeterRule& rule) const;
@@ -452,6 +456,10 @@ private:
     uint32 _plumeTargets = 3;
     float _retortRadius = 8.0f;
     float _breathRange = 12.0f;
+    int32 _giftLevelBasePct = 122;
+    int32 _giftAttackPowerPct = 80;
+    uint32 _giftScalingClass = 8;
+    int32 _retortFloorPct = 200;
     std::map<uint8, Heartseed::MeterRule> _meters;      // path -> meter (heartseed_meter)
     float _coreWeaponDamagePct = 0.0f;
     uint32 _procSpellId = 0;

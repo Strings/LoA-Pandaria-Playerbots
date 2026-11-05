@@ -303,6 +303,18 @@ namespace Heartseed
         return active;
     }
 
+    // A Gift's power: a level base (the spell-scaling value for the level, so the Gift is a nuke from level 1 and
+    // the same for every class) plus the higher of spell power and attack power. Attack power is weighted down,
+    // because melee carry more attack power than casters carry spell power at the same gear, most at low levels.
+    inline uint32_t GiftPower(float levelScaling, float attackPower, float spellPower, int32_t levelBasePct, int32_t attackPowerPct)
+    {
+        double base = double(std::max(levelScaling, 0.0f)) * double(std::max(levelBasePct, 0)) / 100.0;
+        double power = std::max(double(std::max(spellPower, 0.0f)),
+            double(std::max(attackPower, 0.0f)) * double(std::max(attackPowerPct, 0)) / 100.0);
+        double total = base + power;
+        return total >= double(UINT32_MAX) ? UINT32_MAX : uint32_t(total);
+    }
+
     inline uint32_t PercentOf(uint32_t value, int32_t pct)
     {
         if (pct <= 0)

@@ -420,11 +420,11 @@ public:
             return true;
         }
 
-        // References: the average white hit (melee, or ranged for hunters) and the class's filler spell.
-        bool ranged = target->GetClass() == CLASS_HUNTER;
-        float white = ranged
-            ? (target->GetFloatValue(UNIT_FIELD_MIN_RANGED_DAMAGE) + target->GetFloatValue(UNIT_FIELD_MAX_RANGED_DAMAGE)) / 2.0f
-            : (target->GetFloatValue(UNIT_FIELD_MIN_DAMAGE) + target->GetFloatValue(UNIT_FIELD_MAX_DAMAGE)) / 2.0f;
+        // References: a normalized weapon strike (what "100% weapon damage" abilities hit for; ranged for hunters)
+        // and the class's filler spell.
+        float minDamage = 0.0f, maxDamage = 0.0f;
+        target->CalculateMinMaxDamage(target->GetClass() == CLASS_HUNTER ? RANGED_ATTACK : BASE_ATTACK, true, true, minDamage, maxDamage);
+        float white = (minDamage + maxDamage) / 2.0f;
         uint32 fillerId = 0;
         switch (target->GetClass())
         {
@@ -437,13 +437,18 @@ public:
         }
         int32 filler = 0;
         if (SpellInfo const* info = fillerId ? sSpellMgr->GetSpellInfo(fillerId) : nullptr)
-            filler = target->SpellDamageBonusDone(target, info, EFFECT_0, info->Effects[EFFECT_0].CalcValue(target), SPELL_DIRECT_DAMAGE);
+            for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+                if (info->Effects[i].Effect == SPELL_EFFECT_SCHOOL_DAMAGE)
+                {
+                    filler = target->SpellDamageBonusDone(target, info, SpellEffIndex(i), info->Effects[i].CalcValue(target), SPELL_DIRECT_DAMAGE);
+                    break;
+                }
         float reference = std::max(white, float(filler));
 
         float attackPower = std::max(target->GetTotalAttackPowerValue(BASE_ATTACK), target->GetTotalAttackPowerValue(RANGED_ATTACK));
-        handler->PSendSysMessage("Probe %s: level %u class %u spec %u. AP %.0f, SP %d, health %u. White hit %.0f, filler %u = %d.",
+        handler->PSendSysMessage("Probe %s: level %u class %u spec %u. AP %.0f, SP %d, health %u, Gift power %u. Weapon strike %.0f, filler %u = %d.",
             target->GetName().c_str(), uint32(target->GetLevel()), uint32(target->GetClass()), uint32(target->GetTalentSpecialization()),
-            attackPower, target->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_ALL), target->GetMaxHealth(), white, fillerId, filler);
+            attackPower, target->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_ALL), target->GetMaxHealth(), sHeartseedMgr->GetGiftPower(target), white, fillerId, filler);
 
         for (Heartseed::TraitInfo const& gift : sHeartseedMgr->GetGiftTraits())
         {
@@ -472,8 +477,9 @@ public:
                 case 310102:   // Niuzao's Retort: a share of the damage taken in the window, to each enemy
                 {
                     uint32 tenPct = target->GetMaxHealth() / 10 * uint32(std::max(gift.GiftBaseAmount, 0)) / 100;
-                    line = Trinity::StringFormat("%d%% of damage taken per enemy: %u per 10%% of health taken (%.1fx reference)",
-                        gift.GiftBaseAmount, tenPct, tenPct / ref);
+                    uint32 floor = Heartseed::PercentOf(sHeartseedMgr->GetGiftPower(target), sHeartseedMgr->GetRetortFloorPct());
+                    line = Trinity::StringFormat("%d%% of damage taken per enemy: %u per 10%% of health taken (%.1fx reference), at least %u (%.1fx)",
+                        gift.GiftBaseAmount, tenPct, tenPct / ref, floor, floor / ref);
                     break;
                 }
                 case 310101:   // Crane's Plume: a share of the caster's max health to each target
@@ -1699,7 +1705,10 @@ class spell_heartseed_niuzao_retort : public SpellScript
         if (!_active)
             return;
         Player* caster = GetCaster()->ToPlayer();
-        SetHitDamage(int32(Heartseed::PercentOf(sHeartseedMgr->GetLastSpend(caster).RecentDamage, _gift.GiftBaseAmount)));
+        // A share of the damage just taken, but never less than the floor, so a light hit still strikes back hard.
+        uint32 taken = Heartseed::PercentOf(sHeartseedMgr->GetLastSpend(caster).RecentDamage, _gift.GiftBaseAmount);
+        uint32 floor = Heartseed::PercentOf(sHeartseedMgr->GetGiftPower(caster), sHeartseedMgr->GetRetortFloorPct());
+        SetHitDamage(int32(std::min<uint32>(std::max(taken, floor), INT32_MAX)));
         if (Unit* target = GetHitUnit())
             if (Heartseed::GiftRider const* rider = Rider(Heartseed::GiftRiderKind::TargetAura))
                 ApplyRiderAura(caster, target, *rider, rider->Amount);
