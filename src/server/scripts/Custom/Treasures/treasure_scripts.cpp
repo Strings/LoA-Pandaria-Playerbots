@@ -263,9 +263,51 @@ namespace
         std::string Tiles = "no navmesh";
         float RoadZ = 0.0f;
         uint32 Legs = 1;
+        char const* Direction = "none";
         Treasures::Measurement M;
         Treasures::Verdict V;
     };
+
+    struct Walk
+    {
+        bool Reachable = false;
+        float Length = 0.0f;
+        uint32 Type = 0;
+        uint32 Legs = 0;
+    };
+
+    // Walks the navmesh from one point to another with the PathGenerator `.mmap path` uses. A long walk ends
+    // INCOMPLETE at the path node limit: carry on from where each partial path stopped, up to MaxPathSegments
+    // legs. At a real dead end the next leg goes nowhere.
+    Walk WalkPath(Creature* probe, float sx, float sy, float sz, float tx, float ty, float tz)
+    {
+        Walk w;
+        for (uint32 leg = 0; leg < MaxPathSegments; ++leg)
+        {
+            PathGenerator path(probe);
+            bool built = path.CalculatePath(sx, sy, sz, tx, ty, tz, false, false);
+            w.Type = path.GetPathType();
+            w.Legs = leg + 1;
+            Movement::PointsArray const& points = path.GetPath();
+            float legLength = 0.0f;
+            for (size_t i = 1; i < points.size(); ++i)
+                legLength += (points[i] - points[i - 1]).length();
+            w.Length += legLength;
+            G3D::Vector3 end = path.GetActualEndPosition();
+            float miss = std::sqrt((end.x - tx) * (end.x - tx) + (end.y - ty) * (end.y - ty) + (end.z - tz) * (end.z - tz));
+            bool usable = built && (w.Type & (PATHFIND_NORMAL | PATHFIND_INCOMPLETE))
+                && !(w.Type & (PATHFIND_NOPATH | PATHFIND_NOT_USING_PATH | PATHFIND_SHORTCUT));
+            if (usable && !(w.Type & PATHFIND_INCOMPLETE))
+            {
+                w.Reachable = miss < 3.0f;
+                break;
+            }
+            if (!usable || legLength < 5.0f)
+                break;
+            sx = end.x; sy = end.y; sz = end.z;
+        }
+        return w;
+    }
 
     float HeightAt(Map* map, float x, float y, float z)
     {
@@ -367,34 +409,15 @@ namespace
                 Creature* probe = new Creature();
                 if (probe->Create(map->GenerateLowGuid<HighGuid::Unit>(), map, PHASEMASK_NORMAL, ProbeCreatureEntry, 0, 0, rx, ry, rz, 0.0f))
                 {
-                    // A long walk ends INCOMPLETE at the path node limit: carry on from where each partial path
-                    // stopped, up to MaxPathSegments legs. At a real dead end the next leg goes nowhere.
-                    float sx = rx, sy = ry, sz = rz;
-                    for (uint32 leg = 0; leg < MaxPathSegments; ++leg)
-                    {
-                        PathGenerator path(probe);
-                        bool built = path.CalculatePath(sx, sy, sz, x, y, gz, false, false);
-                        p.PathType = path.GetPathType();
-                        Movement::PointsArray const& points = path.GetPath();
-                        float legLength = 0.0f;
-                        for (size_t i = 1; i < points.size(); ++i)
-                            legLength += (points[i] - points[i - 1]).length();
-                        p.PathLength += legLength;
-                        G3D::Vector3 end = path.GetActualEndPosition();
-                        float miss = std::sqrt((end.x - x) * (end.x - x) + (end.y - y) * (end.y - y) + (end.z - gz) * (end.z - gz));
-                        bool usable = built && (p.PathType & (PATHFIND_NORMAL | PATHFIND_INCOMPLETE))
-                            && !(p.PathType & (PATHFIND_NOPATH | PATHFIND_NOT_USING_PATH | PATHFIND_SHORTCUT));
-                        if (usable && !(p.PathType & PATHFIND_INCOMPLETE))
-                        {
-                            p.M.Reachable = miss < 3.0f;
-                            break;
-                        }
-                        if (!usable || legLength < 5.0f)
-                            break; // a dead end: the partial path stopped making progress
-                        sx = end.x; sy = end.y; sz = end.z;
-                        p.Legs = leg + 2;
-                    }
-                    p.M.PathLength = p.PathLength;
+                    // The search budget can run out walking in from a far road point while the walk out finds the
+                    // way (walkable navmesh links go both ways), so try both directions.
+                    Walk in = WalkPath(probe, rx, ry, rz, x, y, gz);
+                    Walk w = in.Reachable ? in : WalkPath(probe, x, y, gz, rx, ry, rz);
+                    p.M.Reachable = w.Reachable;
+                    p.PathLength = p.M.PathLength = w.Length;
+                    p.PathType = w.Type;
+                    p.Legs = w.Legs;
+                    p.Direction = in.Reachable ? "in" : w.Reachable ? "out" : "none";
                     if (dtNavMesh const* mesh = MMAP::MMapFactory::createOrGetMMapManager()->GetNavMesh(map->GetId()))
                     {
                         auto tileAt = [mesh](float px, float py, float pz)
@@ -448,7 +471,8 @@ namespace
             Treasures::SkyName(p.M.SkyState), p.RaysBlocked, p.RaysTotal, p.M.Reachable ? "ok" : "none", p.M.PathLength,
             p.M.StraightDistance, p.PathType, p.Tiles.c_str(), p.M.LineOfSight ? "yes" : "no");
         if (p.M.StraightDistance > 0.0f)
-            handler->PSendSysMessage("  road point ground z %.2f, path in %u leg%s", p.RoadZ, p.Legs, p.Legs == 1 ? "" : "s");
+            handler->PSendSysMessage("  road point ground z %.2f, path in %u leg%s, found walking %s", p.RoadZ, p.Legs,
+                p.Legs == 1 ? "" : "s", p.Direction);
         if (p.M.NearestTreasure >= 0.0f)
             handler->PSendSysMessage("  nearest treasure %u at %.0f yd; warnings: %s", p.NearestId, p.M.NearestTreasure,
                 p.V.Warnings.empty() ? "none" : Treasures::Join(p.V.Warnings).c_str());
