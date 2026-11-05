@@ -26,6 +26,10 @@
     "target npc",
     "say .die",
     "wait-for evt=never timeout=2",
+    "say .go 330 -4700 12 1",
+    "say .rare go",
+    "wait-for evt=never timeout=3",
+    "say .rare near",
     "say .rare spawn 5824 bogus"
   ],
   "assertions": [
@@ -56,6 +60,10 @@
     {
       "type": "contains",
       "text": "Unknown affix 'bogus'"
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)Going to [^\"]+ .entry [0-9]+, level [0-9]+-[0-9]+., [0-9]+ yd away: rare 1 of [0-9]+ on this map.*?step: say .rare near.*?msg=\"Rare "
     },
     {
       "type": "not_contains",

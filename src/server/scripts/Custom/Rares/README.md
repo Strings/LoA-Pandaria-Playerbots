@@ -17,6 +17,7 @@ spawn or respawn, show them as buffs, and pay for them.
 | Command | Does |
 |---|---|
 | `.rare near` | the selected or nearest rare within 50 yd: affixes, claim state, health |
+| `.rare go [n]` | teleport to the nth closest living rare spawn on your map (default 1; `.rare go 2` for the next) |
 | `.rare spawn <entry> [affix ...]` | a temporary hostile rare at you with those affixes (or one rolled) |
 | `.rare reroll [count]` | rolls new affixes on the selected or nearest rare |
 | `.rare set [affix ...]` | sets exact affixes (none clears them) |

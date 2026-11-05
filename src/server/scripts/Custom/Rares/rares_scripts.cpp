@@ -10,12 +10,14 @@
 #include "LootMgr.h"
 #include "Map.h"
 #include "ObjectAccessor.h"
+#include "ObjectMgr.h"
 #include "Player.h"
 #include "RBAC.h"
 #include "ScriptMgr.h"
 #include "TemporarySummon.h"
 #include "WorldSession.h"
 #include "../Reload/ReloadRegistry.h"
+#include <algorithm>
 #include <list>
 #include <mutex>
 #include <set>
@@ -234,6 +236,7 @@ public:
         static std::vector<ChatCommand> rareTable =
         {
             { "near",   &HandleNear,   GmPermission, Trinity::ChatCommands::Console::No },
+            { "go",     &HandleGo,     GmPermission, Trinity::ChatCommands::Console::No },
             { "spawn",  &HandleSpawn,  GmPermission, Trinity::ChatCommands::Console::No },
             { "reroll", &HandleReroll, GmPermission, Trinity::ChatCommands::Console::No },
             { "set",    &HandleSet,    GmPermission, Trinity::ChatCommands::Console::No },
@@ -281,6 +284,59 @@ public:
             return true;
         }
         handler->SendSysMessage("No rare within 50 yd.");
+        return true;
+    }
+
+    // .rare go [n]: teleport to the nth closest rare spawn on this map (default 1). Skips rares that are loaded
+    // and dead; one not loaded yet may still be on its respawn timer.
+    static bool HandleGo(ChatHandler* handler, char const* args)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+        Map* map = player->GetMap();
+        if (map->Instanceable())
+        {
+            handler->SendSysMessage("Affixed rares are open-world only; leave the instance first.");
+            return true;
+        }
+        int32 nth = args && *args ? atoi(args) : 1;
+        if (nth < 1)
+            nth = 1;
+
+        std::vector<std::pair<float, CreatureData const*>> spawns;
+        for (auto const& [spawnId, data] : sObjectMgr->GetAllCreatureData())
+        {
+            if (data.mapId != map->GetId())
+                continue;
+            CreatureTemplate const* info = sObjectMgr->GetCreatureTemplate(data.id);
+            if (!info || (info->rank != CREATURE_ELITE_RARE && info->rank != CREATURE_ELITE_RAREELITE))
+                continue;
+            if (Creature* loaded = map->GetCreatureBySpawnId(spawnId))
+                if (!loaded->IsAlive())
+                    continue;
+            spawns.emplace_back(player->GetExactDist2d(data.posX, data.posY), &data);
+        }
+        if (spawns.empty())
+        {
+            handler->SendSysMessage("No living rare spawns on this map.");
+            return true;
+        }
+        std::sort(spawns.begin(), spawns.end(), [](auto const& a, auto const& b) { return a.first < b.first; });
+        auto const& [distance, data] = spawns[std::min<size_t>(nth, spawns.size()) - 1];
+        CreatureTemplate const* info = sObjectMgr->GetCreatureTemplate(data->id);
+
+        if (player->IsInFlight())
+        {
+            player->GetMotionMaster()->MovementExpired();
+            player->CleanupAfterTaxiFlight();
+        }
+        else
+            player->SaveRecallPosition();
+
+        handler->PSendSysMessage("Going to %s (entry %u, level %u-%u), %.0f yd away: rare %u of %u on this map. "
+            "Use .rare near when it's in sight, .rare go %u for the next one.",
+            info->Name.c_str(), data->id, uint32(info->minlevel), uint32(info->maxlevel), distance,
+            uint32(std::min<size_t>(nth, spawns.size())), uint32(spawns.size()), uint32(std::min<size_t>(nth, spawns.size()) + 1));
+        player->TeleportTo(map->GetId(), data->posX, data->posY, data->posZ + 1.0f, player->GetOrientation());
         return true;
     }
 
