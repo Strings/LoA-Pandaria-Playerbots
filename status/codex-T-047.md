@@ -35,3 +35,5 @@ AGENTS.md requires asking before computer use. The handoff explicitly asks for h
 - tools/tracking/: Lua VM/API compatibility tests.
 
 Human update (2026-11-04): client currently crashes; crash investigation may be read-only, fixes belong to Claude. No GUI or crash fix attempted. Continuing T-007.
+
+Finish-up 2026-11-05: rebased again on playerbot 08b80192, preserving its newer affix configuration; all eight Lua/API tests still pass. Client observation remains blocked on the reported crash, with fixes assigned to Claude.
