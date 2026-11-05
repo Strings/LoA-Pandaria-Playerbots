@@ -107,6 +107,7 @@ something worth knowing.
 | `tools/sql-validator/` | SQL update linter (filename, CRLF, idempotence, ID ranges, collisions, schemas) |
 | `tools/stack-sizes/` | Trade goods stack size SQL generator (`tools/stack-sizes/stack_sizes.py`) |
 | `tools/twink-tuning/` | Twink stat-buff SQL generator and bracket scaling math |
+| `tools/treasures/` | Treasure placement tool and playbook: scan, check, settle and SQL generation from zone files (`tools/treasures/treasure_zone.py`, `themes.json`, `zones/`) |
 | `tools/devenv/` | Development environment profiles and live scenarios (`tools/devenv/solo_smoke.json`) |
 | `tests/framework/` | Test framework header (`tests/framework/TestMain.h`) defining the shared CTest runner entry point |
 | `tests/capture/` | Unit tests for feedback ticket capture commands |
@@ -134,6 +135,7 @@ something worth knowing.
 | `docs/PLAYTEST.md` | Human playtest walkthrough, checklist, and verification guide |
 | `docs/TUNING.md` | Playtest tuning keys in `src/server/worldserver/worldserver.conf.dist` and `modules/mod_playerbots/config/playerbots.conf.dist` |
 | `docs/twinks.md` | Twink brackets, stats, and gear design reference |
+| `docs/SECRETS.md` | Sealed secrets log with hint ladders (spoilers: where every treasure and secret is) |
 | `docs/agents/` | Agent audit reports (legacy scripts, config keys, commands, SQL updates) |
 
 ## Build options (`cmake/options.cmake`)

@@ -904,6 +904,27 @@ Discovery is the weakest of the eight kinds of fun in this plan, so the world sh
 - **Combination secrets.** Hidden morph forms for specific essence mixes, and recipes found by experimenting.
 - **Visions at historic sites.** At places like the Theramore crater or old Southshore, the jewel shows short scenes from the past.
 
+**Provisional: secret patterns from WoW Forever (2026).** Blizzard's Classic relaunch is built on things found in game rather than read about. These are its patterns, not its content: agents write our own clues, items and places, and record each one in the sealed log (`docs/SECRETS.md`).
+
+| Pattern | Our version | Built on |
+| --- | --- | --- |
+| Clue chains | Burnt pages, journals and scattered books point to a place, an NPC or an object that summons a boss. Treasures sometimes hold a page instead of a green | Treasures, Lore tab, rumors |
+| Emote triggers | `/sing`, `/dance`, `/kneel` at the right creature, statue or shrine starts something | Creature and gameobject scripts |
+| Rule-breaking items | Effects that bend a rule: a pick that mines without the skill for a few charges, a weapon that burns frozen targets | Affix module, consumable modifiers |
+| Zone-bound sets | Set bonuses that only work in one region, so old gear keeps a home | Item scripts, zone check |
+| Hidden vendors | Vendors in odd places who take curios and other junk as currency | Treasure curios |
+| Rest consumables | A bedroll or campfire buff for XP or regen that stacks with food | Shrines, cooking fires |
+| Form-changing sets | A full set turns a class form into something else (a serpent cat form) | Client patch for the display |
+| Solo talents | Bonuses for playing alone, never penalties for having no group | Solo design |
+
+**Provisional: zone lore tiers.** From the wowfusion design ("finishing a zone pays an account reward, such as a zone-themed passive"), cut into steps so fast leveling still pays.
+
+- **Progress per zone:** the share of the zone's quests completed (by quest sort, excluding dailies and repeatables), plus its lore objects and treasures. Counts at any level, so out-leveling a zone never locks progress out.
+- **Four tiers, 25/50/75/100%,** each a small permanent bonus. 25% and 75% pick from a modest generic pool (a little health, regen out of combat, gathering speed); 50% is a zone convenience (cheaper flights or repairs there); 100% is a zone-themed passive (Durotar: a little fire resistance, for the sun-baked desert) plus a continent title step.
+- **Small and capped:** all tiers together stay a few percent of power, so they reward exploring without becoming mandatory. Off in battlegrounds and arenas (Grimfall had to switch its account bonus off there).
+- **Unlocked per account, earned by any character,** so alts and reincarnations keep them (provisional; the alternative is per character).
+- **GM hooks:** `.lore` shows, sets and resets a zone's progress; journal and achievement entries come with Phase 1b.
+
 **Flying rule for terrain secrets.** Anything visible from the air can be landed on, so terrain secrets follow three rules:
 
 1. **Default: hide them where flying can't go.** Caves, interiors (no mounting indoors), under overhangs, underwater. The placement tool raycasts upward from each candidate and rejects or scores down spots with open sky.
