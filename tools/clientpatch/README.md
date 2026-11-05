@@ -24,7 +24,7 @@ python tools/clientpatch/build.py uninstall --client I:/UltimateMoP/mop-clean
     BSD0, MD5-checked) in load order. It never writes into the client.
   - `spell` edits clone a client spell to a new `id` (310000 block, `docs/ID_RANGES.md`) with its own `name`,
     `rank`, `description`, `aura_description`, `range_index` (a SpellRange row), `icon` (a SpellIcon id) and `attributes` changes (`set`/`clear`
-    bits on SpellMisc). The clone keeps the source's effects, visuals, cast time, range and targeting, so a
+    bits on SpellMisc), `cast_time_index` and `duration_index` (SpellCastTimes and SpellDuration rows) and per-effect `effects` overrides keyed by effect index (`base_points`, `points_per_level`, `aura`, `misc_value`, `trigger_spell`, `radius_index`). Clones carry no effect scaling, so `base_points` is the amount, plus `points_per_level` per caster level unless you zero it. The clone otherwise keeps the source's effects, visuals, cast time, range and targeting, so a
     borrowed spell can be renamed without renaming the ability it came from. `build.py sql` writes the same spells
     as `spell_dbc`, `spellmisc_dbc` and `spelleffect_dbc` rows into the file `server_sql` names; run it after any
     spell edit and commit the result. Not copied: power costs, effect scaling and server-side cooldowns (see

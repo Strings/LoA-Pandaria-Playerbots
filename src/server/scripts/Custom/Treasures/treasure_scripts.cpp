@@ -842,6 +842,8 @@ public:
             data->mapid, data->posX, data->posY, data->posZ);
         if (spot != spots.end() && !spot->second.Landmark.empty())
             handler->PSendSysMessage("  Landmark: %s", spot->second.Landmark.c_str());
+        if (spot != spots.end() && !spot->second.Sparkle)
+            handler->SendSysMessage("  Hidden in plain sight: never sparkles.");
         uint32 total = 0;
         if (QueryResult result = CharacterDatabase.PQuery("SELECT COUNT(*) FROM character_treasure WHERE spawn_id = %u", spawnId))
             total = uint32(result->Fetch()[0].GetUInt64());
