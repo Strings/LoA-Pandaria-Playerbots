@@ -171,7 +171,14 @@ namespace
                         earners.push_back(member);
         for (Player* player : earners)
             if (uint32 xp = uint32(fraction * player->GetUInt32Value(PLAYER_FIELD_NEXT_LEVEL_XP)))
-                player->GiveXP(xp, killed);
+            {
+                uint32 level = player->GetLevel(), before = player->GetUInt32Value(PLAYER_FIELD_XP);
+                player->GiveXP(xp, nullptr); // a bonus, not kill XP: no victim, so a GM kill without a tag still pays
+                if (player->GetLevel() == level && player->GetUInt32Value(PLAYER_FIELD_XP) == before)
+                    continue; // XP turned off, max level or no loot recipient
+                ChatHandler(player->GetSession()).PSendSysMessage("Rare bonus: %u XP%s.", xp,
+                    player == killer && lootRolls ? Trinity::StringFormat(", %u extra loot rolls", lootRolls).c_str() : "");
+            }
 
         uint32 lootId = killed->GetCreatureTemplate()->lootid;
         if (LootTemplate const* table = lootId ? LootTemplates_Creature.GetLootFor(lootId) : nullptr)
@@ -260,10 +267,10 @@ public:
 
     static void Report(ChatHandler* handler, Creature* c)
     {
-        handler->PSendSysMessage("Rare %s (entry %u, guid %s): affixes %s; %s; health %u",
+        handler->PSendSysMessage("Rare %s (entry %u, guid %s): affixes %s; %s; health %u/%u",
             c->GetName().c_str(), c->GetEntry(), c->GetGUID().ToString().c_str(),
             sAffixMgr->Describe(sAffixMgr->Get(c->GetGUID())).c_str(),
-            c->HasAura(SPELL_UNCLAIMED) ? "unclaimed (bots wait)" : "claimed", c->GetMaxHealth());
+            c->HasAura(SPELL_UNCLAIMED) ? "unclaimed (bots wait)" : "claimed", c->GetHealth(), c->GetMaxHealth());
     }
 
     static bool HandleNear(ChatHandler* handler, char const* /*args*/)
