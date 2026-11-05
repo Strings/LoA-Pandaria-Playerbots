@@ -16,6 +16,7 @@
 */
 
 #include "Creature.h"
+#include "CreatureHooks.h"
 #include "RaidRetention.h"
 #include "RaidResetPolicy.h"
 #include "AutoBalanceLevelScaling.h"  // #702: instance level scaling (off unless AutoBalance.Enable.Global = 1)
@@ -289,6 +290,8 @@ void Creature::AddToWorld()
         if (((GetCreatureTemplate()->rank == CREATURE_ELITE_RARE || GetCreatureTemplate()->rank == CREATURE_ELITE_RAREELITE) && GetZoneId() == 6757) || // Timeless Isle (or only rare elite?...)
             (!GetMap()->Instanceable() && sLootMgr->GetPersonalLoot(GetEntry())))   // World Bosses
             m_hasNormalLootMode = false;
+
+        CreatureHooks::Dispatch(this, CreatureHooks::Event::Spawned);
     }
 }
 
@@ -296,6 +299,7 @@ void Creature::RemoveFromWorld()
 {
     if (IsInWorld())
     {
+        CreatureHooks::Dispatch(this, CreatureHooks::Event::Removed);
         if (GetZoneScript())
             GetZoneScript()->OnCreatureRemove(this);
         
@@ -1889,6 +1893,8 @@ void Creature::Respawn(bool force)
         uint32 poolid = GetDBTableGUIDLow() ? sPoolMgr->IsPartOfAPool<Creature>(GetDBTableGUIDLow()) : 0;
         if (poolid)
             sPoolMgr->UpdatePool<Creature>(GetMap()->GetPoolData(), poolid, GetDBTableGUIDLow());
+
+        CreatureHooks::Dispatch(this, CreatureHooks::Event::Respawned);
     }
 
     UpdateObjectVisibility();
@@ -2305,6 +2311,10 @@ bool Creature::_IsTargetAcceptable(const Unit* target) const
             && !target->HasAuraType(SPELL_AURA_SPIRIT_OF_REDEMPTION) && !target->HasUnitState(UNIT_STATE_UNATTACKABLE);
     else
         targetable = target->isTargetableForAttack(false);
+
+    // Custom systems that keep two units apart (affixed rares wait for a human before bots may fight them).
+    if (CreatureHooks::BlocksFight(this, target))
+        return false;
 
     if (IsFriendlyTo(target)
         || !targetable

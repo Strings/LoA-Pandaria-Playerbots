@@ -1,4 +1,5 @@
 #include "GrindTargetValue.h"
+#include "CreatureHooks.h"
 
 #include "LootMgr.h"
 #include "ObjectMgr.h"
@@ -90,6 +91,8 @@ Unit* GrindTargetValue::FindTargetForGrinding(uint32 assistCount)
         if (unit->isDead()) continue;
         // #843 (AC GrindTargetValue.cpp:64-65): a unit that is leaving the world is no grind target.
         if (!unit->IsInWorld() || unit->IsDuringRemoveFromWorld())
+            continue;
+        if (unit->ToCreature() && CreatureHooks::BlocksFight(unit->ToCreature(), bot))
             continue;
 
         auto& rep = bot->ToPlayer()->GetReputationMgr();

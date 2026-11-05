@@ -1,0 +1,69 @@
+{
+  "name": "affixed-rares",
+  "timeout_seconds": 120,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "2"
+  ],
+  "steps": [
+    "say .xp on",
+    "say .gm off",
+    "say .revive",
+    "say .character level Seedtest 10",
+    "say .go 330 -4700 12 1",
+    "say .rare affixes",
+    "say .rare spawn 5824 molten shielded",
+    "say .rare near",
+    "say .rare set juggernaut",
+    "say .rare near",
+    "npcguid 5824",
+    "target npc",
+    "say .damage 10",
+    "wait-for evt=never timeout=2",
+    "say .rare near",
+    "target npc",
+    "say .die",
+    "wait-for evt=never timeout=2",
+    "say .rare spawn 5824 bogus"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "contains",
+      "text": "8 affixes"
+    },
+    {
+      "type": "regex",
+      "pattern": "Rare Captain Flat Tusk .entry 5824, [^)]*.: affixes Molten, Shielded; unclaimed .bots wait."
+    },
+    {
+      "type": "regex",
+      "pattern": "affixes Juggernaut; unclaimed"
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)step: say .damage 10.*?Captain Flat Tusk.*?is Juggernaut. Each affix adds XP and loot.*?step: say .rare near.*?affixes Juggernaut; claimed"
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)step: say .die.*?Rare bonus: [0-9]+ XP, 2 extra loot rolls"
+    },
+    {
+      "type": "contains",
+      "text": "Unknown affix 'bogus'"
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback"
+    }
+  ]
+}

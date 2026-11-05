@@ -5,6 +5,8 @@
 
 #include "AttackersValue.h"
 
+#include "CreatureHooks.h"
+
 #include "CellImpl.h"
 #include "GridObject.h"
 #include "GridNotifiers.h"
@@ -181,6 +183,11 @@ bool AttackersValue::IsPossibleTarget(Unit* attacker, Player* bot, float /*range
     // Relationship checks
     if (attacker->IsFriendlyTo(bot))
         return false;
+
+    // Custom systems keep some creatures away from bots (affixed rares wait until a human strikes first).
+    if (Creature const* creature = attacker->ToCreature())
+        if (CreatureHooks::BlocksFight(creature, bot))
+            return false;
 
     // Critter exception
     if (attacker->GetCreatureType() == CREATURE_TYPE_CRITTER && !attacker->IsInCombat())
