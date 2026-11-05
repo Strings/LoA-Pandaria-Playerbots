@@ -1,4 +1,5 @@
-#include "TreasureRules.h"
+﻿#include "TreasureRules.h"
+#include "Bag.h"
 #include "CellImpl.h"
 #include "Chat.h"
 #include "Config.h"
@@ -172,10 +173,20 @@ namespace
                 player->UpdateVisibilityOf(go);
     }
 
-    std::string NameOf(GameObject const* go)
+    // Empty slots in the backpack and in general-purpose bags (profession bags hold only some items).
+    size_t FreeGeneralSlots(Player* player)
     {
-        auto it = spots.find(go->GetDBTableGUIDLow());
-        return it != spots.end() && !it->second.Label.empty() ? it->second.Label : go->GetGOInfo()->name;
+        size_t free = 0;
+        for (uint8 slot = INVENTORY_SLOT_ITEM_START; slot < INVENTORY_SLOT_ITEM_END; ++slot)
+            if (!player->GetItemByPos(INVENTORY_SLOT_BAG_0, slot))
+                ++free;
+        for (uint8 bagSlot = INVENTORY_SLOT_BAG_START; bagSlot < INVENTORY_SLOT_BAG_END; ++bagSlot)
+            if (Bag* bag = player->GetBagByPos(bagSlot))
+                if (!bag->GetTemplate()->BagFamily)
+                    for (uint32 slot = 0; slot < bag->GetBagSize(); ++slot)
+                        if (!bag->GetItemByPos(uint8(slot)))
+                            ++free;
+        return free;
     }
 
     // Opens a treasure for one character: rolls its loot for them alone, puts it in the bags, records it.
@@ -202,18 +213,16 @@ namespace
         if (GameObjectTemplateAddon const* addon = go->GetTemplateAddon())
             loot.generateMoneyLoot(addon->mingold, addon->maxgold);
 
-        std::vector<std::pair<ItemPosCountVec, LootItem const*>> stores;
+        // Every item needs its own free slot: checked against the count of empty general slots, since a
+        // CanStoreNewItem check per item would hand two items the same empty slot.
+        std::vector<LootItem const*> stores;
         for (LootItem const& item : loot.items)
+            if (item.itemid && !item.currency && item.AllowedForPlayer(player, go))
+                stores.push_back(&item);
+        if (stores.size() > FreeGeneralSlots(player))
         {
-            if (!item.itemid || item.currency || !item.AllowedForPlayer(player, go))
-                continue;
-            ItemPosCountVec dest;
-            if (player->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, item.itemid, item.count) != EQUIP_ERR_OK)
-            {
-                player->SendEquipError(EQUIP_ERR_INV_FULL, nullptr, nullptr, item.itemid);
-                return true;
-            }
-            stores.emplace_back(std::move(dest), &item);
+            player->SendEquipError(EQUIP_ERR_INV_FULL, nullptr, nullptr, stores.front()->itemid);
+            return true;
         }
 
         bool first = LootedCount(character) == 0;
@@ -224,9 +233,17 @@ namespace
         CharacterDatabase.PExecute("REPLACE INTO character_treasure (guid, spawn_id, looted_at) VALUES (%u, %u, %u)",
             character, spawnId, uint32(time(nullptr)));
 
-        for (auto const& store : stores)
-            if (Item* item = player->StoreNewItem(store.first, store.second->itemid, true, store.second->randomPropertyId))
-                player->SendNewItem(item, store.second->count, false, false, true);
+        for (LootItem const* store : stores)
+        {
+            ItemPosCountVec dest;
+            if (player->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, store->itemid, store->count) != EQUIP_ERR_OK)
+            {
+                TC_LOG_ERROR("scripts", "Treasures: no room for item %u from treasure %u for %s", store->itemid, spawnId, player->GetName().c_str());
+                continue;
+            }
+            if (Item* item = player->StoreNewItem(dest, store->itemid, true, store->randomPropertyId))
+                player->SendNewItem(item, store->count, false, false, true);
+        }
         if (loot.gold)
         {
             player->ModifyMoney(loot.gold);
@@ -237,7 +254,7 @@ namespace
             player->SendDirectMessage(&data);
         }
 
-        chat.PSendSysMessage("You open the %s.", NameOf(go).c_str());
+        chat.PSendSysMessage("You open the %s.", go->GetGOInfo()->name.c_str());
         if (first && config.Intro)
             player->GetSession()->SendNotification("Treasure! Each one opens once for each of your characters.");
         TC_LOG_INFO("scripts", "Treasures: %s opened treasure %u (%u items, %u copper)", player->GetName().c_str(),
