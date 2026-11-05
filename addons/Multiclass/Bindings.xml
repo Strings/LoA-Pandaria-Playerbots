@@ -1,0 +1,5 @@
+<Bindings>
+    <Binding name="MULTICLASS_TOGGLE" header="MULTICLASS">
+        MulticlassPanel_Toggle()
+    </Binding>
+</Bindings>

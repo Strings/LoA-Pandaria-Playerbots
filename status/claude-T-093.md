@@ -17,7 +17,7 @@
   a small new core hook header `src/server/game/Scripting/GameObjectHooks.*` called from
   `GameObject::IsNeverVisibleFor` and the chest dynamic-flags update; others still see and open it.
 - GM commands: `.treasure list | go | spawn | reset | looted | explain | validate | check | reload` (RBAC 99000).
-- 12 Durotar treasures in `sql/updates/world/2026_11_05_claude_03_durotar_treasures.sql` (templates 909000-909011,
+- 12 Durotar treasures in `sql/updates/world/2026_11_05_claude_07_durotar_treasures.sql` (templates 909000-909011,
   reference pools 909100-909105, spawn guids 9090001-9090012).
 
 ## Validator result
@@ -51,7 +51,7 @@
 - New core hook header `GameObjectHooks.h` (not in `GameObject.h`): register hide/sparkle filters from a script.
 - SQL: `sql/updates/characters/2026_11_05_claude_04_character_treasure.sql`,
   `sql/updates/master/auth/2026_11_05_claude_05_treasure_commands.sql`,
-  `sql/updates/world/2026_11_05_claude_02_treasure_spot.sql`, `..._03_durotar_treasures.sql`.
+  `sql/updates/world/2026_11_05_claude_06_treasure_spot.sql`, `..._03_durotar_treasures.sql`.
 - IDs: RBAC 99000, gameobject templates 909000-909011, references 909100-909105, spawn guids 9090001-9090012
   (row in `docs/ID_RANGES.md` comes with T-094).
 

@@ -15,7 +15,7 @@ something worth knowing.
 | `src/tools/` | Map, vmap and mmap extractors |
 | `modules/mod_playerbots/` | The playerbots port |
 | `sql/` | `base/` (full schemas), `updates/{world,characters,master}/`, `old/`, `archive/` |
-| `addons/` | Client addons we ship (`GMSuite/`, `Capture/`, `Loadouts/` (`/lo`), `ReagentBank/` (`/rb`), `ProfessionBar/` (`/pb`)) |
+| `addons/` | Client addons we ship (`GMSuite/`, `Capture/`, `Loadouts/` (`/lo`), `ReagentBank/` (`/rb`), `ProfessionBar/` (`/pb`), `Multiclass/` (Alt-N, `/mc`)) |
 | `tickets/` | Captured in-game `/idea` and `/bug` feedback tickets |
 | `tools/` | Developer tooling (build, benchmarks, live MCP, DBC reader, content search, SQL validator, twink tuning, stack sizes, crash triage) |
 | `tests/` | Pure logic unit test suites and regression scenarios |
@@ -53,6 +53,7 @@ something worth knowing.
 |---|---|
 | `Custom/` | Our scripts go here. Already contains `PlayerStartScript.cpp`, `solocraft.cpp`, `npc_teleport.cpp`, `custom_items.cpp` and others; check them before writing similar code |
 | `Custom/Heartseed/` | The Heartseed living jewel system (stages, feeding, traits, essences) |
+| `Custom/Multiclass/` | Multi-classing: second classes, mirrored experience, interaction rules engine (`.multiclass`, `.mc`) |
 | `Custom/GMTools/` | GM test suite (`Custom/GMTools/Checkpoints/`, `Custom/GMTools/Clock/`, `Custom/GMTools/Scenarios/`, `Custom/GMTools/Spectate/`, `Custom/GMTools/AreaProbe/` spell area probe, `Custom/GMTools/README.md` overview) |
 | `Custom/SpawnThinning/` | Startup thinning of crowded hostile open-world spawns (`.spawnthin`); world data untouched |
 | `Custom/MountedSpeed/` | `.mountspeed` inspect command and configuration docs |
@@ -115,6 +116,7 @@ something worth knowing.
 | `tests/common/` | Shared test fixtures, mock environment, and in-memory test databases |
 | `tests/gmtools/` | Unit tests for GM checkpoint and twink kit templates |
 | `tests/heartseed/` | Unit tests for Heartseed growth and trait rules |
+| `tests/multiclass/` | Unit tests for second-class experience and rule cooldowns |
 | `tests/loadouts/` | Unit tests for loadout and gear page rules |
 | `tests/mounted_speed/` | Unit tests for mount speed multiplier math |
 | `tests/reagent_bank/` | Unit tests for reagent bank stack rules |

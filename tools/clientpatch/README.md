@@ -10,7 +10,7 @@ the launcher will install the same files.
 python tools/clientpatch/build.py build       # build/clientpatch/<archive> from edits.json
 python tools/clientpatch/build.py check       # list the files inside the built archive
 python tools/clientpatch/build.py sql         # server SQL for the spell clones
-python tools/clientpatch/build.py install --client I:/UltimateMoP/mop-clean
+python tools/clientpatch/build.py install --client I:/UltimateMoP/mop-clean   # copies what build made; refuses if nothing is built
 python tools/clientpatch/build.py uninstall --client I:/UltimateMoP/mop-clean
 ```
 
@@ -23,7 +23,7 @@ python tools/clientpatch/build.py uninstall --client I:/UltimateMoP/mop-clean
     repo) by `client.py`, which decompresses Blizzard's archives and applies their `PTCH` delta patches (COPY and
     BSD0, MD5-checked) in load order. It never writes into the client.
   - `spell` edits clone a client spell to a new `id` (310000 block, `docs/ID_RANGES.md`) with its own `name`,
-    `rank`, `description`, `aura_description`, `icon` (a SpellIcon id) and `attributes` changes (`set`/`clear`
+    `rank`, `description`, `aura_description`, `range_index` (a SpellRange row), `icon` (a SpellIcon id) and `attributes` changes (`set`/`clear`
     bits on SpellMisc). The clone keeps the source's effects, visuals, cast time, range and targeting, so a
     borrowed spell can be renamed without renaming the ability it came from. `build.py sql` writes the same spells
     as `spell_dbc`, `spellmisc_dbc` and `spelleffect_dbc` rows into the file `server_sql` names; run it after any

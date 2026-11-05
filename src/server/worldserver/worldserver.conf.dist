@@ -5483,6 +5483,30 @@ Heartseed.Gift.ScalingClass = 8
 
 Heartseed.Gift.RetortFloorPct = 200
 
+###################################################################################################
+# MULTI-CLASSING (T-094)
+#
+#    Multiclass.Enable
+#        Description: Second classes (src/server/scripts/Custom/Multiclass/README.md). Off unlearns every second-class
+#                     ability at login and stops experience.
+#        Default:     1
+#
+#    Multiclass.UnlockLevel
+#        Description: Character level at which a second class can be taken.
+#        Default:     30
+#
+#    Multiclass.XpPct
+#        Description: One second-class level costs this percentage of the experience for the character's own next
+#                     level (the level below the cap at the top level). The active second class earns a copy of the
+#                     experience the character earns, never a split.
+#        Default:     25
+
+Multiclass.Enable = 1
+Multiclass.UnlockLevel = 30
+Multiclass.XpPct = 25
+#
+###################################################################################################
+
 #
 #    Heartseed.Proc.Chance
 #        Description: Chance in percent for damage the character deals to roll the core proc.
