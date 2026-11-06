@@ -90,7 +90,7 @@ verb in `headless.py`.
 | Waiting and control | `wait-for group members=N \| map=ID \| evt=KIND [timeout=S]`, `wait-for-server-pos NAME x,y,z [tol=] [timeout=]`, `wait-file PATH [timeout=S]`, `soap COMMAND...` |
 | Targeting and group | `select`, `target GUID`, `invite NAME`, `accept`, `leave` / `disband`, `uninvite`, `leader`, `loot-method`, `difficulty normal\|heroic`, `raid`, `icon`, `ready-check`, `ready` |
 | Chat | `say`, `party`, `raid-chat`, `whisper NAME TEXT` |
-| Movement | `setpos`, `goto`, `walk [speed=] x,y,z ...`, `mover NPC\|off`, `face`, `stop`, `mount`, `taxi`, `areatrigger ID` |
+| Movement | `setpos`, `goto`, `walk [speed=] x,y,z ...`, `mover NPC\|off`, `face`, `move-start` (start forward, keep moving), `stop`, `mount`, `taxi`, `areatrigger ID` |
 | Transports | `board-walk ENTRY [seat]`, `board-natural`, `leave-transport` |
 | Quests and NPCs | `quest-accept`, `quest-share`, `quest-complete`, `quest-reward`, `gossip-hello NPC`, `gossip-select ID\|text=SUBSTR [code=] [guid=] [menu=]`, `trainer-buy SPELL [guid=]`, `faction-select horde\|alliance`, `spellclick NPC`, `gameobject-use` / `gameobject-report-use GUID\|entry:spawnId` |
 | Loot and trade | `loot`, `loot-all [seconds]`, `roll`, `master-give`, `trade-open`, `trade-item`, `trade-gold`, `trade-accept`, `trade-cancel` |
