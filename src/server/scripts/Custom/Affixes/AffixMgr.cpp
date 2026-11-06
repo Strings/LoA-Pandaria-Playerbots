@@ -126,14 +126,14 @@ std::vector<uint32_t> Affixes::Manager::Roll(uint32_t host, uint32_t count) cons
     return RollDistinct(pool, count, Uniform);
 }
 
-void Affixes::Manager::Apply(Creature* creature, std::vector<uint32_t> const& affixes)
+void Affixes::Manager::Apply(Creature* creature, std::vector<uint32_t> const& affixes, float intensity, uint32_t host)
 {
     Clear(creature);
     if (affixes.empty())
         return;
     {
         std::lock_guard<std::mutex> guard(_lock);
-        _applied[creature->GetGUID()] = affixes;
+        _applied[creature->GetGUID()] = Applied{ affixes, ClampIntensity(intensity), host };
     }
     Reapply(creature);
 }
@@ -148,13 +148,12 @@ void Affixes::Manager::Reapply(Creature* creature)
 
 void Affixes::Manager::Clear(Creature* creature)
 {
-    {
-        std::lock_guard<std::mutex> guard(_lock);
-        _applied.erase(creature->GetGUID());
-    }
+    // Auras first: their removal reads the intensity they were applied with (Juggernaut undoes its own health).
     auto templates = Templates();
     for (auto const& entry : *templates)
         creature->RemoveAurasDueToSpell(entry.second.AuraSpell);
+    std::lock_guard<std::mutex> guard(_lock);
+    _applied.erase(creature->GetGUID());
 }
 
 void Affixes::Manager::Forget(ObjectGuid guid)
@@ -167,7 +166,21 @@ std::vector<uint32_t> Affixes::Manager::Get(ObjectGuid guid) const
 {
     std::lock_guard<std::mutex> guard(_lock);
     auto itr = _applied.find(guid);
-    return itr == _applied.end() ? std::vector<uint32_t>() : itr->second;
+    return itr == _applied.end() ? std::vector<uint32_t>() : itr->second.Ids;
+}
+
+float Affixes::Manager::Intensity(ObjectGuid guid) const
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    auto itr = _applied.find(guid);
+    return itr == _applied.end() ? 1.0f : itr->second.Intensity;
+}
+
+uint32_t Affixes::Manager::Host(ObjectGuid guid) const
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    auto itr = _applied.find(guid);
+    return itr == _applied.end() ? 0 : itr->second.Host;
 }
 
 std::string Affixes::Manager::Describe(std::vector<uint32_t> const& affixes) const
@@ -183,6 +196,20 @@ namespace
 {
     using Affixes::Kind;
     using Affixes::Template;
+
+    bool HasAmount(Kind kind)
+    {
+        return kind != Kind::Teleporting && kind != Kind::ShaTouched;
+    }
+
+    // The template as this creature runs it: amounts, add counts and amount-less periods follow its intensity.
+    Template Scaled(Template t, float intensity)
+    {
+        t.AmountPct = Affixes::ScaledAmount(t.AmountPct, intensity);
+        t.PeriodMs = Affixes::ScaledPeriod(t.PeriodMs, intensity, HasAmount(t.AffixKind));
+        t.SummonCount = Affixes::ScaledCount(t.SummonCount, intensity);
+        return t;
+    }
 
     void Juggernaut(Creature* me, Template const& t, bool apply)
     {
@@ -277,7 +304,7 @@ class spell_affix_marker : public AuraScript
         Affixes::Template const* t = sAffixMgr->FindByAura(GetId());
         isPeriodic = t && t->PeriodMs;
         if (isPeriodic)
-            amplitude = int32(t->PeriodMs);
+            amplitude = int32(Scaled(*t, sAffixMgr->Intensity(GetUnitOwner()->GetGUID())).PeriodMs);
     }
 
     void HandlePeriodic(AuraEffect const* /*aurEff*/)
@@ -285,7 +312,7 @@ class spell_affix_marker : public AuraScript
         Creature* me = GetTarget()->ToCreature();
         Affixes::Template const* t = sAffixMgr->FindByAura(GetId());
         if (me && t && me->IsInCombat())
-            Pulse(me, *t);
+            Pulse(me, Scaled(*t, sAffixMgr->Intensity(me->GetGUID())));
     }
 
     void HandleApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
@@ -293,7 +320,7 @@ class spell_affix_marker : public AuraScript
         Creature* me = GetTarget()->ToCreature();
         Affixes::Template const* t = sAffixMgr->FindByAura(GetId());
         if (me && t && t->AffixKind == Kind::Juggernaut)
-            Juggernaut(me, *t, true);
+            Juggernaut(me, Scaled(*t, sAffixMgr->Intensity(me->GetGUID())), true);
     }
 
     void HandleRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
@@ -302,10 +329,11 @@ class spell_affix_marker : public AuraScript
         Affixes::Template const* t = sAffixMgr->FindByAura(GetId());
         if (!me || !t)
             return;
+        Template scaled = Scaled(*t, sAffixMgr->Intensity(me->GetGUID()));
         if (t->AffixKind == Kind::Juggernaut)
-            Juggernaut(me, *t, false);
+            Juggernaut(me, scaled, false);
         if (t->AffixKind == Kind::Molten && GetTargetApplication()->GetRemoveMode() == AURA_REMOVE_BY_DEATH)
-            MoltenDeath(me, *t);
+            MoltenDeath(me, scaled);
     }
 
     void Register() override
@@ -330,7 +358,7 @@ public:
         for (uint32 id : sAffixMgr->Get(attacker->GetGUID()))
             if (Affixes::Template const* t = sAffixMgr->Find(id))
                 if (t->AffixKind == Kind::Vampiric)
-                    attacker->ModifyHealth(int32(damage * t->AmountPct / 100.0f));
+                    attacker->ModifyHealth(int32(damage * Affixes::ScaledAmount(t->AmountPct, sAffixMgr->Intensity(attacker->GetGUID())) / 100.0f));
     }
 };
 

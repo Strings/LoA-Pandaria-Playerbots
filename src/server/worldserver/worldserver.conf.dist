@@ -6063,6 +6063,11 @@ Twinks.IntroOnLogin = 1
 #    Rares.IntroOnFirstClaim
 #        Description: The first claim per character this server run shows a short popup.
 #        Default:     1
+#
+#    Rares.Vignette.Id
+#        Description: Vignette.db2 id of the minimap star shown on open-world rares whose template has none
+#                     (rares from before MoP). 0 shows none. 4 is the client's generic kill star.
+#        Default:     4
 
 Rares.Affixes.Enable = 1
 Rares.Affixes.CountWeights = "30,40,22,8"
@@ -6070,6 +6075,97 @@ Rares.BotsWaitForPlayer = 1
 Rares.Xp.BaseLevelFraction = 0.25
 Rares.Xp.MaxLevelFraction = 1.0
 Rares.IntroOnFirstClaim = 1
+Rares.Vignette.Id = 4
+
+###################################################################################################
+# WILD RARES (T-100)
+#
+#    WildRares.Enable
+#        Description: Ordinary hostile open-world creatures sometimes spawn as a lesser "wild rare" with one or
+#                     two affixes at reduced intensity and more health (DESIGN.md, Rares and discovery).
+#        Default:     1
+#
+#    WildRares.ChancePct
+#        Description: Percent chance per eligible spawn or respawn. `.wildrare chance` overrides it until restart.
+#        Default:     2.0
+#
+#    WildRares.ZoneCap
+#        Description: Most live wild rares per zone at once (0 = no cap).
+#        Default:     6
+#
+#    WildRares.SpawnCooldownSeconds
+#        Description: A spawn point that turned wild can't turn wild again for this long (custom clock).
+#        Default:     900
+#
+#    WildRares.IncludeNeutral
+#        Description: Neutral (yellow) creatures can turn wild too, not only hostile ones.
+#        Default:     1
+#
+#    WildRares.AffixCountWeights
+#        Description: Weights for 1 and 2 affixes, comma separated.
+#        Default:     "75,25"
+#
+#    WildRares.AffixIntensity
+#        Description: Strength of a wild rare's affixes against a fixed rare's (1.0 = full strength).
+#        Default:     0.55
+#
+#    WildRares.HealthBonusMinPct
+#    WildRares.HealthBonusMaxPct
+#        Description: Extra health, rolled uniformly between the two, in percent of the creature's own.
+#        Default:     50, 100
+#
+#    WildRares.Xp.BaseLevelFraction
+#    WildRares.Xp.PerAffixLevelFraction
+#    WildRares.Xp.MaxLevelFraction
+#        Description: Kill XP bonus as a share of the killer's current level: base plus one share per affix,
+#                     capped. Paid to the killer and group members in reward range.
+#        Default:     0.10, 0.05, 0.20
+#
+#    WildRares.ExtraLootRolls
+#        Description: Extra rolls of the creature's own loot table on the kill.
+#        Default:     1
+#
+#    WildRares.EssenceChancePct
+#        Description: Percent chance the killer gains a random Heartseed essence (needs a Heartseed).
+#        Default:     3.0
+#
+#    WildRares.DeathReset.Radius
+#        Description: When a player dies within this many yards of a wild rare, or in combat with it, its affixes
+#                     and extra health wear off and it becomes an ordinary creature again.
+#        Default:     40
+#
+#    WildRares.DeathReset.BotsCount
+#        Description: Bot deaths wear wild rares off too. Off by default so bots can't strip them before a human
+#                     arrives.
+#        Default:     0
+#
+#    WildRares.Vignette.Id
+#        Description: Vignette.db2 id of the minimap star a wild rare shows (0 = none). 4 is the client's
+#                     generic kill star.
+#        Default:     4
+#
+#    WildRares.SpawnEmote
+#        Description: Text emote the creature makes when it turns wild ("" = none); %s is its name.
+#        Default:     "%s crackles with wild power!"
+
+WildRares.Enable = 1
+WildRares.ChancePct = 2.0
+WildRares.ZoneCap = 6
+WildRares.SpawnCooldownSeconds = 900
+WildRares.IncludeNeutral = 1
+WildRares.AffixCountWeights = "75,25"
+WildRares.AffixIntensity = 0.55
+WildRares.HealthBonusMinPct = 50
+WildRares.HealthBonusMaxPct = 100
+WildRares.Xp.BaseLevelFraction = 0.10
+WildRares.Xp.PerAffixLevelFraction = 0.05
+WildRares.Xp.MaxLevelFraction = 0.20
+WildRares.ExtraLootRolls = 1
+WildRares.EssenceChancePct = 3.0
+WildRares.DeathReset.Radius = 40
+WildRares.DeathReset.BotsCount = 0
+WildRares.Vignette.Id = 4
+WildRares.SpawnEmote = "%s crackles with wild power!"
 
 ###################################################################################################
 # TREASURES (T-093)

@@ -43,4 +43,16 @@ void RunTests()
     UMP_CHECK(ShareOfHealth(10, 1.0f) == 1);
     UMP_CHECK(ShareOfHealth(1000, 0.0f) == 0);
     UMP_CHECK(ShareOfHealth(4000000000u, 100.0f) == 2147483647);
+
+    // Intensity: amounts scale; amount-less affixes fire less often instead; counts never drop to zero.
+    UMP_CHECK(std::fabs(ScaledAmount(6.0f, 0.5f) - 3.0f) < 1e-6f);
+    UMP_CHECK(ScaledAmount(6.0f, -1.0f) == 0.0f);
+    UMP_CHECK(ScaledPeriod(10000, 0.5f, false) == 20000);
+    UMP_CHECK(ScaledPeriod(10000, 0.5f, true) == 10000);
+    UMP_CHECK(ScaledPeriod(10000, 0.0f, false) == 10000);
+    UMP_CHECK(ScaledPeriod(0, 0.5f, false) == 0);
+    UMP_CHECK(ScaledCount(2, 0.55f) == 1);
+    UMP_CHECK(ScaledCount(2, 1.0f) == 2);
+    UMP_CHECK(ScaledCount(0, 1.0f) == 0);
+    UMP_CHECK(ScaledCount(1, 0.1f) == 1);
 }

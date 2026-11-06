@@ -1,0 +1,90 @@
+{
+  "name": "wild-rares",
+  "timeout_seconds": 180,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "2"
+  ],
+  "steps": [
+    "say .xp on",
+    "say .gm off",
+    "say .revive",
+    "say .character level Seedtest 10",
+    "say .go 330 -4700 12 1",
+    "say .wildrare chance 0",
+    "say .wildrare chance",
+    "say .modify hp 1",
+    "say .wildrare spawn 299 molten",
+    "npcguid 299",
+    "target npc",
+    "say .wildrare explain",
+    "say .damage 1",
+    "wait-for evt=never timeout=25",
+    "say .wildrare stats",
+    "say .revive Seedtest",
+    "say .gm on",
+    "say .wildrare explain",
+    "say .wildrare spawn shielded",
+    "say .die",
+    "wait-for evt=never timeout=2",
+    "say .wildrare stats",
+    "say .wildrare chance reset",
+    "say .wildrare spawn 299 bogus"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "contains",
+      "text": "Wild rare chance now 0.00% (override)"
+    },
+    {
+      "type": "regex",
+      "pattern": "Wild rare Young Wolf .entry 299, [^)]*.: affixes Molten at 55% intensity; [+][0-9]+% health; alive"
+    },
+    {
+      "type": "regex",
+      "pattern": "Eligible: pet, summon or player-controlled"
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)step: say .damage 1.*?The wild power of .*?Young Wolf.*? fades"
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)step: say .wildrare stats.*?turned wild [(][1-9][0-9]* forced[)].*? [1-9][0-9]* resets"
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)step: say .revive Seedtest.*?Not wild: Young Wolf .entry 299"
+    },
+    {
+      "type": "regex",
+      "pattern": "affixes Shielded at 55% intensity"
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)step: say .die.*?Wild rare bonus: [0-9]+ XP, 1 extra loot roll"
+    },
+    {
+      "type": "regex",
+      "pattern": "(?s)step: say .die.*?Since start: .*? [1-9][0-9]* kills paid, [1-9][0-9]* resets"
+    },
+    {
+      "type": "contains",
+      "text": "Unknown affix 'bogus'"
+    },
+    {
+      "type": "not_contains",
+      "text": "SESSION-TIMEOUT"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback"
+    }
+  ]
+}

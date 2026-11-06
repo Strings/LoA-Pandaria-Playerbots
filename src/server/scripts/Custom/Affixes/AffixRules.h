@@ -13,7 +13,8 @@ namespace Affixes
     {
         HOST_RARE       = 0x1,
         HOST_CORRUPTION = 0x2,
-        HOST_BRAWLER    = 0x4
+        HOST_BRAWLER    = 0x4,
+        HOST_WILD_RARE  = 0x8
     };
 
     struct Candidate
@@ -76,6 +77,34 @@ namespace Affixes
         for (uint32_t pct : affixBonusPct)
             fraction += pct / 100.0f;
         return std::clamp(fraction, 0.0f, std::max(0.0f, max));
+    }
+
+    // Intensity scales an affix for a lesser or greater host (wild rares run at about 0.55; 1 is full strength).
+    // Amounts scale directly; an affix with no amount (Teleporting, Sha-touched) fires less or more often instead.
+    inline float ClampIntensity(float intensity)
+    {
+        return std::clamp(intensity, 0.0f, 10.0f);
+    }
+
+    inline float ScaledAmount(float pct, float intensity)
+    {
+        return pct * ClampIntensity(intensity);
+    }
+
+    inline uint32_t ScaledPeriod(uint32_t periodMs, float intensity, bool hasAmount)
+    {
+        float scale = ClampIntensity(intensity);
+        if (hasAmount || !periodMs || scale <= 0.0f)
+            return periodMs;
+        double value = double(periodMs) / scale;
+        return value >= 4294967295.0 ? 0xFFFFFFFFu : std::max<uint32_t>(1, uint32_t(value + 0.5));
+    }
+
+    inline uint32_t ScaledCount(uint32_t count, float intensity)
+    {
+        if (!count)
+            return 0;
+        return std::max<uint32_t>(1, uint32_t(float(count) * ClampIntensity(intensity) + 0.5f));
     }
 
     // Damage or shield amounts are a share of a unit's maximum health, so an affix stays a threat at any level.

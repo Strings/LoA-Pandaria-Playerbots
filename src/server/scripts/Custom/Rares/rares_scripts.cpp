@@ -38,6 +38,7 @@ namespace
         float XpBase = 0.25f;
         float XpMax = 1.0f;
         bool Intro = true;
+        uint32 VignetteId = 4;  // Vignette.db2 "kill" star for rares whose template has none (pre-MoP rares)
     };
     Config config;
 
@@ -63,6 +64,7 @@ namespace
         config.XpBase = std::max(0.0f, sConfigMgr->GetFloatDefault("Rares.Xp.BaseLevelFraction", 0.25f));
         config.XpMax = std::max(0.0f, sConfigMgr->GetFloatDefault("Rares.Xp.MaxLevelFraction", 1.0f));
         config.Intro = sConfigMgr->GetBoolDefault("Rares.IntroOnFirstClaim", true);
+        config.VignetteId = sConfigMgr->GetIntDefault("Rares.Vignette.Id", 4);
     }
 
     bool IsOpenWorldRare(Creature const* creature)
@@ -132,7 +134,7 @@ namespace
                 Hold(creature);
                 break;
             case CreatureHooks::Event::Evaded:
-                if (sAffixMgr->Get(creature->GetGUID()).empty())
+                if (sAffixMgr->Host(creature->GetGUID()) != Affixes::HOST_RARE)
                     return;
                 sAffixMgr->Reapply(creature);
                 Hold(creature);
@@ -149,8 +151,23 @@ namespace
         return creature->HasAura(SPELL_UNCLAIMED) && IsBotSide(other);
     }
 
+    // Older rares (before MoP) have no vignette in their template; give them the generic star so every open-world
+    // rare shows on the minimap. Reads only the creature: safe on map threads.
+    uint32_t StockRareVignette(Creature const* creature)
+    {
+        if (!config.VignetteId || !creature->IsInWorld() || creature->IsPet() || creature->IsTotem() || creature->GetMap()->Instanceable())
+            return 0;
+        CreatureTemplate const* info = creature->GetCreatureTemplate();
+        if (info->VignetteID || (info->rank != CREATURE_ELITE_RARE && info->rank != CREATURE_ELITE_RAREELITE))
+            return 0;
+        return config.VignetteId;
+    }
+
     void PayKill(Player* killer, Creature* killed)
     {
+        uint32 host = sAffixMgr->Host(killed->GetGUID());
+        if (host && host != Affixes::HOST_RARE)
+            return;  // another system's affixes (wild rares pay for themselves)
         std::vector<uint32_t> affixes = sAffixMgr->Get(killed->GetGUID());
         if (affixes.empty() && !IsOpenWorldRare(killed))
             return;
@@ -443,6 +460,7 @@ void AddSC_rares()
     TC_LOG_INFO("server.loading", ">> Loaded %u affixes", uint32(rows));
     CreatureHooks::Register(&OnCreatureEvent);
     CreatureHooks::RegisterFightFilter(&BlocksBotFight);
+    CreatureHooks::RegisterVignetteResolver(&StockRareVignette);
     if (!CustomReload::Tables().Register("affix_template", "Affixes (rares now; corruption and Brawler later)", []
     {
         std::size_t rows = 0;

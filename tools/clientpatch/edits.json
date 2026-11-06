@@ -184,6 +184,17 @@
     },
     {
       "type": "spell",
+      "id": 318100,
+      "from": 33208,
+      "name": "Wild Rare",
+      "rank": "Wild Rare",
+      "icon": 2229,
+      "description": "An ordinary creature grown wild: tougher, with lesser affixes. Its power fades if you die near it.",
+      "aura_description": "Wild rare: tougher and affixed. Fades if a player dies near it.",
+      "why": "Wild rares (T-100): the marker aura on a wild rare; the server's spell_wild_rare_marker script frees its zone slot and minimap star on death."
+    },
+    {
+      "type": "spell",
       "id": 318001,
       "from": 33208,
       "name": "Molten",
