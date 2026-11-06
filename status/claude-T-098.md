@@ -20,7 +20,10 @@
   levelling is tabled until the baseline has been played.
 
 ## For the other agent
-- Main's `worldserver.conf` needs the two new values; the `.conf.dist` defaults changed.
+- Main's `worldserver.conf` sets no `Multiclass.*` keys, so the new code defaults apply there.
+- `multiclass` fails with cast result 50 (line of sight) when Seedtest was left on the Durotar ledge at
+  (-250, -3976, 159). An in-scenario `.tele` near teleport does not move the headless client; move the character
+  offline first: `soap.py ".tele name Seedtest RazorHill"`. Worth a KNOWLEDGE.md line at the fold.
 
 ## Next
 - T-099: fill both tracks.
