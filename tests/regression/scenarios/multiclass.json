@@ -9,7 +9,7 @@
   ],
   "steps": [
     "say .revive",
-    "say .character level Seedtest 30",
+    "say .character level Seedtest 10",
     "say .multiclass clear",
     "say .mc switch necromancer",
     "say .mc switch barbarian",

@@ -37,7 +37,8 @@ experience at the level cap. One second-class level costs `Multiclass.XpPct` % o
 
 ## Config
 
-`Multiclass.Enable` (1), `Multiclass.UnlockLevel` (30), `Multiclass.XpPct` (25) in `worldserver.conf.dist`.
+`Multiclass.Enable` (1), `Multiclass.UnlockLevel` (10), `Multiclass.XpPct` (275: the 30-level track spans character
+levels 10 to 90) in `worldserver.conf.dist`.
 
 ## GM commands
 
@@ -57,10 +58,10 @@ Players: `.mc sync` and `.mc switch <class or none>` (the addon's).
 | Class | Lvl | Ability | Interactions |
 |---|---|---|---|
 | Barbarian | 1 | Hurl Axe (320000) | Arms roots a Hamstrung target, Fury throws a second axe while Enraged, Protection taunts |
-| Barbarian | 5 | War Cry (320001) | |
-| Barbarian | 10 | Frenzy, passive (320002) | Mortal Strike, Bloodthirst or Shield Slam |
+| Barbarian | 3 | War Cry (320001) | |
+| Barbarian | 5 | Frenzy, passive (320002) | Mortal Strike, Bloodthirst or Shield Slam |
 | Necromancer | 1 | Raise Skeleton (320003) | Affliction: a kill with your Corruption on the target raises skeletons |
-| Necromancer | 5 | Bone Spear (320004) | Demonology: 60 Demonic Fury |
-| Necromancer | 10 | Corpse Explosion (320005) | Destruction: enemies hit catch Immolate |
+| Necromancer | 3 | Bone Spear (320004) | Demonology: 60 Demonic Fury |
+| Necromancer | 5 | Corpse Explosion (320005) | Destruction: enemies hit catch Immolate |
 
 Not yet: the unlock quest from each class's order, bot strategies, new resources, custom icons (docs/ART-NEEDED.md).

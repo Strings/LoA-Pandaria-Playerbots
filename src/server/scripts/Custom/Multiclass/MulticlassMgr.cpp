@@ -28,8 +28,8 @@ MulticlassMgr* MulticlassMgr::instance()
 void MulticlassMgr::LoadConfig()
 {
     _enabled = sConfigMgr->GetBoolDefault("Multiclass.Enable", true);
-    _unlockLevel = uint8(std::clamp(sConfigMgr->GetIntDefault("Multiclass.UnlockLevel", 30), 1, 255));
-    _xpPct = uint32(std::max(1, sConfigMgr->GetIntDefault("Multiclass.XpPct", 25)));
+    _unlockLevel = uint8(std::clamp(sConfigMgr->GetIntDefault("Multiclass.UnlockLevel", 10), 1, 255));
+    _xpPct = uint32(std::max(1, sConfigMgr->GetIntDefault("Multiclass.XpPct", 275)));
 }
 
 void MulticlassMgr::LoadData()
