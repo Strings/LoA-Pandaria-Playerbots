@@ -376,6 +376,8 @@ class spell_multiclass_ability : public SpellScript
         Player* player = GetCaster()->ToPlayer();
         if (_ability.CostPct)
             player->ModifyPower(Powers(_ability.PowerType), -int32(Cost()));
+        if (_ability.PowerGain)
+            player->ModifyPower(Powers(_ability.PowerType), _ability.PowerGain);
         if (_ability.CooldownMs)
         {
             player->RemoveSpellCooldown(_ability.SpellId, true);
@@ -386,7 +388,10 @@ class spell_multiclass_ability : public SpellScript
     void HandleDamage(SpellEffIndex effIndex)
     {
         if (_ability.PowerPct <= 0)
+        {
+            HandleWeaponDamage(effIndex);
             return;
+        }
         switch (GetSpellInfo()->Effects[effIndex].Effect)
         {
             case SPELL_EFFECT_SCHOOL_DAMAGE:
@@ -409,6 +414,37 @@ class spell_multiclass_ability : public SpellScript
         PreventHitDefaultEffect(effIndex);
     }
 
+    // A weapon-percent ability (Hurl Axe) hits with the main-hand weapon. Its source spells are thrown (ranged attack
+    // type), and since 5.0 a melee class has no ranged weapon, so the core's own handling would deal 0.
+    void HandleWeaponDamage(SpellEffIndex effIndex)
+    {
+        SpellEffectInfo const& effect = GetSpellInfo()->Effects[effIndex];
+        if (effect.Effect != SPELL_EFFECT_WEAPON_PERCENT_DAMAGE)
+            return;
+        Unit* target = GetHitUnit();
+        if (!target)
+            return;
+        PreventHitDefaultEffect(effIndex);
+        Unit* caster = GetCaster();
+        int32 damage = int32(caster->CalculateDamage(BASE_ATTACK, false, true));
+        damage = int32(int64(damage) * effect.CalcValue(caster) / 100);
+        SetHitDamage(int32(caster->MeleeDamageBonusDone(target, uint32(std::max(0, damage)), BASE_ATTACK, GetSpellInfo())));
+    }
+
+    // A share of another spell's bonus damage (Hurl Axe: 80% of Mortal Strike's), at the caster's level, on top of the
+    // spell's own weapon damage; armor and crits apply to the total afterwards, as for the weapon part.
+    void HandleBonusDamage()
+    {
+        if (!_ability.BonusSpell || _ability.BonusPct <= 0 || GetHitDamage() <= 0)
+            return;
+        SpellInfo const* bonusSpell = sSpellMgr->GetSpellInfo(_ability.BonusSpell);
+        if (!bonusSpell)
+            return;
+        int32 const bonus = bonusSpell->Effects[_ability.BonusEffect].CalcValue(GetCaster());
+        if (bonus > 0)
+            SetHitDamage(GetHitDamage() + int32(int64(bonus) * _ability.BonusPct / 100));
+    }
+
     void HandleHitRules()
     {
         if (GetSpell()->IsTriggered())
@@ -422,6 +458,7 @@ class spell_multiclass_ability : public SpellScript
         AfterCast += SpellCastFn(spell_multiclass_ability::PayAndCool);
         OnEffectHitTarget += SpellEffectFn(spell_multiclass_ability::HandleDamage, EFFECT_0, SPELL_EFFECT_ANY);
         OnEffectHitTarget += SpellEffectFn(spell_multiclass_ability::HandleNoKnockback, EFFECT_ALL, SPELL_EFFECT_KNOCK_BACK);
+        OnHit += SpellHitFn(spell_multiclass_ability::HandleBonusDamage);
         AfterHit += SpellHitFn(spell_multiclass_ability::HandleHitRules);
     }
 

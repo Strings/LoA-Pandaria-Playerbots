@@ -1021,6 +1021,9 @@ class WorldClient:
             return self.obj_guid("npc") or None
         if low in self.group_members:
             return self.group_members[low]
+        # Own name works without a group (scenarios target themselves, e.g. before ".die").
+        if self.char_name and low == self.char_name.lower() and self.char_guid:
+            return self.char_guid
         try:
             val = int(arg)
         except ValueError:

@@ -89,7 +89,8 @@ void BattlegroundTOK::StartingEventCloseDoors()
     for (uint32 i = 0; i < BG_TOK_MAX_BUFFS; i++)
         SpawnBGObject(BG_TOK_OBJECT_BUFF_NORTH + i, RESPAWN_IMMEDIATELY);
 
-    m_scheduler->Schedule(Seconds(BATTLEGROUND_COUNTDOWN_MAX - 6), [=](TaskContext ctx)
+    // 6 s before the preparation (Battleground.PrepTimeSeconds) ends
+    m_scheduler->Schedule(Milliseconds(std::max<int32>(0, int32(StartDelayTimes[BG_STARTING_EVENT_FIRST]) - 6000)), [=](TaskContext ctx)
     {
         DoorOpen(BG_TOK_OBJECT_A_DOOR);
         DoorOpen(BG_TOK_OBJECT_H_DOOR);

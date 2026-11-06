@@ -410,6 +410,7 @@ class Battleground
 
         void ModifyStartDelayTime(int diff) { m_StartDelayTime -= diff; }
         void SetStartDelayTime(int Time)    { m_StartDelayTime = Time; }
+        uint32 GetPrepCountdownSeconds() const; // Battleground.PrepTimeSeconds aware (arenas: ARENA_COUNTDOWN_MAX)
 
         void SetMaxPlayersPerTeam(uint32 MaxPlayers) { m_MaxPlayersPerTeam = MaxPlayers; }
         void SetMinPlayersPerTeam(uint32 MinPlayers) { m_MinPlayersPerTeam = MinPlayers; }
@@ -673,6 +674,7 @@ class Battleground
 
         // these are important variables used for starting messages
         uint8 m_Events;
+        void ApplyPrepTimeConfig();        // Battleground.PrepTimeSeconds
         BattlegroundStartTimeIntervals  StartDelayTimes[BG_STARTING_EVENT_COUNT];
         // this must be filled in constructors!
         uint32 StartMessageIds[BG_STARTING_EVENT_COUNT];

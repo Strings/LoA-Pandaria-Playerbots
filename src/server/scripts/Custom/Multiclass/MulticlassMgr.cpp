@@ -55,7 +55,7 @@ void MulticlassMgr::LoadData()
     }
 
     if (QueryResult result = WorldDatabase.Query("SELECT `class_id`, `level`, `spell_id`, `kind`, `power_pct`, `cooldown`, `power_type`, "
-        "`cost_pct`, `name`, `description` FROM `multiclass_ability`"))
+        "`cost_pct`, `name`, `description`, `bonus_spell`, `bonus_effect`, `bonus_pct`, `power_gain` FROM `multiclass_ability`"))
     {
         do
         {
@@ -71,6 +71,16 @@ void MulticlassMgr::LoadData()
             info.CostPct = fields[7].GetUInt32();
             info.Name = fields[8].GetString();
             info.Description = fields[9].GetString();
+            info.BonusSpell = fields[10].GetUInt32();
+            info.BonusEffect = fields[11].GetUInt8();
+            info.BonusPct = fields[12].GetInt32();
+            info.PowerGain = fields[13].GetInt32();
+            if (info.BonusSpell && (!sSpellMgr->GetSpellInfo(info.BonusSpell) || info.BonusEffect >= MAX_SPELL_EFFECTS))
+            {
+                TC_LOG_ERROR("sql.sql", "multiclass_ability: spell %u has an unknown bonus spell %u or effect %u; no bonus.",
+                    info.SpellId, info.BonusSpell, uint32(info.BonusEffect));
+                info.BonusSpell = 0;
+            }
             if (!classes.count(info.ClassId) || !sSpellMgr->GetSpellInfo(info.SpellId) || info.PowerType >= MAX_POWERS)
             {
                 TC_LOG_ERROR("sql.sql", "multiclass_ability: spell %u (class %u) skipped: unknown class or spell, or bad power type.",

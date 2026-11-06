@@ -550,7 +550,10 @@ engine (F-051); interactions here use the same model.
   each spec gets interactions with it. Ranks of an earlier ability fill the levels in between only where they
   change how it plays. The first three unlocks sit at levels 1, 3 and 5.
 - **Power from the character:** second-class damage and healing are a share of the Gift power (level base plus
-  weighted attack or spell power), so a fresh second class at 90 is short of abilities, not of numbers.
+  weighted attack or spell power), so a fresh second class at 90 is short of abilities, not of numbers. Exception
+  (owner, 2026-11-06): Barbarian's Hurl Axe is a weapon attack, 150% weapon damage plus 80% of Mortal Strike's
+  bonus, 1 s cast usable on the move, 20 Rage, 6 s cooldown: worth pressing when Mortal Strike is on cooldown or
+  at low level, not a replacement for the core strikes.
 - **Swapping:** free out of combat; every second class keeps its level. The panel lists every second class the base
   class can take, learned or not.
 - **Interaction rules as rows:** trigger (a cast of a spell, a hit of an ability, a kill), condition (an aura on the

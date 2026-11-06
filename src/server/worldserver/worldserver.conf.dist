@@ -2365,6 +2365,14 @@ Battleground.QueueAnnouncer.PlayerOnly = 0
 Battleground.InvitationType = 0
 
 #
+#    Battleground.PrepTimeSeconds
+#        Description: Preparation before a battleground's gates open, in seconds. Shortens the
+#                     battleground's own (2 minutes); a longer value or 0 keeps it. Arenas keep theirs.
+#        Default:     60
+
+Battleground.PrepTimeSeconds = 60
+
+#
 #    Battleground.PrematureFinishTimer
 #        Description: Time (in milliseconds) before battleground will end prematurely if there are
 #                     not enough players on one team. (Values defined in battleground template)

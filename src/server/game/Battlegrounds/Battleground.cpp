@@ -44,6 +44,7 @@
 #include "BattlegroundTOK.h"
 #include "Realm.h"
 #include "TelemetryHooks.h"
+#include "Config.h"
 
 namespace Trinity
 {
@@ -610,6 +611,67 @@ void Battleground::CheckPrematureEnd(uint32 diff)
     }
 }
 
+namespace
+{
+    // UltimateMoP: Battleground.PrepTimeSeconds (0 = each battleground's own) shortens a battleground's preparation.
+    // Returns the preparation in ms for a battleground whose own is `ownMs`; arenas keep theirs.
+    uint32 BattlegroundPrepMs(bool isArena, uint32 ownMs)
+    {
+        if (isArena)
+            return ownMs;
+        int32 const seconds = sConfigMgr->GetIntDefault("Battleground.PrepTimeSeconds", 60);
+        if (seconds <= 0 || uint32(seconds) * IN_MILLISECONDS >= ownMs)
+            return ownMs;
+        return uint32(seconds) * IN_MILLISECONDS;
+    }
+}
+
+// Shorter preparation (Battleground.PrepTimeSeconds): the first warning is the one whose time matches the new
+// preparation (none if no warning says that time), the later warnings keep their own times, and the slots left over
+// fire nothing. Runs once per match, before SetupBattleground, which may schedule door events off the preparation.
+void Battleground::ApplyPrepTimeConfig()
+{
+    uint32 const ownMs = uint32(StartDelayTimes[BG_STARTING_EVENT_FIRST]);
+    uint32 const prepMs = BattlegroundPrepMs(IsArena(), ownMs);
+    if (prepMs == ownMs)
+        return;
+
+    uint32 times[BG_STARTING_EVENT_COUNT];
+    uint32 messages[BG_STARTING_EVENT_COUNT];
+    for (uint8 i = 0; i < BG_STARTING_EVENT_COUNT; ++i)
+    {
+        times[i] = uint32(StartDelayTimes[i]);
+        messages[i] = StartMessageIds[i];
+    }
+
+    StartDelayTimes[BG_STARTING_EVENT_FIRST] = BattlegroundStartTimeIntervals(prepMs);
+    StartMessageIds[BG_STARTING_EVENT_FIRST] = 0;
+    uint8 next = BG_STARTING_EVENT_SECOND;
+    for (uint8 i = BG_STARTING_EVENT_FIRST; i < BG_STARTING_EVENT_FOURTH; ++i)
+    {
+        if (times[i] == prepMs)
+            StartMessageIds[BG_STARTING_EVENT_FIRST] = messages[i];
+        else if (times[i] < prepMs && next < BG_STARTING_EVENT_FOURTH)
+        {
+            StartDelayTimes[next] = BattlegroundStartTimeIntervals(times[i]);
+            StartMessageIds[next] = messages[i];
+            ++next;
+        }
+    }
+    for (; next < BG_STARTING_EVENT_FOURTH; ++next)
+    {
+        StartDelayTimes[next] = BG_START_DELAY_NONE;
+        StartMessageIds[next] = 0;
+    }
+}
+
+uint32 Battleground::GetPrepCountdownSeconds() const
+{
+    if (IsArena())
+        return ARENA_COUNTDOWN_MAX;
+    return BattlegroundPrepMs(false, BATTLEGROUND_COUNTDOWN_MAX * IN_MILLISECONDS) / IN_MILLISECONDS;
+}
+
 void Battleground::ProcessJoin(uint32 diff)
 {
     // *********************************************************
@@ -635,7 +697,7 @@ void Battleground::ProcessJoin(uint32 diff)
     {
         // #736 (owner 2026-10-08): Strand of the Ancients has the 2 min preparation of every battleground again (AC
         // Battleground.cpp:515-517; BattlegroundSA's 1 min "temp hack for ships" is gone), so no arena countdown for it
-        uint32 countdownMaxForBGType = IsArena() ? ARENA_COUNTDOWN_MAX : BATTLEGROUND_COUNTDOWN_MAX;
+        uint32 countdownMaxForBGType = GetPrepCountdownSeconds();
         // SotA round 2 sets STATUS_WAIT_JOIN again (BattlegroundSA::ResetObjs) long after this countdown ran out: no
         // wrapped (uint32) timer then - BattlegroundSA::SendRoundTwoStartTimer sends that warm-up's own countdown
         if (GetElapsedTime() / 1000 < countdownMaxForBGType)
@@ -660,6 +722,8 @@ void Battleground::ProcessJoin(uint32 diff)
             EndNow();
             return;
         }
+
+        ApplyPrepTimeConfig();
 
         // Setup here, only when at least one player has ported to the map
         if (!SetupBattleground())
@@ -1646,7 +1710,7 @@ void Battleground::AddPlayer(Player* player)
             player->CastSpell(player, SPELL_PREPARATION, true);   // reduces all mana cost of spells.
 
             // #736: SotA counts down its 2 min like every battleground; none after it ran out (SotA round 2)
-            uint32 countdownMaxForBGType = BATTLEGROUND_COUNTDOWN_MAX;
+            uint32 countdownMaxForBGType = GetPrepCountdownSeconds();
             if (GetElapsedTime() / 1000 < countdownMaxForBGType)
             {
                 uint32 timer = countdownMaxForBGType - (GetElapsedTime() / 1000);

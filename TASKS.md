@@ -115,6 +115,7 @@ The first playtest starts when the quick wins are merged. T-003, T-004 and T-031
 | T-101 | Rare health: `Rares.HealthMultiplier` (2.0) for fixed rares, wild rares +95-160% (PR 158) | `src/server/scripts/Custom/Rares/`, `src/server/scripts/Custom/WildRares/` | claude | done |
 | T-102 | Creature melee damage from the client's NpcDamageByClass tables: port of upstream LoA-Pandaria PR 470 (levels 1-85, weapon damage times attack time) behind `Creature.BaseDamagePerSecond`; AutoBalance compares base damage per hit; `.npc info` shows melee per hit | `src/server/game/Entities/Unit/StatSystem.cpp`, `src/server/game/Entities/Creature/CreatureDamage.h`, `src/server/game/Maps/AutoBalanceLevelScaling.cpp`, `src/server/scripts/Commands/cs_npc.cpp`, `sql/updates/world/` | claude | done |
 | T-103 | Battleground bot fill: a real player's queue gets bracket bots for both factions at once (`AiPlayerbot.BgFill.*`, offline bracket bots logged in when short, fast accept, `.playerbots bgfill`); wild rare chance 2.5% | `modules/mod_playerbots/src/Manager/BgQueueFill.*`, `src/server/scripts/Custom/WildRares/` | claude | review |
+| T-104 | Battleground prep time 1 minute (`Battleground.PrepTimeSeconds`); Hurl Axe: 1 s cast, usable moving, 6 s cooldown, +20 Rage, 150% weapon damage + 80% of Mortal Strike's bonus; wild rare marker auras shown | `src/server/game/Battlegrounds/`, `src/server/scripts/Custom/Multiclass/`, `tools/clientpatch/edits.json` | claude | review |
 
 ## Later (parked, not v0.1)
 

@@ -45,6 +45,10 @@ namespace Multiclass
         uint32 CooldownMs = 0;
         uint8 PowerType = 0;        // Powers
         uint32 CostPct = 0;         // % of the character's maximum of that power
+        uint32 BonusSpell = 0;      // adds BonusPct % of this spell's effect BonusEffect value (caster level) per hit
+        uint8 BonusEffect = 0;
+        int32 BonusPct = 0;
+        int32 PowerGain = 0;        // PowerType gained per cast, raw units (rage in tenths)
         std::string Name;
         std::string Description;
     };
