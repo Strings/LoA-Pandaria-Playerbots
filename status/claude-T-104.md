@@ -28,6 +28,9 @@
 - Hurl Axe: a level 40 Barbarian against a 100000 HP boar. The cast took 1 s. Damage was about 199 weapon plus about 217
   Mortal Strike bonus. The Rage gain was not measured directly: `.modify rage` fails in `world_claude`.
 - Wild rare auras: data change only. The client display is untested until the patch is installed.
+- Follow-up (PR 2): Hurl Axe would not cast on the move. Its 1 s cast kept Throw Axe's movement interrupt
+  (`InterruptFlags` 15). `edits.json` `interrupts.clear_cast` and a SpellMgr correction clear it. New headless
+  verb `move-start` and scenario `hurl-axe-moving` (passes).
 - Regression suite: see the PR. `multiclass` and `telemetry` already fail in this env.
 
 ## Decisions made
