@@ -19,6 +19,7 @@
 #include "Player.h"
 #include "Pet.h"
 #include "Creature.h"
+#include "CreatureDamage.h"
 #include "SharedDefines.h"
 #include "SpellAuras.h"
 #include "SpellAuraEffects.h"
@@ -1245,6 +1246,15 @@ void Creature::UpdateDamagePhysical(WeaponAttackType attType)
 
     float weapon_mindamage = GetWeaponDamageRange(attType, MINDAMAGE);
     float weapon_maxdamage = GetWeaponDamageRange(attType, MAXDAMAGE);
+
+    // Base damage of expansion 0-3 creatures is damage per second (client NpcDamageByClass tables), so the weapon part is
+    // multiplied by the attack time as well, as in TrinityCore (port of LoA-Pandaria PR 470); damage_exp4 is per hit.
+    if (GetCreatureTemplate()->expansion < 4 && CreatureDamage::PerSecondColumns())
+    {
+        float const attackSpeed = GetAPMultiplier(attType, false);
+        weapon_mindamage *= attackSpeed;
+        weapon_maxdamage *= attackSpeed;
+    }
 
     /* per-creature/per-difficulty damage multiplier (from difficulty table, default 1.0)
        combined with any runtime override (e.g. world events) */

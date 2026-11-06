@@ -119,6 +119,7 @@
 #include "Chat.h"
 #include "Config.h"
 #include "Creature.h"
+#include "CreatureDamage.h"
 #include "DBCStores.h"
 #include "Log.h"
 #include "LootMgr.h"
@@ -705,8 +706,10 @@ namespace
 
     // AB's base damage of a level (CreatureBaseStats::GenerateBaseDamage, ABAllCreatureScript.cpp:1086 and :1095). The damage
     // columns have holes on this core (damage_exp3 is set for levels 80-85 only; above 85 only damage_exp4 is), so a hole
-    // takes the nearest lower level of the same column, then the column of the level. 0 when there is none.
-    float BaseDamageOf(uint8 level, uint8 unitClass, uint32 column)
+    // takes the nearest lower level of the same column, then the column of the level. 0 when there is none. Returned per hit
+    // at attackTimeMs (CreatureDamage.h: columns 0-3 are damage per second, column 4 per hit), so levels on either side of
+    // 85 compare in the same unit.
+    float BaseDamageOf(uint8 level, uint8 unitClass, uint32 column, uint32 attackTimeMs)
     {
         uint32 const columns[2] = { std::min<uint32>(column, MAX_CREATURE_BASE_DAMAGE - 1),
             std::min<uint32>(AutoBalance::ExpansionColumnForLevel(level), MAX_CREATURE_BASE_DAMAGE - 1) };
@@ -715,17 +718,19 @@ namespace
             {
                 float const damage = sObjectMgr->GetCreatureBaseStats(uint8(l), unitClass)->BaseDamage[c];
                 if (damage > 0.0f)
-                    return damage;
+                    return damage * CreatureDamage::PerHitFactor(c, attackTimeMs);
             }
         return 0.0f;
     }
 
     // The core's melee damage per hit of a creature with damage modifier 1, as StatSystem.cpp Creature::UpdateDamagePhysical
-    // computes it: attack power * attack time / 14 plus the average weapon damage Creature::SelectLevel sets (1.0 - 1.5 x base).
+    // computes it: attack power * attack time / 14 plus the average weapon damage Creature::SelectLevel sets (1.0 - 1.5 x base,
+    // times the attack time for the per-second columns).
     float NativeMeleePerHit(CreatureBaseStats const* stats, uint32 column, uint32 attackTimeMs)
     {
+        uint32 const c = std::min<uint32>(column, MAX_CREATURE_BASE_DAMAGE - 1);
         return float(stats->AttackPower) * float(attackTimeMs) / 14000.0f +
-            1.25f * stats->BaseDamage[std::min<uint32>(column, MAX_CREATURE_BASE_DAMAGE - 1)];
+            1.25f * stats->BaseDamage[c] * CreatureDamage::PerHitFactor(c, attackTimeMs);
     }
 
     struct LevelRatios
@@ -751,13 +756,13 @@ namespace
 
         // AB newDamageMultiplier (ABAllCreatureScript.cpp:1081-1114): new base damage / original base damage, applied to melee
         // on top of the damage the core already computes at the scaled level (ABUnitScript.cpp:52-70 -> :438)
-        float const origBase = BaseDamageOf(unmodifiedLevel, cinfo->unit_class, origColumn);
-        float const newBase = BaseDamageOf(selectedLevel, cinfo->unit_class, newColumn);
+        uint32 const attackTime = cinfo->BaseAttackTime ? cinfo->BaseAttackTime : 2000;
+        float const origBase = BaseDamageOf(unmodifiedLevel, cinfo->unit_class, origColumn, attackTime);
+        float const newBase = BaseDamageOf(selectedLevel, cinfo->unit_class, newColumn, attackTime);
         float melee = (origBase > 0.0f && newBase > 0.0f) ? newBase / origBase : 1.0f;
 
         // never more, relative to the creature's own health, than its unscaled melee: scaled melee per hit
         // (newPerHit x modifier x melee) <= unscaled melee per hit (origPerHit x modifier) x health ratio
-        uint32 const attackTime = cinfo->BaseAttackTime ? cinfo->BaseAttackTime : 2000;
         float const origPerHit = NativeMeleePerHit(origStats, origColumn, attackTime);
         float const newPerHit = NativeMeleePerHit(newStats, newColumn, attackTime);
         if (origPerHit > 0.0f && newPerHit > 0.0f)
@@ -871,8 +876,8 @@ namespace
         if (s.levelScaling && state.highestPlayerLevel && OutsideSkipRange(state))
         {
             state.worldMultiplierTargetLevel = state.highestPlayerLevel;
-            float const origBase = BaseDamageOf(avgRounded, CLASS_WARRIOR, AutoBalance::ExpansionColumnForLevel(avgRounded));
-            float const newBase = BaseDamageOf(state.highestPlayerLevel, CLASS_WARRIOR, AutoBalance::ExpansionColumnForLevel(state.highestPlayerLevel));
+            float const origBase = BaseDamageOf(avgRounded, CLASS_WARRIOR, AutoBalance::ExpansionColumnForLevel(avgRounded), 2000);
+            float const newBase = BaseDamageOf(state.highestPlayerLevel, CLASS_WARRIOR, AutoBalance::ExpansionColumnForLevel(state.highestPlayerLevel), 2000);
             if (origBase > 0.0f && newBase > 0.0f)
                 damage *= newBase / origBase;
         }
