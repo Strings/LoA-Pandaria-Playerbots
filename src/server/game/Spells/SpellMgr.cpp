@@ -6568,6 +6568,10 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->AuraInterruptFlags[0] &= ~(AURA_INTERRUPT_FLAG_MOVE | AURA_INTERRUPT_FLAG_TURNING);
                     spellInfo->ChannelInterruptFlags[0] &= ~(AURA_INTERRUPT_FLAG_MOVE | AURA_INTERRUPT_FLAG_TURNING);
                     break;
+                case 320000: // Hurl Axe (multiclass Barbarian): 1 s cast on the move, as its client row does
+                             // (tools/clientpatch/edits.json `interrupts.clear_cast`); it borrows Throw Axe's row.
+                    spellInfo->InterruptFlags &= ~SPELL_INTERRUPT_FLAG_MOVEMENT;
+                    break;
                 case 118018: // Draw Power (Summons)
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_CASTER;
                     spellInfo->Effects[1].TargetA = TARGET_UNIT_CASTER;

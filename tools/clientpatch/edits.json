@@ -309,9 +309,10 @@
       "rank": "Barbarian",
       "cooldown": 6000,
       "description": "Hurl an axe at an enemy, dealing $s1% weapon damage plus 80% of Mortal Strike's bonus damage. Generates 20 Rage. Can be thrown while moving. Arms: roots a target you have Hamstrung. Fury: a second axe follows while you are Enraged. Protection: taunts a target that is attacking someone else.",
-      "why": "Barbarian level 1 (T-094). Clone of Throw Axe (weapon throw). Range 0 to 30 yd (the source's has an 8 yd minimum). T-104: 1 s cast (no movement interrupt, so it casts on the move), 150% weapon damage; the Mortal Strike bonus and the rage come from multiclass_ability.",
+      "why": "Barbarian level 1 (T-094). Clone of Throw Axe (weapon throw). Range 0 to 30 yd (the source's has an 8 yd minimum). T-104: 1 s cast; `interrupts.clear_cast` drops the source's movement interrupt so it casts on the move (server: SpellMgr correction), 150% weapon damage; the Mortal Strike bonus and the rage come from multiclass_ability.",
       "range_index": 4,
       "cast_time_index": 4,
+      "interrupts": {"clear_cast": 1},
       "effects": {"0": {"base_points": 150}}
     },
     {

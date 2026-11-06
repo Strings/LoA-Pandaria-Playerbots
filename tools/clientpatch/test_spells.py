@@ -68,6 +68,13 @@ class CloneTests(unittest.TestCase):
         self.assertEqual(rows['Spell'][0][17], 27127)
         self.assertEqual(rows['ServerSpell'][0][17], 27126)   # the server's data files only have the source row
 
+    def test_interrupts_clear_cast_flags(self):
+        tables = source_tables()
+        tables['Spell'].rows[0][17] = 31591
+        tables['SpellInterrupts'] = Dbc(table(8, [[31591, 500, 0, 0, 0, 0, 0, 15]]), 'SpellInterrupts.dbc')
+        rows = spells.clone(dict(EDIT, interrupts={'clear_cast': 1}), tables)
+        self.assertEqual(rows['SpellInterrupts'][0][7], 14)
+
     def test_cast_time_index(self):
         tables = source_tables()
         self.assertEqual(spells.clone(EDIT, tables)['SpellMisc'][0][17], 0)   # the source's own
