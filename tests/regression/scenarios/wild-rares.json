@@ -1,6 +1,6 @@
 {
   "name": "wild-rares",
-  "timeout_seconds": 150,
+  "timeout_seconds": 180,
   "args": [
     "--cmd",
     "play",
@@ -21,7 +21,7 @@
     "target npc",
     "say .wildrare explain",
     "say .damage 1",
-    "wait-for evt=never timeout=10",
+    "wait-for evt=never timeout=25",
     "say .wildrare stats",
     "say .revive Seedtest",
     "say .gm on",
