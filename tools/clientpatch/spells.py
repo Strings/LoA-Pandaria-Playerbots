@@ -29,7 +29,7 @@ EFFECT_FIELDS = {'base_points': 6, 'aura': 4, 'misc_value': 13, 'trigger_spell':
 FLOAT_EFFECT_FIELDS = {'points_per_level': 18}
 CD_ID, CD_SPELL, CD_RECOVERY = 0, 1, 4
 S_INTERRUPTS = 17
-I_ID, I_SPELL, I_AURA, I_CHANNEL = 0, 1, 3, 5
+I_ID, I_SPELL, I_AURA, I_CHANNEL, I_CAST = 0, 1, 3, 5, 7
 
 MISC_ATTRIBUTES = ['attributes'] + ['attributes_ex%s' % s for s in [''] + [str(n) for n in range(2, 14)]]
 
@@ -153,8 +153,9 @@ def clone(edit: dict, tables: Dict[str, Dbc]) -> Dict[str, List[List[int]]]:
         spell[S_COOLDOWNS] = row[CD_ID]
         cooldown_rows.append(row)
 
-    # `interrupts` clears AuraInterruptFlags and ChannelInterruptFlags bits on the clone's own copy of the source's
-    # SpellInterrupts row (8 = moving, 16 = turning). The server keeps the source row (its data files are stock), so
+    # `interrupts` clears AuraInterruptFlags and ChannelInterruptFlags bits (8 = moving, 16 = turning) and, with
+    # `clear_cast`, InterruptFlags bits (1 = movement stops a cast) on the clone's own copy of the source's
+    # SpellInterrupts row. The server keeps the source row (its data files are stock), so
     # the core's spell corrections must clear the same bits; `server_spell` is the row the server SQL gets.
     interrupt_rows = []
     server_spell = list(spell)
@@ -168,6 +169,7 @@ def clone(edit: dict, tables: Dict[str, Dbc]) -> Dict[str, List[List[int]]]:
         row[I_SPELL] = new_id
         row[I_AURA] &= ~edit['interrupts'].get('clear_aura', 0)
         row[I_CHANNEL] &= ~edit['interrupts'].get('clear_channel', 0)
+        row[I_CAST] &= ~edit['interrupts'].get('clear_cast', 0)
         spell[S_INTERRUPTS] = row[I_ID]
         interrupt_rows.append(row)
 

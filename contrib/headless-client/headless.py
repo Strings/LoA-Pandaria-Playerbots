@@ -2850,6 +2850,15 @@ class WorldClient:
             "relying on the transport's own per-tick passenger relocation instead")
         self.emit("board", transport=self.transport_guid)
 
+    def move_start(self):
+        """Send MSG_MOVE_START_FORWARD and leave the character moving (no heartbeats, no stop), so the next steps
+        act while the server sees it moving, e.g. a cast that must work on the move. `stop` ends it."""
+        x, y, z = self.pos
+        body = build_movement_body(MSE_START_FORWARD, self._mguid(), x, y, z, self.orientation,
+                                    movement_flags=MOVEMENTFLAG_FORWARD,
+                                    timestamp_ms=self._move_ts(), transport=self._transport_tuple())
+        self.send_packet(MSG_MOVE_START_FORWARD, body)
+
     def move_stop(self):
         x, y, z = self.pos
         body = build_movement_body(MSE_STOP, self._mguid(), x, y, z, self.orientation,
@@ -4307,6 +4316,8 @@ def run_verb(w, args_cli, line):
             log("mover: movement packets now carry guid %d" % g)
     elif verb == "face":
         w.move_face(float(rest[0]))
+    elif verb == "move-start":
+        w.move_start()
     elif verb == "stop":
         w.move_stop()
     elif verb == "mount":

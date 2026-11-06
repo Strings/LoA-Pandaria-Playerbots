@@ -1,0 +1,33 @@
+{
+  "name": "hurl-axe-moving",
+  "timeout_seconds": 120,
+  "args": ["--cmd", "play", "--hold", "2"],
+  "steps": [
+    "say .revive",
+    "say .gm off",
+    "say .character level Seedtest 10",
+    "say .multiclass clear",
+    "say .mc switch barbarian",
+    "say .multiclass xp 999999999",
+    "say .character level Seedtest 40",
+    "say .npc add temp 3098",
+    "npcguid 3098",
+    "target npc",
+    "say .npc set level 41",
+    "say .modify hp 100000",
+    "face 0",
+    "move-start",
+    "cast 320000 npc",
+    "wait-for evt=never timeout=2",
+    "stop",
+    "say .die",
+    "say .mc switch none",
+    "say .respec reset spec",
+    "say .character level Seedtest 10"
+  ],
+  "assertions": [
+    {"type": "contains", "text": "LOGIN-OK map="},
+    {"type": "not_contains", "text": "SMSG_CAST_FAILED spell=320000"},
+    {"type": "regex", "pattern": "spell_go size=[0-9]+ spell=[0-9|]*320000"}
+  ]
+}
