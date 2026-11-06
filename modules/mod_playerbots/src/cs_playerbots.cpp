@@ -13,6 +13,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "BgQueueFill.h"
 #include "BotScenario.h"
 #include "Chat.h"
 #include "ObjectAccessor.h"
@@ -53,6 +54,8 @@ public:
             { "pmon", &HandlePerfMonCommand,   rbac::RBAC_PERM_COMMAND_PMON,   Trinity::ChatCommands::Console::Yes },
             // #808: AC SEC_GAMEMASTER + Console::Yes (PlayerbotCommandScript.cpp:45); console/SOAP only needs Console::Yes.
             { "rndbot", &HandleRandomPlayerbotCommand, rbac::RBAC_PERM_COMMAND_PMON, Trinity::ChatCommands::Console::Yes },
+            // Battleground queue fill (Manager/BgQueueFill.h): .playerbots bgfill [status|now]
+            { "bgfill", &HandleBgFillCommand, rbac::RBAC_PERM_COMMAND_PMON, Trinity::ChatCommands::Console::Yes },
         };
         static std::vector<ChatCommand> commandTable =
         {
@@ -75,6 +78,38 @@ public:
     static bool HandleRandomPlayerbotCommand(ChatHandler* handler, char const* args)
     {
         return HandleRandomPlayerbotConsoleCommand(handler, args);
+    }
+
+    // .playerbots bgfill [status] prints what the fill sees and did on its last pass; "now" runs a pass on the next
+    // world tick, ignoring AiPlayerbot.BgFill.CheckIntervalMs, DelaySeconds and Enable once.
+    static bool HandleBgFillCommand(ChatHandler* handler, char const* args)
+    {
+        std::string const arg = args ? args : "";
+        if (arg == "now")
+        {
+            BgQueueFill::ForceNextPass();
+            handler->SendSysMessage("bgfill: a pass runs on the next world tick");
+            return true;
+        }
+
+        if (!arg.empty() && arg != "status")
+        {
+            handler->SendSysMessage("usage: .playerbots bgfill [status|now]");
+            return false;
+        }
+
+        std::string const status = BgQueueFill::Status();
+        size_t start = 0;
+        while (start <= status.size())
+        {
+            size_t const end = status.find('
+', start);
+            handler->SendSysMessage(status.substr(start, end == std::string::npos ? std::string::npos : end - start).c_str());
+            if (end == std::string::npos)
+                break;
+            start = end + 1;
+        }
+        return true;
     }
 
     static bool HandlePerfMonCommand(ChatHandler* handler, char const* args)

@@ -8,7 +8,7 @@ intensity, and more health. Fixed rares (`Custom/Rares/`) stay the big-reward ti
   with `WildRares.IncludeNeutral`), outside instances and cities (capital, sanctuary and city area flags). Never NPCs
   (any NPC flag or a gossip menu), pets, summons, guardians, critters, triggers, elites or rares, and never an entry
   in `rare_wild_denylist` (world DB, `.reload rare_wild_denylist`).
-- **Roll:** on every spawn and respawn, `WildRares.ChancePct` (2%), unless the zone already has `WildRares.ZoneCap`
+- **Roll:** on every spawn and respawn, `WildRares.ChancePct` (2.5%), unless the zone already has `WildRares.ZoneCap`
   live wild rares or the spawn point turned wild within `WildRares.SpawnCooldownSeconds` (custom clock).
 - **Strength:** affix count from `WildRares.AffixCountWeights` (one or two), rolled from affixes with host bit 8
   (`HOST_WILD_RARE`), applied at `WildRares.AffixIntensity` (0.55). Health +50 to 100%.
