@@ -19,6 +19,8 @@
 #define _MEMORY_H
 
 #include "DetourAlloc.h"
+#include <memory>
+#include <utility>
 
 //  memory management
 inline void* dtCustomAlloc(size_t size, dtAllocHint /*hint*/)

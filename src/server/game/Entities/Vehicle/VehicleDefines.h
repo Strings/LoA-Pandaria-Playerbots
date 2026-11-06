@@ -19,6 +19,8 @@
 #define SF_VEHICLEDEFINES_H
 
 #include "Define.h"
+#include "ObjectGuid.h"
+#include "Position.h"
 #include <vector>
 #include <map>
 

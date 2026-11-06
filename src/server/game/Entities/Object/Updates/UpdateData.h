@@ -19,6 +19,7 @@
 #define SF_UPDATEDATA_H
 
 #include "ByteBuffer.h"
+#include "ObjectGuid.h"
 #include <set>
 
 class WorldPacket;

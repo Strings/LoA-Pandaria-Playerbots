@@ -20,6 +20,7 @@
 
 #include "Common.h"
 #include "WorldPacket.h"
+#include "ObjectGuid.h"
 
 enum CalendarMailAnswers
 {

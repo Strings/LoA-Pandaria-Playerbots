@@ -4,8 +4,8 @@
 * Please see the included DOCS/LICENSE.TXT for more information
 */
 
-#include "ItemMethods.h"
 #include "Includes.h"
+#include "ItemMethods.h"
 
 namespace LuaItem
 {

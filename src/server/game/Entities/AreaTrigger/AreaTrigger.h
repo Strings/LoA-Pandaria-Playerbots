@@ -18,6 +18,7 @@
 #ifndef TRINITYCORE_AREATRIGGER_H
 #define TRINITYCORE_AREATRIGGER_H
 
+#include "GridObject.h"
 #include "Object.h"
 #include <memory>
 #include <functional>

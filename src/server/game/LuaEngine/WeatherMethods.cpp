@@ -4,8 +4,8 @@
 * Please see the included DOCS/LICENSE.TXT for more information
 */
 
-#include "WeatherMethods.h"
 #include "Includes.h"
+#include "WeatherMethods.h"
 
 namespace LuaWeather
 {

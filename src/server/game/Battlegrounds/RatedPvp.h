@@ -26,6 +26,13 @@
 #include "DatabaseEnvFwd.h"
 
 #include "Common.h"
+#include "Errors.h"
+#include "ObjectGuid.h"
+#include <set>
+
+struct AchievementEntry;
+struct CharTitlesEntry;
+struct ItemTemplate;
 
 enum ArenaType : uint32;
 

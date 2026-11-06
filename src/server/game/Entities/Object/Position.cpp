@@ -17,6 +17,7 @@
 
 #include "Position.h"
 #include "ByteBuffer.h"
+#include "Object.h"
 
 #include <G3D/g3dmath.h>
 #include <G3D/Quat.h>

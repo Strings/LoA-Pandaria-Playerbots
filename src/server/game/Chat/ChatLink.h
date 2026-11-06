@@ -26,6 +26,8 @@ struct ItemLocale;
 struct ItemTemplate;
 struct ItemRandomSuffixEntry;
 struct ItemRandomPropertiesEntry;
+struct AchievementEntry;
+struct CurrencyTypesEntry;
 class SpellInfo;
 struct AchievementEntry;
 struct GlyphPropertiesEntry;

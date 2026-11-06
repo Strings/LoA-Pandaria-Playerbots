@@ -18,6 +18,8 @@
 #ifndef TRINITY_WAYPOINTMANAGER_H
 #define TRINITY_WAYPOINTMANAGER_H
 
+#include "Define.h"
+#include <unordered_map>
 #include <vector>
 
 struct WaypointData

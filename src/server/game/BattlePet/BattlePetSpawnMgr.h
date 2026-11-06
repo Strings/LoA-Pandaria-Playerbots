@@ -21,6 +21,8 @@
 #include "BattlePet.h"
 #include "Common.h"
 
+class Map;
+
 #define BATTLE_PET_SPAWN_MGR_UPDATE 2000
 
 //          replacement  

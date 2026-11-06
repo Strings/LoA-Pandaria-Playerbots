@@ -16,6 +16,7 @@
 */
 
 #include "DBCStores.h"
+#include "Containers.h"
 #include "DBCFileLoader.h"
 #include "DBCfmt.h"
 #include "ItemPrototype.h"

@@ -7,6 +7,8 @@
 #ifndef _TRINITY_GEOMETRY_H
 #define _TRINITY_GEOMETRY_H
 
+#include "Common.h"
+#include <cmath>
 #include <cstdlib>
 #include <math.h>
 

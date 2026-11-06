@@ -16,6 +16,10 @@
 */
 
 #include "WordFilterMgr.h"
+#include "DatabaseEnv.h"
+#include "Log.h"
+#include "Timer.h"
+#include "Util.h"
 
 bool NormalizeWord(std::string& utf8String)
 {

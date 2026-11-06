@@ -19,6 +19,7 @@
 #include "Config.h"
 #include "ByteBuffer.h"
 #include "GameTime.h"
+#include "Timer.h"
 #include "WorldPacket.h"
 
 #pragma pack(push, 1)

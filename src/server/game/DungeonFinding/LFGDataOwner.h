@@ -19,6 +19,7 @@
 #define LFG_DATA_OWNER_H
 
 #include <LFG.h>
+#include "Errors.h"
 
 namespace lfg
 {

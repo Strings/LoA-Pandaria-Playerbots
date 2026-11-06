@@ -22,6 +22,7 @@
 #include "SharedDefines.h"
 #include "WorldPacket.h"
 #include "DBCEnums.h"
+#include "DatabaseEnvFwd.h"
 #include "EnumFlag.h"
 
 #include <string>

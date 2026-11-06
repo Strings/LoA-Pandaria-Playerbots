@@ -21,9 +21,12 @@
 #include "Define.h"
 #include "Hash.h"
 #include "Errors.h"
+#include <array>
 #include <list>
 #include <unordered_map>
+#include <unordered_set>
 
+class Creature;
 class Player;
 class Unit;
 class WorldObject;

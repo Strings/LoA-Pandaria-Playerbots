@@ -18,6 +18,7 @@
 #ifndef Trinity_game_Position_h__
 #define Trinity_game_Position_h__
 
+#include "Common.h"
 #include "Define.h"
 #include <string>
 #include <cmath>

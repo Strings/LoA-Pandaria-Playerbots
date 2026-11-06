@@ -19,6 +19,7 @@
 #define VIGNETTE_H
 
 #include "Common.h"
+#include "Creature.h"
 #include "Object.h"
 #include "DB2Stores.h"
 #include "GameObject.h"

@@ -4,8 +4,8 @@
 * Please see the included DOCS/LICENSE.TXT for more information
 */
 
-#include "SpellMethods.h"
 #include "Includes.h"
+#include "SpellMethods.h"
 
 namespace LuaSpell
 {

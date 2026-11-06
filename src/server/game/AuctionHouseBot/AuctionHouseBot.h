@@ -20,6 +20,7 @@
 
 #include "Define.h"
 #include "SharedDefines.h"
+#include "ObjectGuid.h"
 #include <string>
 #include <vector>
 

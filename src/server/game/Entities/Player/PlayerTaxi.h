@@ -18,6 +18,7 @@
 #ifndef PlayerTaxi_h__
 #define PlayerTaxi_h__
 
+#include "ByteBuffer.h"
 #include "DBCStores.h"
 #include "Define.h"
 #include <deque>

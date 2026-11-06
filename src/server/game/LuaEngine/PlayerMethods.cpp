@@ -4,8 +4,8 @@
 * Please see the included DOCS/LICENSE.TXT for more information
 */
 
-#include "PlayerMethods.h"
 #include "Includes.h"
+#include "PlayerMethods.h"
 
 namespace LuaPlayer
 {

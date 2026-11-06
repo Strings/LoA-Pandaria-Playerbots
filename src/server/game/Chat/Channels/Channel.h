@@ -23,6 +23,7 @@
 #include <string>
 
 #include "Common.h"
+#include "ObjectGuid.h"
 
 #include "Opcodes.h"
 #include "WorldPacket.h"

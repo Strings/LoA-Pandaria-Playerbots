@@ -19,6 +19,7 @@
 #include "ObjectAccessor.h"
 #include "Player.h"
 #include "AreaTrigger.h"
+#include "MapManager.h"
 
 namespace Vignette
 {

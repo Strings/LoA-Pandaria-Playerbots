@@ -4,8 +4,8 @@
 * Please see the included DOCS/LICENSE.TXT for more information
 */
 
-#include "GameObjectMethods.h"
 #include "Includes.h"
+#include "GameObjectMethods.h"
 
 namespace LuaGameObject
 {

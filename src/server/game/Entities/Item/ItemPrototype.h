@@ -20,6 +20,10 @@
 
 #include "Common.h"
 #include "SharedDefines.h"
+#include <bitset>
+
+class Player;
+struct ChrSpecializationEntry;
 
 enum ItemModType
 {
