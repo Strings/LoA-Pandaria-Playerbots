@@ -376,6 +376,8 @@ class spell_multiclass_ability : public SpellScript
         Player* player = GetCaster()->ToPlayer();
         if (_ability.CostPct)
             player->ModifyPower(Powers(_ability.PowerType), -int32(Cost()));
+        if (_ability.PowerGain)
+            player->ModifyPower(Powers(_ability.PowerType), _ability.PowerGain);
         if (_ability.CooldownMs)
         {
             player->RemoveSpellCooldown(_ability.SpellId, true);
@@ -409,6 +411,20 @@ class spell_multiclass_ability : public SpellScript
         PreventHitDefaultEffect(effIndex);
     }
 
+    // A share of another spell's bonus damage (Hurl Axe: 80% of Mortal Strike's), at the caster's level, on top of the
+    // spell's own weapon damage; armor and crits apply to the total afterwards, as for the weapon part.
+    void HandleBonusDamage()
+    {
+        if (!_ability.BonusSpell || _ability.BonusPct <= 0 || GetHitDamage() <= 0)
+            return;
+        SpellInfo const* bonusSpell = sSpellMgr->GetSpellInfo(_ability.BonusSpell);
+        if (!bonusSpell)
+            return;
+        int32 const bonus = bonusSpell->Effects[_ability.BonusEffect].CalcValue(GetCaster());
+        if (bonus > 0)
+            SetHitDamage(GetHitDamage() + int32(int64(bonus) * _ability.BonusPct / 100));
+    }
+
     void HandleHitRules()
     {
         if (GetSpell()->IsTriggered())
@@ -422,6 +438,7 @@ class spell_multiclass_ability : public SpellScript
         AfterCast += SpellCastFn(spell_multiclass_ability::PayAndCool);
         OnEffectHitTarget += SpellEffectFn(spell_multiclass_ability::HandleDamage, EFFECT_0, SPELL_EFFECT_ANY);
         OnEffectHitTarget += SpellEffectFn(spell_multiclass_ability::HandleNoKnockback, EFFECT_ALL, SPELL_EFFECT_KNOCK_BACK);
+        OnHit += SpellHitFn(spell_multiclass_ability::HandleBonusDamage);
         AfterHit += SpellHitFn(spell_multiclass_ability::HandleHitRules);
     }
 

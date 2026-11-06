@@ -3584,7 +3584,7 @@ public:
             return handler->SendError("Battleground must be in STATUS_WAIT_JOIN");
         bg->SetStartDelayTime(0);
 
-        uint32 maxTime = bg->IsArena() ? ARENA_COUNTDOWN_MAX : BATTLEGROUND_COUNTDOWN_MAX;
+        uint32 maxTime = bg->GetPrepCountdownSeconds();
         for (auto&& itr : bg->GetPlayers())
             if (Player* player = ObjectAccessor::FindPlayer(itr.first))
                 player->SendStartTimer(0, maxTime, TIMER_PVP);
