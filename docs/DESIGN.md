@@ -534,11 +534,21 @@ engine (F-051); interactions here use the same model.
 
 **Proposed details:**
 
-- **Unlock at 30** with a quest from the second class's order (a warband for the Barbarian, a cabal for the
-  Necromancer). Track length about 30 levels; each level adds an ability, a rank or a passive. Config keys.
+- **Unlock at 10** (decided 2026-11-06; was 30) with a quest from the second class's order (a warband for the
+  Barbarian, a cabal for the Necromancer). Level 10 is when the base class has a spec, which the interactions need.
+  `Multiclass.UnlockLevel`.
 - **Experience mirrored, never split:** the active second class earns what the character earns from kills and quests
   (computed the same way at 90), so the base class never levels slower and a 90 keeps progressing. Each second-class
   level costs a share of the character's own next level (`Multiclass.XpPct`).
+- **The track runs 10 to 90** (decided 2026-11-06): 30 second-class levels, each costing 275% of the character's
+  next level, so a second class taken at 10 reaches 30 around 90 (about one level per 2.75 character levels). A
+  class taken later catches up at the same rate and keeps going on quest experience at the cap.
+- **About 14 unlocks per class, one every two second-class levels** (roughly every 5 to 6 character levels), so no
+  stretch goes long without something new: about **8 active abilities** and about **6 impactful passives or
+  procs**. Neither half has to deal damage: mobility, control, defensives, utility, summons, resource tricks and
+  procs that change how the base rotation plays all count, as long as each one is interesting on its own and
+  each spec gets interactions with it. Ranks of an earlier ability fill the levels in between only where they
+  change how it plays. The first three unlocks sit at levels 1, 3 and 5.
 - **Power from the character:** second-class damage and healing are a share of the Gift power (level base plus
   weighted attack or spell power), so a fresh second class at 90 is short of abilities, not of numbers.
 - **Swapping:** free out of combat; every second class keeps its level. The panel lists every second class the base
@@ -573,11 +583,11 @@ engine (F-051); interactions here use the same model.
 | Second class | Level | Ability | Interactions by spec |
 | --- | --- | --- | --- |
 | Barbarian | 1 | Hurl Axe: a thrown axe | Arms: roots a target with Hamstring. Fury: a second axe while Enraged. Protection: taunts a target that is not attacking you |
-| Barbarian | 5 | War Cry: nearby enemies cower, allies gain attack power | none (stands on its own) |
-| Barbarian | 10 | Frenzy (passive): Mortal Strike, Bloodthirst and Shield Slam add a stack of attack speed | the trigger is the spec's core strike |
+| Barbarian | 3 | War Cry: nearby enemies cower, allies gain attack power | none (stands on its own) |
+| Barbarian | 5 | Frenzy (passive): Mortal Strike, Bloodthirst and Shield Slam add a stack of attack speed | the trigger is the spec's core strike |
 | Necromancer | 1 | Raise Skeleton: a skeletal warrior fights for you | Affliction: an enemy that dies with Corruption on it raises a free skeleton |
-| Necromancer | 5 | Bone Spear: a piercing bolt of bone | Demonology: grants Demonic Fury |
-| Necromancer | 10 | Corpse Explosion: a nearby corpse bursts | Destruction: spreads Immolate from the target to enemies hit |
+| Necromancer | 3 | Bone Spear: a piercing bolt of bone | Demonology: grants Demonic Fury |
+| Necromancer | 5 | Corpse Explosion: a nearby corpse bursts | Destruction: spreads Immolate from the target to enemies hit |
 
 **Art:** every second class starts on stock icons; each gets rows in `docs/ART-NEEDED.md`.
 

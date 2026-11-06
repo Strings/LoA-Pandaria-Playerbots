@@ -141,8 +141,8 @@ private:
     void Save(Player const* player) const;
 
     bool _enabled = true;
-    uint8 _unlockLevel = 30;
-    uint32 _xpPct = 25;
+    uint8 _unlockLevel = 10;
+    uint32 _xpPct = 275;
 
     mutable std::mutex _lock;
     std::map<uint32, Multiclass::ClassInfo> _classes;
