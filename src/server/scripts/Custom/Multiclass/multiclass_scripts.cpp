@@ -388,7 +388,10 @@ class spell_multiclass_ability : public SpellScript
     void HandleDamage(SpellEffIndex effIndex)
     {
         if (_ability.PowerPct <= 0)
+        {
+            HandleWeaponDamage(effIndex);
             return;
+        }
         switch (GetSpellInfo()->Effects[effIndex].Effect)
         {
             case SPELL_EFFECT_SCHOOL_DAMAGE:
@@ -409,6 +412,23 @@ class spell_multiclass_ability : public SpellScript
     void HandleNoKnockback(SpellEffIndex effIndex)
     {
         PreventHitDefaultEffect(effIndex);
+    }
+
+    // A weapon-percent ability (Hurl Axe) hits with the main-hand weapon. Its source spells are thrown (ranged attack
+    // type), and since 5.0 a melee class has no ranged weapon, so the core's own handling would deal 0.
+    void HandleWeaponDamage(SpellEffIndex effIndex)
+    {
+        SpellEffectInfo const& effect = GetSpellInfo()->Effects[effIndex];
+        if (effect.Effect != SPELL_EFFECT_WEAPON_PERCENT_DAMAGE)
+            return;
+        Unit* target = GetHitUnit();
+        if (!target)
+            return;
+        PreventHitDefaultEffect(effIndex);
+        Unit* caster = GetCaster();
+        int32 damage = int32(caster->CalculateDamage(BASE_ATTACK, false, true));
+        damage = int32(int64(damage) * effect.CalcValue(caster) / 100);
+        SetHitDamage(int32(caster->MeleeDamageBonusDone(target, uint32(std::max(0, damage)), BASE_ATTACK, GetSpellInfo())));
     }
 
     // A share of another spell's bonus damage (Hurl Axe: 80% of Mortal Strike's), at the caster's level, on top of the
