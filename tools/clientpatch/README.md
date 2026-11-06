@@ -18,6 +18,7 @@ python tools/clientpatch/build.py uninstall --client I:/UltimateMoP/mop-clean
   A `from` that no longer matches the source fails the build.
   - `dbc` edits change one cell (`id`, `field`) of a table from the extracted server game data (`--dbc`, else
     `MOP_DBC_DIR`, else `<repo>/gamedata/dbc`); field names come from the shared DBC schemas (`tools/dbc/`).
+    WDB2 tables without an id index work too, and string columns take text for `from` and `to` (`Vignette.db2`).
   - `text` edits replace one exact, unique string in a client file such as interface Lua. The current file is read
     from the client's own archives (`--client`, else `MOP_CLIENT_DIR`, else the `mop-clean` folder next to the
     repo) by `client.py`, which decompresses Blizzard's archives and applies their `PTCH` delta patches (COPY and
@@ -42,7 +43,11 @@ python tools/clientpatch/build.py uninstall --client I:/UltimateMoP/mop-clean
   CORRUPT. The build ships a placeholder `.toc.sig` of the wrong size for each edited Blizzard addon, which the
   client treats as unsigned, so the addon loads (as tainted code, like any user addon).
 
-Only WDBC tables with 4-byte fields and text files are edited so far; DB2 tables and art come with their first use.
+Only tables with 4-byte fields (WDBC, and WDB2 without an id index) and text files are edited so far; art comes with
+its first use.
+
+`build.py sql` also lists every clone in `spell_client_known`. The core treats spell ids from 203751 up as
+server-only and never sends their auras to the client; a listed spell is exempt, so a clone's buff shows.
 
 ## Edits
 
