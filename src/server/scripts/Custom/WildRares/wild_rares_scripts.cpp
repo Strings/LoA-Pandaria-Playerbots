@@ -105,8 +105,8 @@ namespace
         std::vector<uint32_t> weights = ParseWeights(sConfigMgr->GetStringDefault("WildRares.AffixCountWeights", "75,25"));
         config.CountWeights = weights.empty() ? std::vector<uint32_t>{ 75, 25 } : weights;
         config.Intensity = Affixes::ClampIntensity(sConfigMgr->GetFloatDefault("WildRares.AffixIntensity", 0.55f));
-        config.HealthMinPct = uint32(std::max(0, sConfigMgr->GetIntDefault("WildRares.HealthBonusMinPct", 50)));
-        config.HealthMaxPct = uint32(std::max(0, sConfigMgr->GetIntDefault("WildRares.HealthBonusMaxPct", 100)));
+        config.HealthMinPct = uint32(std::max(0, sConfigMgr->GetIntDefault("WildRares.HealthBonusMinPct", 95)));
+        config.HealthMaxPct = uint32(std::max(0, sConfigMgr->GetIntDefault("WildRares.HealthBonusMaxPct", 160)));
         config.XpBase = std::max(0.0f, sConfigMgr->GetFloatDefault("WildRares.Xp.BaseLevelFraction", 0.10f));
         config.XpPerAffix = std::max(0.0f, sConfigMgr->GetFloatDefault("WildRares.Xp.PerAffixLevelFraction", 0.05f));
         config.XpMax = std::max(0.0f, sConfigMgr->GetFloatDefault("WildRares.Xp.MaxLevelFraction", 0.20f));

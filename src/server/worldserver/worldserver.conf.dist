@@ -6068,6 +6068,12 @@ Twinks.IntroOnLogin = 1
 #        Description: Vignette.db2 id of the minimap star shown on open-world rares whose template has none
 #                     (rares from before MoP). 0 shows none. 4 is the client's generic kill star.
 #        Default:     4
+#
+#    Rares.HealthMultiplier
+#        Description: Health multiplier for fixed open-world rares (rare and rare-elite templates), applied at
+#                     spawn and respawn, before affixes. 1 keeps template health. Wild rares use
+#                     WildRares.HealthBonusMinPct/MaxPct instead.
+#        Default:     2.0
 
 Rares.Affixes.Enable = 1
 Rares.Affixes.CountWeights = "30,40,22,8"
@@ -6076,6 +6082,7 @@ Rares.Xp.BaseLevelFraction = 0.25
 Rares.Xp.MaxLevelFraction = 1.0
 Rares.IntroOnFirstClaim = 1
 Rares.Vignette.Id = 4
+Rares.HealthMultiplier = 2.0
 
 ###################################################################################################
 # WILD RARES (T-100)
@@ -6112,7 +6119,7 @@ Rares.Vignette.Id = 4
 #    WildRares.HealthBonusMinPct
 #    WildRares.HealthBonusMaxPct
 #        Description: Extra health, rolled uniformly between the two, in percent of the creature's own.
-#        Default:     50, 100
+#        Default:     95, 160
 #
 #    WildRares.Xp.BaseLevelFraction
 #    WildRares.Xp.PerAffixLevelFraction
@@ -6155,8 +6162,8 @@ WildRares.SpawnCooldownSeconds = 900
 WildRares.IncludeNeutral = 1
 WildRares.AffixCountWeights = "75,25"
 WildRares.AffixIntensity = 0.55
-WildRares.HealthBonusMinPct = 50
-WildRares.HealthBonusMaxPct = 100
+WildRares.HealthBonusMinPct = 95
+WildRares.HealthBonusMaxPct = 160
 WildRares.Xp.BaseLevelFraction = 0.10
 WildRares.Xp.PerAffixLevelFraction = 0.05
 WildRares.Xp.MaxLevelFraction = 0.20
