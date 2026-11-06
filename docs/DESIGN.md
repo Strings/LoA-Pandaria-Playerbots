@@ -909,6 +909,17 @@ Discovery is the weakest of the eight kinds of fun in this plan, so the world sh
 - **One shared affix module** serves rare modifiers, corruption dial affixes and Brawler mutators.
 - **Modifiers show as buff icons** plus a spawn emote; the client caches names per creature entry, so per-spawn names aren't possible.
 
+**Wild rares (decided 2026-11-06).** A second, lesser tier: ordinary mobs that sometimes spawn as a wild rare. Fixed rares stay the big-reward tier. Every number below is a config key (`WildRares.*`).
+
+- **Eligible:** hostile open-world creatures of normal rank, quest targets included. Never NPCs (vendors, trainers, quest givers, flight masters, anything with gossip or NPC flags), city creatures, instance creatures, pets, summons, elites, or rares (fixed rares have their own tier). A per-entry denylist (`rare_wild_denylist`) takes out anything else.
+- **Chance:** 2% per eligible spawn or respawn to start, tuned down later. A per-zone cap on live wild rares and a cooldown per spawn point, both generous.
+- **Strength:** one affix, sometimes two, from the shared affix module at about 55% strength (the module's intensity parameter), and +50–100% health.
+- **No harsh penalty:** when a player dies near a wild rare (in combat with it, or within a radius), its affixes and extra health wear off. This matters most for quest targets.
+- **Rewards:** about 10–20% of a level in XP, one extra loot roll and a small chance at a Heartseed essence. No signature collectible.
+- **Presentation:** affix buff icons, a spawn emote, a *Wild Rare* marker aura, and a minimap vignette per spawn. Per-spawn names and classification aren't possible.
+- **Stock rares get stars too:** pre-MoP rares and rare elites have no vignette in their data, so they get one through the same path.
+- **GM hooks:** `.wildrare spawn`, `explain`, `stats`, `chance <pct>`.
+
 **Provisional: other discovery wins**
 
 | Difficulty | Idea |
