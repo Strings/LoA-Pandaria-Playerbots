@@ -1960,6 +1960,67 @@ AiPlayerbot.RandomBotJoinBG = 1
 # Default: 30
 AiPlayerbot.BgCheckInterval = 30
 
+# Battleground queue fill (beyond AC, Manager/BgQueueFill.h). When a real player waits in a battleground queue,
+# random bots of that bracket are queued for both factions at once, so the match pops without waiting for the census
+# above. If a faction has too few free bots online in that bracket, offline random bots of the bracket are logged in
+# for it and logged out again once they have been idle for ExtraBotStaySeconds. GM: .playerbots bgfill [status|now].
+#
+# Default: 1 (enabled)
+AiPlayerbot.BgFill.Enable = 1
+
+# How often (milliseconds) the fill checks the queues.
+#
+# Default: 1000
+AiPlayerbot.BgFill.CheckIntervalMs = 1000
+
+# Seconds a real player waits in the queue before bots are added (0 = at once).
+#
+# Default: 0
+AiPlayerbot.BgFill.DelaySeconds = 0
+
+# Players per faction the fill aims for, players and bots together; clamped to the battleground's minimum and
+# maximum. 0 = the battleground's maximum (a full match). The queue pops once both sides reach the minimum.
+#
+# Default: 0
+AiPlayerbot.BgFill.TeamSize = 0
+
+# Log in offline random bots of the bracket when too few are online (1 = yes).
+#
+# Default: 1
+AiPlayerbot.BgFill.LoginOffline = 1
+
+# Most extra bots the fill keeps logged in at once, on top of MaxRandomBots.
+#
+# Default: 60
+AiPlayerbot.BgFill.MaxExtraLogins = 60
+
+# Seconds an extra bot stays logged in after it last was in a battleground, a queue or a group.
+#
+# Default: 300
+AiPlayerbot.BgFill.ExtraBotStaySeconds = 300
+
+# Seconds a bot must have been in world before the fill queues it.
+#
+# Default: 3
+AiPlayerbot.BgFill.LoginSettleSeconds = 3
+
+# Seconds to wait for an extra bot's login before giving up on it.
+#
+# Default: 60
+AiPlayerbot.BgFill.LoginTimeoutSeconds = 60
+
+# Bots the fill queued accept their invitation on its next check instead of on their own "bg status" trigger.
+#
+# Default: 1
+AiPlayerbot.BgFill.FastAccept = 1
+
+# Seconds a bot the fill queued may wait uninvited after no real player waits in its queue any more; then it leaves
+# the queue, so leftovers never start a bots-only match. While it waits the fill keeps the queue updating, so a match
+# that popped at the minimum per team is topped up to the maximum.
+#
+# Default: 120
+AiPlayerbot.BgFill.QueueTimeoutSeconds = 120
+
 # Strand of the Ancients - beyond AC (AC has no SotA tactics; owner 2026-10-14, #736): the chance (0-100) that a
 # demolisher gets a bot driver at all. One deterministic roll per vehicle per life (a destroyed and respawned
 # demolisher rolls again); a demolisher that loses the roll is left for a player to drive. The harness verb

@@ -98,7 +98,7 @@ namespace
     void LoadConfig()
     {
         config.Enable = sConfigMgr->GetBoolDefault("WildRares.Enable", true);
-        config.ChancePct = std::max(0.0f, sConfigMgr->GetFloatDefault("WildRares.ChancePct", 2.0f));
+        config.ChancePct = std::max(0.0f, sConfigMgr->GetFloatDefault("WildRares.ChancePct", 2.5f));
         config.ZoneCap = uint32(std::max(0, sConfigMgr->GetIntDefault("WildRares.ZoneCap", 6)));
         config.CooldownSeconds = std::max(0, sConfigMgr->GetIntDefault("WildRares.SpawnCooldownSeconds", 900));
         config.IncludeNeutral = sConfigMgr->GetBoolDefault("WildRares.IncludeNeutral", true);

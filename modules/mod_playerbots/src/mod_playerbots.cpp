@@ -24,6 +24,7 @@
 #include "RandomItemManager.h"
 #include "PlayerbotTextMgr.h"
 #include "PlayerbotWorldThreadProcessor.h"
+#include "BgQueueFill.h"        // battleground queue fill for real players (AiPlayerbot.BgFill.*)
 #include "TravelNode.h"
 
 #include "Authentication/AuthCrypt.h"
@@ -188,6 +189,8 @@ public:
         PlayerbotRecordWorldUpdateDiff(diff);  // AC World::Update -> sWorldUpdateTime.UpdateWithDiff(diff)
         sRandomPlayerbotMgr->UpdateAI(diff);
         sRandomPlayerbotMgr->UpdateSessions();
+        // World thread, before the map update and BattlegroundMgr::Update, so a queue it fills pops this same tick.
+        BgQueueFill::Update(diff);
     }
 
     void OnPlayerbotUpdateSessions(Player* player) override
