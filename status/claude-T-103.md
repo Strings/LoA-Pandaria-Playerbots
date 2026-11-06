@@ -29,7 +29,9 @@
   The fill now schedules one every pass while its bots wait. That was fixed and retested above.
 - Not exercised: the release of extra bots 300 s after their match ends, and the 120 s leftover-queue timeout (matches
   ran longer than the test).
-- Regression suite: see the PR.
+- Regression suite (test profile, bots off): 36 pass, 2 fail, neither from this change: `telemetry` (times out on
+  the base run too) and `multiclass` (spell 320000's script hook is not bound at startup, "did not match dbc effect
+  data", in `world_claude`; it passed earlier today).
 
 ## Decisions made
 - Bot pool per bracket on the main server (500 online, levels 1-90): roughly 3-30 online per faction per bracket,
