@@ -23,7 +23,8 @@
     "say .damage 1",
     "wait-for evt=never timeout=10",
     "say .wildrare stats",
-    "say .revive",
+    "say .revive Seedtest",
+    "say .gm on",
     "say .wildrare explain",
     "say .wildrare spawn shielded",
     "say .die",
@@ -47,7 +48,7 @@
     },
     {
       "type": "regex",
-      "pattern": "Eligible: no spawn point .summoned."
+      "pattern": "Eligible: pet, summon or player-controlled"
     },
     {
       "type": "regex",
@@ -59,7 +60,7 @@
     },
     {
       "type": "regex",
-      "pattern": "(?s)step: say .revive.*?Not wild: Young Wolf .entry 299"
+      "pattern": "(?s)step: say .revive Seedtest.*?Not wild: Young Wolf .entry 299"
     },
     {
       "type": "regex",
