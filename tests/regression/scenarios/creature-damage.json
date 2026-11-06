@@ -1,0 +1,53 @@
+{
+  "name": "creature-damage",
+  "timeout_seconds": 120,
+  "args": [
+    "--cmd",
+    "play",
+    "--hold",
+    "2"
+  ],
+  "steps": [
+    "say .revive",
+    "say .gm on",
+    "say .npc add temp 46",
+    "npcguid 46",
+    "target npc",
+    "say .npc info",
+    "say .npc add temp 381",
+    "npcguid 381",
+    "target npc",
+    "say .npc info",
+    "say .npc add temp 90",
+    "npcguid 90",
+    "target npc",
+    "say .npc info",
+    "say .npc add temp 1442",
+    "npcguid 1442",
+    "target npc",
+    "say .npc info",
+    "say .npc add temp 58415",
+    "npcguid 58415",
+    "target npc",
+    "say .npc info",
+    "say .gm off"
+  ],
+  "assertions": [
+    {
+      "type": "contains",
+      "text": "LOGIN-OK map="
+    },
+    {
+      "type": "regex",
+      "pattern": "Melee: [0-9.]+ - [0-9.]+ per hit, every 2000 ms .expansion 0"
+    },
+    {
+      "type": "regex",
+      "pattern": "Melee: [0-9.]+ - [0-9.]+ per hit, every 2000 ms .expansion 4"
+    },
+    {
+      "type": "not_contains",
+      "text": "Traceback"
+    }
+  ]
+}
