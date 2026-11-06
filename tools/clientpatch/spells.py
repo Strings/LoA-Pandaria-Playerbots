@@ -232,4 +232,11 @@ def server_sql(clones: List[dict], rows: List[Dict[str, List[List[int]]]]) -> st
         _insert('spell_dbc', SERVER_SPELL, spells, names),
         _insert('spellmisc_dbc', SERVER_MISC, miscs, names),
         _insert('spelleffect_dbc', SERVER_EFFECT, effects, None),
+        '-- The client knows these spells, so the core sends their auras (it treats spell_dbc ids as server-only).\n',
+        'CREATE TABLE IF NOT EXISTS `spell_client_known` (\n'
+        '  `spell_id` INT UNSIGNED NOT NULL,\n'
+        '  PRIMARY KEY (`spell_id`)\n'
+        ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Custom spells the client patch adds (tools/clientpatch)';\n",
+        'DELETE FROM `spell_client_known` WHERE `spell_id` IN (%s);\n' % ids,
+        'INSERT INTO `spell_client_known` (`spell_id`) VALUES %s;\n' % ', '.join('(%d)' % c['id'] for c in clones),
     ])

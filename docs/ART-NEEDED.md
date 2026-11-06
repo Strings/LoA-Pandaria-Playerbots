@@ -12,4 +12,4 @@ it done when the custom art lands in the client patch.
 | Second classes (multi-classing): every ability and class emblem | spells 320000+ | icons of the cloned spells | one icon per ability, an emblem per class | needed |
 | Profession tome pet | creature 69208, species 1174 | stock Gusting Grimoire (fel tome) model, name and journal entry | its own scholarly tome model and name ("Tome of Trades"), needs client DB2 rows for the journal | needed |
 | Wild rare marker aura | spell 318100 | Beast Within icon (2229) | a wild-rare icon distinct from the affix icons | needed |
-| Rare minimap stars (wild rares and pre-MoP rares) | Vignette.db2 4 | the client's "Vignette Test Kill" star; its name may show on minimap hover | a Vignette.db2 row named "Wild Rare" (and "Rare") once the client patch edits DB2 tables | needed |
+| Rare minimap stars (wild rares and pre-MoP rares) | Vignette.db2 4 | the client's generic kill star, renamed "Rare" by the client patch | its own star art if wild rares should look different | needed |

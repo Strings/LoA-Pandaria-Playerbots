@@ -94,6 +94,33 @@ def wdb2(rows, fields):
     return header + struct.pack('<IIIiiiI', 0xABCD, 18273, 0, 0, 0, -1, 0) + body + b'\0'
 
 
+class StringCellTests(unittest.TestCase):
+    schema = get_schema('Vignette.db2')
+
+    def vignettes(self):
+        strings = b'\0Vignette Test Kill\0Go-Kan\0'
+        body = struct.pack('<6I', 4, 1, 89, 0, 0, 0) + struct.pack('<6I', 160, 20, 89, 0, 0, 0)
+        header = struct.pack('<4sIIII', b'WDB2', 2, 6, 24, len(strings))
+        return header + struct.pack('<IIIiiiI', 0xABCD, 18273, 0, 0, 0, 1, 0) + body + strings
+
+    def test_renames_a_string_cell_in_wdb2(self):
+        raw = self.vignettes()
+        out = build.patch_dbc(raw, self.schema, [{'id': 4, 'field': 'name', 'from': 'Vignette Test Kill', 'to': 'Rare'}])
+        self.assertEqual(out[20:48], raw[20:48])
+        size = struct.unpack_from('<I', out, 16)[0]
+        strings = out[48 + 48:]
+        self.assertEqual(len(strings), size)
+        offset = struct.unpack_from('<I', out, 48 + 4)[0]
+        self.assertEqual(strings[offset:strings.index(b'\0', offset)], b'Rare')
+        # Other rows keep their strings.
+        other = struct.unpack_from('<I', out, 48 + 24 + 4)[0]
+        self.assertEqual(strings[other:strings.index(b'\0', other)], b'Go-Kan')
+
+    def test_refuses_unexpected_string(self):
+        with self.assertRaises(ValueError):
+            build.patch_dbc(self.vignettes(), self.schema, [{'id': 4, 'field': 'name', 'from': 'Other', 'to': 'Rare'}])
+
+
 class RowEditTests(unittest.TestCase):
     schema = get_schema('SpellVisualKitModelAttach.db2')
 

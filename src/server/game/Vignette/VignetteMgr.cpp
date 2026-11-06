@@ -300,6 +300,11 @@ objectUpdateBuffer.WriteByteSeq(objectGUID[7]);
     template <class T>
     void Manager::OnWorldObjectAppear(T const* target)
     {
+        // A dead creature shows no star (the corpse of a rare isn't worth a detour).
+        if (Creature const* creature = target->ToCreature())
+            if (!creature->IsAlive())
+                return;
+
         VignetteEntry const* vignetteEntry = ResolveVignette(target);
         if (!vignetteEntry)
             return;

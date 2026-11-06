@@ -55,3 +55,16 @@
 ## Map additions
 - `src/server/scripts/Custom/WildRares/`: wild rares (lesser random rares), README.
 - `tests/wild_rares/`: wild rare rule tests.
+
+## Follow-up fixes after the first playtest (T-100b)
+- No buffs on wild or fixed rares: the core marks every spell id from 203751 up as server-only and never sends its
+  aura. `build.py sql` now lists each client-patched clone in `spell_client_known` (world), and
+  `SpellMgr::LoadSpellInfoCustomAttributes` exempts them. This also makes the Heartseed rider auras and Unclaimed
+  visible, as their clones intended.
+- Star hover said "Vignette Test Kill": the client patch renames Vignette.db2 row 4 to "Rare" (`dbc` edits now handle
+  WDB2 tables and string cells; `tools/dbc` gained a Vignette schema).
+- Stars stayed on corpses: `Creature::setDeathState` takes a creature's star away from players who see it when it dies
+  and gives it back when it respawns in place; `VignetteMgr` never shows a star on a dead creature. Applies to every
+  creature with a star (stock MoP rares too).
+- Tested: clientpatch unit tests (string edit on WDB2), the wild-rares scenario now checks the marker and an affix
+  aura get a client slot (`.list auras`). Real-client look still needed for the stars.

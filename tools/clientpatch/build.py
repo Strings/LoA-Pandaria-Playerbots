@@ -46,27 +46,29 @@ def load_manifest(path: Path = MANIFEST) -> dict:
 
 
 def patch_dbc(raw: bytes, schema, edits) -> bytes:
-    magic, count, fields, record_size, _ = struct.unpack_from('<4sIIII', raw)
-    if magic != b'WDBC':
-        raise ValueError(schema.filename + ': only WDBC tables are supported')
-    if record_size != fields * 4 or fields != len(schema.fields):
+    """One cell per edit, WDBC or WDB2 (without an id index). String columns take and compare text."""
+    table = Dbc(raw, schema.filename)
+    if table.fields != len(schema.fields):
         raise ValueError(schema.filename + ': schema does not match the file layout')
-    data = bytearray(raw)
-    rows = {}
-    for row in range(count):
-        offset = 20 + row * record_size
-        rows[struct.unpack_from('<I', data, offset + schema.key_index * 4)[0]] = offset
+    rows = {row[schema.key_index]: row for row in table.rows}
+    kinds = {f.name: f.kind for f in schema.fields}
     for edit in edits:
         if edit['id'] not in rows:
             raise KeyError('%s: no row %d' % (schema.filename, edit['id']))
         column = schema.field_names.index(edit['field'])
-        offset = rows[edit['id']] + column * 4
-        current = struct.unpack_from('<I', data, offset)[0]
-        if current != edit['from']:
+        row = rows[edit['id']]
+        if kinds[edit['field']] == 'string':
+            current = table.string(row[column])
+            if current != edit['from']:
+                raise ValueError('%s row %d %s is %r, expected %r' % (schema.filename, edit['id'], edit['field'],
+                                                                      current, edit['from']))
+            row[column] = table.add_string(edit['to'])
+            continue
+        if row[column] != edit['from']:
             raise ValueError('%s row %d %s is %d, expected %d' % (schema.filename, edit['id'], edit['field'],
-                                                                  current, edit['from']))
-        struct.pack_into('<I', data, offset, edit['to'])
-    return bytes(data)
+                                                                  row[column], edit['from']))
+        row[column] = edit['to']
+    return table.to_bytes()
 
 
 def patch_text(raw: bytes, path: str, edits) -> bytes:
@@ -138,7 +140,7 @@ def build_tables(manifest: dict, dbc_dir: Path):
         schema = get_schema(filename)
         if not schema:
             raise KeyError('no schema for ' + filename)
-        raws[filename] = patch_dbc((dbc_dir / filename).read_bytes(), schema, edits)
+        raws[filename] = patch_dbc(table_path(dbc_dir, filename, manifest['locale']).read_bytes(), schema, edits)
     for (_, filename), edits in group_edits(manifest, ('row',)).items():
         schema = get_schema(filename)
         if not schema:

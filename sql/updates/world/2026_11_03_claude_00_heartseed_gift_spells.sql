@@ -108,3 +108,10 @@ INSERT INTO `spelleffect_dbc` (`Id`, `Effect`, `EffectValueMultiplier`, `EffectA
 (3190040, 2, 1.0, 0, 0, 45, 1.0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 6, 0, 319004, 0, 0),
 (3190050, 2, 1.0, 0, 0, 70, 1.0, 1.0, 0, 0, 0, 0, 0, 13, 0, 0.0, 0, 0, 0, 0, 0, 22, 15, 319005, 0, 0),
 (3190060, 2, 1.0, 0, 0, 22, 1.0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 6, 0, 319006, 0, 0);
+-- The client knows these spells, so the core sends their auras (it treats spell_dbc ids as server-only).
+CREATE TABLE IF NOT EXISTS `spell_client_known` (
+  `spell_id` INT UNSIGNED NOT NULL,
+  PRIMARY KEY (`spell_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Custom spells the client patch adds (tools/clientpatch)';
+DELETE FROM `spell_client_known` WHERE `spell_id` IN (310100, 310101, 310102, 310103, 310110, 310111, 310112, 310113, 310114, 318000, 318100, 318001, 318002, 318003, 318004, 318005, 318006, 318007, 318008, 320000, 320001, 320002, 320003, 320004, 320005, 319000, 319001, 319002, 319003, 319004, 319005, 319006);
+INSERT INTO `spell_client_known` (`spell_id`) VALUES (310100), (310101), (310102), (310103), (310110), (310111), (310112), (310113), (310114), (318000), (318100), (318001), (318002), (318003), (318004), (318005), (318006), (318007), (318008), (320000), (320001), (320002), (320003), (320004), (320005), (319000), (319001), (319002), (319003), (319004), (319005), (319006);

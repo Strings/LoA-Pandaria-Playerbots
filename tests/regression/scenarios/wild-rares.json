@@ -20,6 +20,7 @@
     "npcguid 299",
     "target npc",
     "say .wildrare explain",
+    "say .list auras",
     "say .damage 1",
     "wait-for evt=never timeout=25",
     "say .wildrare stats",
@@ -45,6 +46,14 @@
     {
       "type": "regex",
       "pattern": "Wild rare Young Wolf .entry 299, [^)]*.: affixes Molten at 55% intensity; [+][0-9]+% health; alive"
+    },
+    {
+      "type": "regex",
+      "pattern": "id: 318100 [^\"]*? slot ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4]) "
+    },
+    {
+      "type": "regex",
+      "pattern": "id: 318001 [^\"]*? slot ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4]) "
     },
     {
       "type": "regex",

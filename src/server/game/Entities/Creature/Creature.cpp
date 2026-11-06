@@ -1769,9 +1769,34 @@ float Creature::GetAttackDistance(Unit const* player) const
     return (RetDistance*aggroRate);
 }
 
+// Minimap stars follow a creature's life for players already seeing it: gone at death, back after an in-place
+// respawn. Only creatures that show one (template or CreatureHooks) pay for the player search.
+static bool ShowsVignette(Creature const* creature)
+{
+    return creature->GetCreatureTemplate()->VignetteID || CreatureHooks::VignetteFor(creature);
+}
+
+static void RefreshVignettes(Creature* creature)
+{
+    std::list<Player*> players;
+    creature->GetPlayerListInGrid(players, creature->GetVisibilityRange());
+    for (Player* player : players)
+    {
+        player->GetVignetteMgr().OnWorldObjectDisappear(static_cast<Creature const*>(creature));
+        if (creature->IsAlive() && player->HaveAtClient(creature))
+            player->GetVignetteMgr().OnWorldObjectAppear(static_cast<Creature const*>(creature));
+    }
+}
+
 void Creature::setDeathState(DeathState s)
 {
+    // Read before the auras go: a wild rare's star rides on its marker aura.
+    bool hadVignette = s == JUST_DIED && IsInWorld() && ShowsVignette(this);
+
     Unit::setDeathState(s);
+
+    if (hadVignette)
+        RefreshVignettes(this);
 
     if (s == JUST_DIED)
     {
@@ -1895,6 +1920,8 @@ void Creature::Respawn(bool force)
             sPoolMgr->UpdatePool<Creature>(GetMap()->GetPoolData(), poolid, GetDBTableGUIDLow());
 
         CreatureHooks::Dispatch(this, CreatureHooks::Event::Respawned);
+        if (IsInWorld() && ShowsVignette(this))
+            RefreshVignettes(this);
     }
 
     UpdateObjectVisibility();

@@ -183,6 +183,15 @@
       "why": "Affixed rares (T-089): the bot hold on an unclaimed rare."
     },
     {
+      "type": "dbc",
+      "file": "Vignette.db2",
+      "id": 4,
+      "field": "name",
+      "from": "Vignette Test Kill",
+      "to": "Rare",
+      "why": "Wild rares and pre-MoP rares (T-100) show the client's generic kill star, row 4; its test name showed on minimap hover."
+    },
+    {
       "type": "spell",
       "id": 318100,
       "from": 33208,
