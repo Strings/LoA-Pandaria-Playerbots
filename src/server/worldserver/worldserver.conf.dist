@@ -1642,6 +1642,16 @@ Rate.Creature.Elite.RAREELITE.SpellDamage = 1
 Rate.Creature.Elite.WORLDBOSS.SpellDamage = 1
 
 #
+#    Creature.BaseDamagePerSecond
+#        Description: creature_classlevelstats damage_base .. damage_exp3 are the client's NpcDamageByClass tables,
+#                     damage per second, so creatures of expansion 0-3 multiply their weapon damage by their attack
+#                     time, as TrinityCore does (sql/updates/world/2026_11_06_claude_01_creature_damage_tables.sql).
+#                     0 restores the old formula for comparison only; the shipped table values assume 1.
+#        Default:     1
+
+Creature.BaseDamagePerSecond = 1
+
+#
 #    Rate.Creature.Normal.HP
 #    Rate.Creature.Elite.Elite.HP
 #    Rate.Creature.Elite.RARE.HP
