@@ -4,6 +4,7 @@
   "args": ["--cmd", "play", "--hold", "2"],
   "steps": [
     "say .revive",
+    "say .gm off",
     "say .character level Seedtest 10",
     "say .multiclass clear",
     "say .mc switch barbarian",

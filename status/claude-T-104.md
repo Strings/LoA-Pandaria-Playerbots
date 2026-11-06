@@ -31,7 +31,8 @@
 - Follow-up (PR 2): Hurl Axe would not cast on the move. Its 1 s cast kept Throw Axe's movement interrupt
   (`InterruptFlags` 15). `edits.json` `interrupts.clear_cast` and a SpellMgr correction clear it. New headless
   verb `move-start` and scenario `hurl-axe-moving` (passes).
-- Regression suite: see the PR. `multiclass` and `telemetry` already fail in this env.
+- Regression suite: 37 pass, `telemetry` fails (pre-existing). `multiclass` failed only when the character was left in
+  GM mode (Hamstring never lands on the boar), which is likely why it failed under T-103 too. It now starts with `.gm off`.
 
 ## Decisions made
 - The prep time is one global key for all battlegrounds, not per battleground.
