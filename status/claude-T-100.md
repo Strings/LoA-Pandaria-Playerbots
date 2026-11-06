@@ -23,7 +23,11 @@
 - Unit tests: `unit_wild_rare_rules` (eligibility reasons, roll, cap, cooldown, health, XP) and new intensity checks
   in `unit_affix_rules`.
 - Regression scenario `wild-rares.json`: forces a wild rare, lets it kill a 1 hp player and checks the death reset,
-  re-wilds it, kills it with `.die` and checks the bonus, and checks stats and the chance override.
+  re-wilds it, kills it with `.die` and checks the bonus, and checks stats and the chance override. Passes; full
+  suite 36 of 37 (telemetry times out: its scenario walks to Elwynn without teleporting first, so it fails whenever
+  an earlier scenario leaves the character elsewhere; unrelated to this change).
+- Not verified in a real client: the minimap stars (the headless client doesn't track vignettes), the marker's
+  client-patched name and icon.
 
 ## Decisions made
 - "Has a fixed-rare row" read as rare or rare-elite rank: there is no fixed-rare table; those creatures are the fixed
