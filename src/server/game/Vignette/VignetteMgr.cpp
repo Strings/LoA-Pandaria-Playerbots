@@ -16,6 +16,7 @@
 */
 
 #include "VignetteMgr.h"
+#include "CreatureHooks.h"
 #include "ObjectAccessor.h"
 #include "Player.h"
 #include "AreaTrigger.h"
@@ -284,12 +285,29 @@ objectUpdateBuffer.WriteByteSeq(objectGUID[7]);
             SendVignetteUpdateToClient();
     }
 
+    // The template's vignette, or one a custom system gives this creature through CreatureHooks (wild rares, and
+    // older rares whose template has none).
+    static VignetteEntry const* ResolveVignette(WorldObject const* target)
+    {
+        if (VignetteEntry const* entry = GetVignetteEntryFromWorldObject(target))
+            return entry;
+        if (Creature const* creature = target->ToCreature())
+            if (uint32 id = CreatureHooks::VignetteFor(creature))
+                return sVignetteStore.LookupEntry(id);
+        return nullptr;
+    }
+
     template <class T>
     void Manager::OnWorldObjectAppear(T const* target)
     {
-        VignetteEntry const* vignetteEntry = GetVignetteEntryFromWorldObject(target);
+        VignetteEntry const* vignetteEntry = ResolveVignette(target);
         if (!vignetteEntry)
             return;
+
+        // A custom system may re-announce a creature it just changed; never show two stars for one source.
+        for (auto const& entry : m_Vignettes)
+            if (entry.second->GeSourceGuid() == target->GetGUID() && entry.second->GetVignetteType() != Type::SourceScript)
+                return;
 
         auto type = GetDefaultVignetteTypeFromWorldObject(target);
         auto trackingQuest = GetTrackingQuestIdFromWorldObject(target);
@@ -308,8 +326,9 @@ objectUpdateBuffer.WriteByteSeq(objectGUID[7]);
     template <class T>
     void Manager::OnWorldObjectDisappear(T const* target)
     {
-        auto vignetteEntry = GetVignetteEntryFromWorldObject(target);
-        if (!vignetteEntry)
+        // By source, not by entry: a creature's resolved vignette can change while it is seen (a wild rare that
+        // wore off), and the star it showed must still go.
+        if (m_Vignettes.empty())
             return;
 
         DestroyAndRemoveVignettes([target](Entity const* vignette) -> bool

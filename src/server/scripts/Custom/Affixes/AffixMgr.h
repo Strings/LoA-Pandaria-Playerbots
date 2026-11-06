@@ -58,17 +58,26 @@ namespace Affixes
         std::vector<uint32_t> Roll(uint32_t host, uint32_t count) const;
 
         // Applies the affixes and remembers them, so an evade can put them back and the kill can pay for them.
-        void Apply(Creature* creature, std::vector<uint32_t> const& affixes);
+        // `intensity` scales them (1 = full strength; AffixRules.h); `host` says which system applied them.
+        void Apply(Creature* creature, std::vector<uint32_t> const& affixes, float intensity = 1.0f, uint32_t host = HOST_RARE);
         void Reapply(Creature* creature);
         void Clear(Creature* creature);
         void Forget(ObjectGuid guid);
         std::vector<uint32_t> Get(ObjectGuid guid) const;
+        float Intensity(ObjectGuid guid) const;   // 1 when none applied
+        uint32_t Host(ObjectGuid guid) const;     // 0 when none applied
         std::string Describe(std::vector<uint32_t> const& affixes) const;
 
     private:
+        struct Applied
+        {
+            std::vector<uint32_t> Ids;
+            float Intensity = 1.0f;
+            uint32_t Host = HOST_RARE;
+        };
         mutable std::mutex _lock;
         std::shared_ptr<std::map<uint32_t, Template> const> _templates = std::make_shared<std::map<uint32_t, Template>>();
-        std::unordered_map<ObjectGuid, std::vector<uint32_t>> _applied;
+        std::unordered_map<ObjectGuid, Applied> _applied;
         std::vector<std::shared_ptr<std::map<uint32_t, Template> const>> _retired;
     };
 }

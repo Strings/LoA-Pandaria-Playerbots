@@ -2176,6 +2176,7 @@ void AddSC_twink_xp();
 void AddSC_rares();
 void AddSC_treasures();
 void AddSC_multiclass();
+void AddSC_wild_rares();
 
 void AddCustomScripts()
 {
@@ -2183,6 +2184,7 @@ void AddCustomScripts()
     AddSC_rares();
     AddSC_treasures();
     AddSC_multiclass();
+    AddSC_wild_rares();
 #ifdef SCRIPTS
     /* This is where custom scripts should be added. */
 //AddSC_npc_teleport();
