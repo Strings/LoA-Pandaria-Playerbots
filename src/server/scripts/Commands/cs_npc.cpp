@@ -779,6 +779,9 @@ public:
         }
 
         handler->PSendSysMessage(LANG_NPCINFO_ARMOR, target->GetArmor());
+        handler->PSendSysMessage("Melee: %.1f - %.1f per hit, every %u ms (expansion %u, damage modifier %.2f).",
+            target->GetFloatValue(UNIT_FIELD_MIN_DAMAGE), target->GetFloatValue(UNIT_FIELD_MAX_DAMAGE),
+            target->GetAttackTime(BASE_ATTACK), uint32(cInfo->expansion), cInfo->dmg_multiplier);
         handler->PSendSysMessage(LANG_NPCINFO_POSITION, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ());
 
         if (target->GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE ||
