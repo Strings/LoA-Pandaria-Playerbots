@@ -32,6 +32,10 @@ entry when something took more than one wrong turn to find, and say what would h
   and 5.4.8 has no unlimited-speed spline flag). Lifting the server cap for flight paths (T-086j, 118 yd/s) made the
   server finish first: it ran `FlightPathMovementGenerator::DoFinalize` and dismounted the player while the client
   still flew the route, so the taxi mount vanished mid-air (T-087). Faster flights need a client exe patch.
+- **Spell.dbc rows must stay sorted by id.** The client finds a spell's row by its rank among the ids, so a clone
+  appended after a higher id shifts every lookup past it onto its neighbour: Hurl Axe (320000) dragged as
+  Windrider's Grace (319001), and the General tab listed trinket spells as unlearned. `spells.clone` inserts in
+  order. SpellMisc, SpellEffect and SkillLineAbility ship unsorted and don't care.
 - **Two archive chains.** Files live in the `base` chain (`Data/*.MPQ`, `Data/wow-update-base-<build>.MPQ`) or the
   locale chain (`Data/enUS/locale-enUS.MPQ`, `Data/enUS/wow-update-enUS-<build>.MPQ`). The client patches a file only
   from update archives of the chain that holds it. A Blizzard addon spans both: `Blizzard_PetJournal.lua` is in

@@ -52,6 +52,13 @@ class CloneTests(unittest.TestCase):
         # The source stays as it was.
         self.assertEqual(tables['Spell'].string(tables['Spell'].find(0, 500)[0][1]), 'Old')
 
+    def test_spell_rows_stay_sorted_by_id(self):
+        # The client looks a spell up by its rank among the ids: a lower id cloned after a higher one must slot in.
+        tables = source_tables()
+        spells.clone(dict(EDIT, id=320000), tables)
+        spells.clone(dict(EDIT, id=319001), tables)
+        self.assertEqual([r[0] for r in tables['Spell'].rows], [500, 319001, 320000])
+
     def test_interrupts_copy_clears_bits(self):
         tables = source_tables()
         tables['Spell'].rows[0][17] = 27126
