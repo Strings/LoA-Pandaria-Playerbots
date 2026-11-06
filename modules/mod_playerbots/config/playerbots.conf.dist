@@ -2014,6 +2014,13 @@ AiPlayerbot.BgFill.LoginTimeoutSeconds = 60
 # Default: 1
 AiPlayerbot.BgFill.FastAccept = 1
 
+# Seconds a bot the fill queued may wait uninvited after no real player waits in its queue any more; then it leaves
+# the queue, so leftovers never start a bots-only match. While it waits the fill keeps the queue updating, so a match
+# that popped at the minimum per team is topped up to the maximum.
+#
+# Default: 120
+AiPlayerbot.BgFill.QueueTimeoutSeconds = 120
+
 # Strand of the Ancients - beyond AC (AC has no SotA tactics; owner 2026-10-14, #736): the chance (0-100) that a
 # demolisher gets a bot driver at all. One deterministic roll per vehicle per life (a destroyed and respawned
 # demolisher rolls again); a demolisher that loses the roll is left for a player to drive. The harness verb

@@ -15,6 +15,9 @@
  *      or queue, so the online bot count returns to MaxRandomBots.
  * With AiPlayerbot.BgFill.FastAccept the bots it queued accept their invitation on the next pass instead of waiting
  * for their own "bg status" trigger.
+ * The core pops a match at the minimum per team; while bots it queued still wait, the fill schedules a queue update
+ * every pass so the match is topped up to the maximum, and after AiPlayerbot.BgFill.QueueTimeoutSeconds with no real
+ * player waiting they leave the queue.
  *
  * GM: .playerbots bgfill [status|now] (cs_playerbots.cpp).
  */

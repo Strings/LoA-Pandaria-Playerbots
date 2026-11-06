@@ -45,6 +45,7 @@ namespace
         uint32 settleSeconds = 3;
         uint32 loginTimeoutSeconds = 60;
         bool fastAccept = true;
+        uint32 queueTimeoutSeconds = 120;
     };
 
     // Read every pass, quietly (an older playerbots.conf without the keys must not log "Missing name" each second).
@@ -61,6 +62,7 @@ namespace
         c.settleSeconds = uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.BgFill.LoginSettleSeconds", 3, true)));
         c.loginTimeoutSeconds = uint32(std::max(5, sConfigMgr->GetIntDefault("AiPlayerbot.BgFill.LoginTimeoutSeconds", 60, true)));
         c.fastAccept = sConfigMgr->GetIntDefault("AiPlayerbot.BgFill.FastAccept", 1, true) != 0;
+        c.queueTimeoutSeconds = uint32(std::max(0, sConfigMgr->GetIntDefault("AiPlayerbot.BgFill.QueueTimeoutSeconds", 120, true)));
         return c;
     }
 
@@ -104,7 +106,13 @@ namespace
     uint32 sTimer = 0;
     bool sForce = false;
     std::map<ObjectGuid::LowType, Extra> sExtras;
-    std::set<ObjectGuid> sOurQueued;          // bots this module queued and that have not entered yet (FastAccept)
+    // A bot this module queued that has not entered yet.
+    struct Queued
+    {
+        Key key;
+        time_t lastDemand;     // last pass a real player still waited in its (queue, bracket)
+    };
+    std::map<ObjectGuid, Queued> sOurQueued;
     std::vector<std::string> sLastStatus;
     uint32 sTotalQueued = 0;
     uint32 sTotalLogins = 0;
@@ -146,7 +154,7 @@ namespace
     }
 
     // The tail of BGJoinAction::JoinQueue (WorldSession::HandleBattlemasterJoinOpcode for one player).
-    bool QueueBot(Player* bot, BattlegroundQueueTypeId queueTypeId, Demand const& demand, Battleground* bgTemplate)
+    bool QueueBot(Player* bot, BattlegroundQueueTypeId queueTypeId, Demand const& demand, Battleground* bgTemplate, Key const& key)
     {
         BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue(queueTypeId);
         GroupQueueInfo* ginfo = bgQueue.AddGroup(bot, nullptr, demand.bgTypeId, demand.bracket, 0, false, false, 0, 0);
@@ -160,7 +168,7 @@ namespace
         sBattlegroundMgr->BuildBattlegroundStatusPacket(&data, bgTemplate, bot, queueSlot, STATUS_WAIT_QUEUE, avgWaitTime, 0, 0);
         bot->GetSession()->SendPacket(&data);
 
-        sOurQueued.insert(bot->GetGUID());
+        sOurQueued[bot->GetGUID()] = Queued{ key, time(nullptr) };
         return true;
     }
 
@@ -278,31 +286,55 @@ namespace
         }
     }
 
-    // FastAccept: a bot this module queued accepts its invitation now (BGStatusAction's accept branch).
-    void AcceptInvites()
+    // The bots this module queued. The core pops a match at the minimum per team and only tops it up to the maximum on
+    // a later queue update (BattlegroundQueue::FillPlayersToBG), which nothing schedules while no one joins, so kick
+    // the queue every pass while any of them waits. Invited: accept now (FastAccept, BGStatusAction's accept branch).
+    // Still uninvited QueueTimeoutSeconds after the last real player of its (queue, bracket) stopped waiting: leave,
+    // so leftovers do not start a bots-only match.
+    void TendQueued(Config const& cfg, std::map<Key, Demand> const& demands)
     {
+        time_t const now = time(nullptr);
+        std::set<Key> kick;
         for (auto itr = sOurQueued.begin(); itr != sOurQueued.end();)
         {
-            Player* bot = ObjectAccessor::FindConnectedPlayer(*itr);
-            if (!bot || !bot->IsInWorld() || bot->InBattleground() || !bot->InBattlegroundQueue())
+            Player* bot = ObjectAccessor::FindConnectedPlayer(itr->first);
+            BattlegroundQueueTypeId const queueTypeId = BattlegroundQueueTypeId(itr->second.key.queueTypeId);
+            if (!bot || !bot->IsInWorld() || bot->InBattleground() || !bot->InBattlegroundQueueForBattlegroundQueueType(queueTypeId))
             {
                 itr = sOurQueued.erase(itr);
                 continue;
             }
 
-            bool invited = false;
-            for (uint8 slot = 0; slot < PLAYER_MAX_BATTLEGROUND_QUEUES && !invited; ++slot)
+            if (bot->IsInvitedForBattlegroundQueueType(queueTypeId))
             {
-                BattlegroundQueueTypeId const queueTypeId = bot->GetBattlegroundQueueTypeId(slot);
-                if (queueTypeId != BATTLEGROUND_QUEUE_NONE && bot->IsInvitedForBattlegroundQueueType(queueTypeId))
-                    invited = true;
+                if (cfg.fastAccept)
+                    if (PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot))
+                        botAI->DoSpecificAction("bg status", Event(), true);
+                ++itr;
+                continue;
             }
 
-            if (invited)
-                if (PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot))
-                    botAI->DoSpecificAction("bg status", Event(), true);
+            if (demands.count(itr->second.key))
+                itr->second.lastDemand = now;
+            else if (now - itr->second.lastDemand >= time_t(cfg.queueTimeoutSeconds))
+            {
+                bot->RemoveBattlegroundQueueId(queueTypeId);
+                sBattlegroundMgr->GetBattlegroundQueue(queueTypeId).RemovePlayer(bot->GetGUID(), true, true);
+                TC_LOG_DEBUG("playerbots", "[BGFILL] %s left queue %u bracket %u (no real player waiting)",
+                             bot->GetName().c_str(), uint32(queueTypeId), itr->second.key.bracketId);
+                itr = sOurQueued.erase(itr);
+                continue;
+            }
 
+            kick.insert(itr->second.key);
             ++itr;
+        }
+
+        for (Key const& key : kick)
+        {
+            BattlegroundQueueTypeId const queueTypeId = BattlegroundQueueTypeId(key.queueTypeId);
+            sBattlegroundMgr->ScheduleQueueUpdate(0, 0, queueTypeId, BattlegroundMgr::BGTemplateId(queueTypeId),
+                                                  BattlegroundBracketId(key.bracketId));
         }
     }
 
@@ -379,8 +411,7 @@ namespace
         std::map<Key, Demand> demands = CollectDemands(cfg, force);
         UpdateExtras(cfg, demands);
 
-        if (cfg.fastAccept)
-            AcceptInvites();
+        TendQueued(cfg, demands);
 
         if (demands.empty())
         {
@@ -416,7 +447,7 @@ namespace
                     Player* bot = bots[i];
                     if (used[i] || uint32(bot->GetTeamId()) != team || !CanQueue(bot, key, demand, bgTemplate, cfg))
                         continue;
-                    if (!QueueBot(bot, queueTypeId, demand, bgTemplate))
+                    if (!QueueBot(bot, queueTypeId, demand, bgTemplate, key))
                         continue;
 
                     used[i] = true;
