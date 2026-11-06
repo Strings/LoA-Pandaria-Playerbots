@@ -20,8 +20,16 @@
 - Wild rare chance `WildRares.ChancePct` 2.0 -> 2.5 (conf.dist, code default, README, DESIGN.md).
 
 ## How it was tested
-- See the PR: Claude test server with 40 random bots online, a level-57 test character queued Warsong Gulch through the
-  headless client, and the time from queue to invite was measured. `.playerbots bgfill status` was checked.
+- Claude test server, 40 random bots online (almost none in 55-59), a level-57 headless character:
+  - Warsong Gulch: queued 15:07:19, invite 15:07:21; 18 offline bracket bots logged in, 19 queued, all 19 entered
+    (10v10).
+  - Arathi Basin: queued 15:14:53, invite 15:14:55; 29 bots logged in and queued, all 29 entered (15v15).
+  - The logged-in bots kept their levels (55-56). `.playerbots bgfill` printed the census.
+- The first version only reached 5v5: the core pops at the minimum per team and tops up only on a later queue update.
+  The fill now schedules one every pass while its bots wait. That was fixed and retested above.
+- Not exercised: the release of extra bots 300 s after their match ends, and the 120 s leftover-queue timeout (matches
+  ran longer than the test).
+- Regression suite: see the PR.
 
 ## Decisions made
 - Bot pool per bracket on the main server (500 online, levels 1-90): roughly 3-30 online per faction per bracket,
@@ -35,6 +43,7 @@
 - New config keys `AiPlayerbot.BgFill.*` in `playerbots.conf.dist` (main `playerbots.conf` does not need them; the code
   defaults match).
 - On by default; `AiPlayerbot.BgFill.Enable = 0` restores the old census-only behaviour.
+- New `AiPlayerbot.BgFill.QueueTimeoutSeconds` (120): leftover bots the fill queued leave once no real player waits.
 
 ## Next
 - Watch the human's first solo BG queues: if a whole bracket has no offline bots of a faction (bracket 85-89 has
