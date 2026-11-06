@@ -38,6 +38,7 @@ namespace
         float XpBase = 0.25f;
         float XpMax = 1.0f;
         bool Intro = true;
+        float HealthMult = 2.0f; // fixed open-world rares' health multiplier (wild rares have their own)
         uint32 VignetteId = 4;  // Vignette.db2 "kill" star for rares whose template has none (pre-MoP rares)
     };
     Config config;
@@ -65,6 +66,18 @@ namespace
         config.XpMax = std::max(0.0f, sConfigMgr->GetFloatDefault("Rares.Xp.MaxLevelFraction", 1.0f));
         config.Intro = sConfigMgr->GetBoolDefault("Rares.IntroOnFirstClaim", true);
         config.VignetteId = sConfigMgr->GetIntDefault("Rares.Vignette.Id", 4);
+        config.HealthMult = std::max(0.1f, sConfigMgr->GetFloatDefault("Rares.HealthMultiplier", 2.0f));
+    }
+
+    // Spawn and respawn reset the template's health, so scaling here never compounds.
+    void ScaleHealth(Creature* creature)
+    {
+        if (config.HealthMult == 1.0f)
+            return;
+        float healthPct = creature->GetHealthPct();
+        creature->SetMaxHealth(std::max<uint32>(1, uint32(creature->GetMaxHealth() * config.HealthMult)));
+        if (creature->IsAlive())
+            creature->SetHealth(std::max<uint32>(1, uint32(creature->GetMaxHealth() * healthPct / 100.0f)));
     }
 
     bool IsOpenWorldRare(Creature const* creature)
@@ -128,7 +141,10 @@ namespace
         {
             case CreatureHooks::Event::Spawned:
             case CreatureHooks::Event::Respawned:
-                if (!config.Enable || !IsOpenWorldRare(creature))
+                if (!IsOpenWorldRare(creature))
+                    return;
+                ScaleHealth(creature);
+                if (!config.Enable)
                     return;
                 RollAffixes(creature);
                 Hold(creature);
