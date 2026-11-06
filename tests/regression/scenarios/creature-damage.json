@@ -9,7 +9,7 @@
   ],
   "steps": [
     "say .revive",
-    "say .gm on",
+    "say .cheat god on",
     "say .npc add temp 46",
     "npcguid 46",
     "target npc",
@@ -30,7 +30,8 @@
     "npcguid 58415",
     "target npc",
     "say .npc info",
-    "say .gm off"
+    "say .cheat god off",
+    "wait-for evt=never timeout=1"
   ],
   "assertions": [
     {
