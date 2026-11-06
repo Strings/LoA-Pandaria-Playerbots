@@ -171,7 +171,9 @@ def clone(edit: dict, tables: Dict[str, Dbc]) -> Dict[str, List[List[int]]]:
         spell[S_INTERRUPTS] = row[I_ID]
         interrupt_rows.append(row)
 
-    spell_dbc.append(spell)
+    # Spell.dbc must stay sorted by id: the client finds a spell's row by its rank among the ids, so a clone appended
+    # after a higher id shifts every lookup past it onto its neighbour (Hurl Axe showed as Windrider's Grace).
+    spell_dbc.insert(bisect.bisect_right([r[S_ID] for r in spell_dbc.rows], new_id), spell)
     misc_dbc.append(misc)
     for row in interrupt_rows:
         tables['SpellInterrupts'].append(row)
