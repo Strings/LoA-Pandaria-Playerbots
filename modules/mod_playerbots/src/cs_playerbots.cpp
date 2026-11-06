@@ -102,8 +102,7 @@ public:
         size_t start = 0;
         while (start <= status.size())
         {
-            size_t const end = status.find('
-', start);
+            size_t const end = status.find('\n', start);
             handler->SendSysMessage(status.substr(start, end == std::string::npos ? std::string::npos : end - start).c_str());
             if (end == std::string::npos)
                 break;
