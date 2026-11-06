@@ -287,7 +287,7 @@ namespace
             itr->second.Alive = false;
             tally.Remove(itr->second.MapId, itr->second.ZoneId);
         }
-        RefreshVignette(c);
+        // The core takes the star away once the death completes (Creature::setDeathState).
     }
 
     // The record of a wild rare that died or left: no live count to give back unless it was still alive.

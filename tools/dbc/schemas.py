@@ -152,6 +152,20 @@ SPELL_ICON_SCHEMA = TableSchema(
     ),
 )
 
+VIGNETTE_SCHEMA = TableSchema(
+    name='Vignette',
+    filename='Vignette.db2',
+    trinity_fmt='nsiiff',
+    fields=_fields(
+        ('id', 'uint32'),
+        ('name', 'string'),
+        ('quest_feedback_effect_id', 'uint32'),
+        ('flags', 'uint32'),
+        ('x', 'float'),
+        ('y', 'float'),
+    ),
+)
+
 SPELL_COOLDOWNS_SCHEMA = TableSchema(
     name='SpellCooldowns',
     filename='SpellCooldowns.dbc',
@@ -816,6 +830,7 @@ for _schema in (
     CREATURE_TYPE_SCHEMA,
     GAMEOBJECT_DISPLAY_INFO_SCHEMA,
     GAMEOBJECTS_DB2_SCHEMA,
+    VIGNETTE_SCHEMA,
 ):
     SCHEMAS_BY_NAME[_schema.name.lower()] = _schema
     SCHEMAS_BY_FILENAME[_schema.filename.lower()] = _schema

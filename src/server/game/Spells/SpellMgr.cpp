@@ -16,6 +16,7 @@
 */
 
 #include "SpellMgr.h"
+#include <unordered_set>
 #include "SpellInfo.h"
 #include "ObjectMgr.h"
 #include "SpellAuras.h"
@@ -2701,6 +2702,14 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
 {
     uint32 oldMSTime = getMSTime();
 
+    // Custom spells the client patch adds (tools/clientpatch): the client knows them, so their auras are sent even
+    // though their ids are in the server-only spell_dbc range below.
+    std::unordered_set<uint32> clientKnown;
+    if (QueryResult known = WorldDatabase.Query("SELECT spell_id FROM spell_client_known"))
+        do
+            clientKnown.insert(known->Fetch()[0].GetUInt32());
+        while (known->NextRow());
+
     QueryResult result = WorldDatabase.Query("SELECT spell, attribute + 0 FROM spell_custom_attribute");
     if (result)
     {
@@ -2823,7 +2832,7 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                 }
             }
 
-            if (spellInfo->Id >= 203751) // I dunno why 203751 is the first in spell_dbc
+            if (spellInfo->Id >= 203751 && !clientKnown.count(spellInfo->Id)) // I dunno why 203751 is the first in spell_dbc
                 spellInfo->AttributesCu |= SPELL_ATTR0_CU_SERVERSIDE_ONLY;
 
             if (spellInfo->HasEffect(SPELL_EFFECT_KNOCK_BACK) && !(spellInfo->AttributesEx2 & SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS))
